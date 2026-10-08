@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-tm-rect="0,0,1280,1367"><head data-tm-rect="0,0,0,0">
+    <meta charset="utf-8" data-tm-rect="0,0,0,0">
+    <meta name="viewport" content="width=device-width, initial-scale=1" data-tm-rect="0,0,0,0">
+    <title data-tm-rect="0,0,0,0">Ledgerline</title>
+    
+  </head>
+  <body data-tm-rect="0,0,1280,1343">
+    <header class="topbar" data-tm-rect="0,0,1280,45">
+      <strong data-tm-rect="24,12,79,21">Ledgerline</strong>
+      <nav aria-label="Main" data-tm-rect="127,12,242,21">
+        <a href="/app/" data-link="" class="c-i0bdaiv" data-tm-rect="127,12,77,21">Dashboard</a>
+        ·
+        <a href="/app/invoices/new" data-link="" class="c-uwod1wh" data-tm-truth="new-invoice-link" data-tm-rect="216,12,86,21">New invoice</a>
+        ·
+        <a href="/reports.html" class="c-iebobjr" data-tm-truth="reports-link" data-tm-rect="315,12,54,21">Reports</a>
+      </nav>
+      <span class="who" id="who" data-stable-id="" data-tm-rect="1139,12,117,21">Signed in as alex</span>
+    </header>
+    <main id="view" data-stable-id="" data-tm-rect="184,69,912,1274"><section class="panel c-oqrylfq" aria-labelledby="new-h" data-tm-rect="200,69,880,1274"><h1 id="x0z665lc" class="c-3jhumd1" data-tm-rect="221,111,838,43">New invoice</h1><form id="invoice-form" data-stable-id="" novalidate="" data-tm-rect="221,176,838,1147">  <div class="field" data-tm-rect="221,176,838,64"><label for="xqif8hul" data-tm-rect="221,176,838,21">Supplier</label>    <input id="xqif8hul" name="supplier" required="" class="c-su71kr0" data-tm-truth="supplier" data-tm-rect="221,201,838,39"></div>  <div class="field" data-tm-rect="221,254,838,64"><label for="xhvaepy7" data-tm-rect="221,254,838,21">Invoice no.</label>    <input id="xhvaepy7" name="invoiceNumber" placeholder="e.g. INV-1043" required="" class="c-ze9gh69" data-tm-truth="invoice-no" data-tm-rect="221,279,838,39"></div>  <div class="field" data-tm-rect="221,332,838,64"><label for="xtqu148a" data-tm-rect="221,332,838,21">Amount</label>    <input id="xtqu148a" name="amount" type="number" step="0.01" min="0" inputmode="decimal" class="c-9gjm5uu" data-tm-truth="amount" data-tm-rect="221,357,838,39"></div>  <div class="field" data-tm-rect="221,410,838,66"><label for="xas3subo" data-tm-rect="221,410,838,21">Currency</label>    <select id="xas3subo" name="currency" class="c-j8h0ehy" data-tm-truth="currency" data-tm-rect="221,435,838,41">      <option value="AUD" data-tm-rect="0,0,0,0">AUD</option><option value="NZD" data-tm-rect="0,0,0,0">NZD</option><option value="USD" data-tm-rect="0,0,0,0">USD</option>    </select></div>  <div class="field" data-tm-rect="221,490,838,66"><label for="x7ficm25" data-tm-rect="221,490,838,21">Invoice date</label>    <input id="x7ficm25" name="invoiceDate" type="date" class="c-fqr9xe0" data-tm-truth="invoice-date" data-tm-rect="221,515,838,41"></div>  <div class="field" data-tm-rect="221,570,838,46"><label data-tm-rect="221,570,838,21"><input type="checkbox" name="gst" class="c-x8956vh" data-tm-truth="gst" data-tm-rect="225,574,13,13"> Includes GST</label>    <label data-tm-rect="221,595,838,21"><input type="checkbox" name="urgent" class="c-0ozac77" data-tm-truth="urgent" data-tm-rect="225,599,13,13"> Urgent</label></div>  <fieldset data-tm-rect="221,630,838,59"><legend data-tm-rect="234,630,125,21">Payment method</legend>    <label data-tm-rect="234,656,50,21"><input type="radio" name="pay" value="eft" checked="" class="c-5x422t1" data-tm-rect="239,660,13,13"> EFT</label>    <label data-tm-rect="288,656,80,21"><input type="radio" name="pay" value="cheque" class="c-9q9qddw" data-tm-truth="cheque" data-tm-rect="293,660,13,13"> Cheque</label>    <label data-tm-rect="372,656,58,21"><input type="radio" name="pay" value="card" class="c-ptxh90z" data-tm-rect="377,660,13,13"> Card</label>    <div class="field" id="card-field" data-stable-id="" hidden="" data-tm-rect="0,0,0,0">      <label for="xldl67f6" data-tm-rect="0,0,0,0">Card number</label>      <input id="xldl67f6" name="cardNumber" autocomplete="cc-number" inputmode="numeric" class="c-3694r18" data-tm-rect="0,0,0,0">    </div>  </fieldset>  <div class="field" data-tm-rect="221,702,838,67"><label for="xbwxqqmx" data-tm-rect="221,702,838,21">Attach invoice PDF</label>    <input id="xbwxqqmx" name="attachment" type="file" accept=".pdf,image/*" class="c-3kdv570" data-tm-truth="attach" data-tm-rect="221,727,838,42"></div>  <div class="field" data-tm-rect="221,783,838,190"><label for="x4gls7qv" data-tm-rect="221,783,838,21">Cost centre</label>    <input id="x4gls7qv" name="costCentre" readonly="" placeholder="Pick one below" class="c-q60klpb" data-tm-truth="cost-centre" data-tm-rect="221,808,838,39">    <iframe title="Cost centre lookup" src="http://127.0.0.1:60449/widget.html" height="120" data-tm-rect="221,851,840,122"></iframe></div>  <div class="field" data-tm-rect="221,987,838,167"><span data-tm-rect="221,987,838,21">Internal note</span>    <iframe title="Internal note" src="/frames/notes.html" height="140" data-tm-rect="221,1012,840,142"></iframe></div>  <div class="field" data-tm-rect="221,1168,838,101"><span id="x1izp2eq" data-tm-rect="221,1168,838,21">Approver</span>    <tm-approver-picker aria-labelledby="approver-label" data-tm-rect="221,1193,838,76"><template data-tm-shadow><input type="search" aria-label="Search approvers" placeholder="Search approvers" data-tm-truth="approver-search" data-tm-rect="221,1193,838,39"><ul role="list" data-tm-rect="221,1238,838,31"><li data-tm-rect="221,1238,109,31"><button type="button" aria-pressed="false" data-tm-rect="221,1238,109,31">Priya Raman</button></li><li data-tm-rect="336,1238,118,31"><button type="button" aria-pressed="false" data-tm-rect="336,1238,118,31">Tom Whitlock</button></li><li data-tm-rect="461,1238,89,31"><button type="button" aria-pressed="false" data-tm-truth="approver-mei" data-tm-rect="461,1238,89,31">Mei Chen</button></li><li data-tm-rect="556,1238,117,31"><button type="button" aria-pressed="false" data-tm-rect="556,1238,117,31">Lachlan Ward</button></li></ul></template></tm-approver-picker></div>  <button type="submit" class="primary c-q5itzg9" data-tm-truth="review" data-tm-rect="221,1283,137,39">Review invoice</button></form></section></main>
+
+    <dialog id="review-dialog" data-stable-id="" aria-labelledby="review-heading" data-tm-rect="0,0,0,0">
+      <h2 id="review-heading" data-tm-rect="0,0,0,0">Review invoice</h2>
+      <dl id="review-summary" data-tm-rect="0,0,0,0"></dl>
+      <p class="muted" data-tm-rect="0,0,0,0">Submitting sends this invoice for approval. This can't be undone.</p>
+      <div style="display: flex; gap: 8px; justify-content: flex-end" data-tm-rect="0,0,0,0">
+        <button type="button" id="review-back" data-tm-rect="0,0,0,0">Back to edit</button>
+        <button type="button" class="danger" id="review-submit" data-tm-rect="0,0,0,0">Submit invoice</button>
+      </div>
+    </dialog>
+
+    
+    
+    
+    
+  
+
+</body></html>

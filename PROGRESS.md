@@ -5,7 +5,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 ## Milestones
 
 - [x] **M0** Monorepo scaffold, tooling, docs, demo app, CI
-- [ ] **M1** `core`: schema and migrations, step-text writer, target descriptors, matching engine, storage interfaces, IndexedDB and Folder adapters
+- [x] **M1** `core`: schema and migrations, step-text writer, target descriptors, matching engine, storage interfaces, IndexedDB and Folder adapters
 - [ ] **M2** Extension capture C1–C7, C9; side panel; library L1–L2
 - [ ] **M3** Editor E1–E10 and image editor
 - [ ] **M4** Exports X1–X8, viewer
@@ -29,6 +29,18 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] `docs/DEVELOPING.md`, `PARITY.md`, `docs/DECISIONS.md`, `docs/MANUAL_TESTS.md`, `README.md`, MIT `LICENSE`
 
 **Acceptance:** `pnpm i && pnpm build && pnpm test` pass; `pnpm lint` passes; `pnpm e2e` passes (5 tests); `pnpm demo` serves the app on <http://localhost:5173>.
+
+## M1 detail (done 2026-10-09)
+
+- [x] Zod schema v1 (`schema.ts`) with secret-safety rules, duplicate-id and variable checks
+- [x] Migration framework (`migrations.ts`): upgrades older files, refuses newer ones with a friendly message
+- [x] Rich text helpers (plain, Markdown, safe HTML)
+- [x] Step-text writer covering all 13 actions, with naming fallbacks and no sensitive values
+- [x] Target descriptors: implicit ARIA roles, accessible names, labels, ranked selectors scored by uniqueness, shadow-host chains, frame selectors
+- [x] Matching engine: ranked strategies, narrowing, position tie-breaks, neighbourhood fallback, `waitForTarget` (MutationObserver + polling)
+- [x] Storage interface + IndexedDbStore + FolderStore (atomic writes, trash, versions ≤ 50, images, per-user sidecars, nested folders)
+
+**Acceptance:** 103 core unit tests. They cover every action's text, schema round-trips and migrations, and matcher round-trips for 26 demo-app elements across login, dashboard, form, dialog, shadow DOM and both iframes (each described in one page load and found in another load with different IDs). A shared storage contract suite runs against IndexedDB, real disk folders and an in-memory file system.
 
 ## Waiting on the owner
 

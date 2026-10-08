@@ -24,3 +24,15 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Extension icon** is deferred to M2 with the capture UI; Chrome shows its default icon until then.
 - **CI:** one workflow, matrix `windows-latest` + `ubuntu-latest`: lint, build, typecheck, unit tests, e2e.
 - **Keep clones at short paths.** Windows' 260-character path limit breaks Vitest when the repo sits deep (pnpm's `.pnpm` folder names are long). The current location is fine; long-path support can be enabled by an admin (`LongPathsEnabled`) if ever needed.
+
+## M1
+
+- **Zod 4** for schemas. Guide schema adds one field beyond the brief: `updatedBy` (who saved last), needed for "show who last edited" in shared libraries (L3).
+- **Rich text** is `{ spans: [{ text, bold?, italic?, href? }] }`. Links must be `http(s):` or `mailto:`; rendering to HTML escapes everything.
+- **Secrets are enforced by the schema:** a step input marked sensitive, or a sensitive variable, cannot carry a value, so it can never be serialised.
+- **Step text** for sensitive fields: "Enter your password" when the field looks like a password/passcode/PIN, otherwise "Enter **<field name>**". Unchecking is "Uncheck **X**"; radios are "Select **X**".
+- **Selector formats:** `testid` = attribute value (any of data-testid/-test-id/-test/-qa/-cy); `aria` = `role "name"`; `label`/`text` = plain text; `css` built only from stable attributes and structure (never IDs or classes); `xpath` = positional path from the document or shadow root.
+- **Matcher confidence:** testid 0.97, role+name 0.92, label 0.88, text 0.78, CSS 0.62, XPath 0.45, neighbourhood ≤ 0.5; ambiguous or wrong-tag hits are fallbacks only. Closed `<dialog>` and `[hidden]` subtrees count as invisible by default; browser callers can pass a layout-aware visibility check.
+- **Matcher tests** run against real Chromium DOM snapshots of the demo app (`pnpm snapshot:demo`), loaded into happy-dom; shadow roots are stored as `<template data-tm-shadow>` because happy-dom lacks declarative shadow DOM. Each page is captured twice so IDs/classes differ between "describe" and "find".
+- **Storage:** one `GuideStore` interface; `IndexedDbStore` (takes an `IDBFactory`) and `FolderStore` (takes a small `FileSystem`; Node implementation at `@trailmark/core/node`). Trash = `<root>/.trash/<id>/`; folders in `<root>/folders.json`; versions capped at 50; sidecar file names use a slug of the user name.
+- **Windows file locking:** the Node file system retries renames on EPERM/EBUSY/EACCES with backoff (OneDrive/antivirus).

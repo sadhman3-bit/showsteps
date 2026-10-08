@@ -25,13 +25,38 @@ export default tseslint.config(
     },
   },
   {
-    // core must stay free of DOM globals at import time
-    files: ['packages/core/**/*.ts'],
+    // core must stay free of DOM globals: DOM helpers receive nodes and reach the window
+    // through node.ownerDocument.defaultView, so core runs in Node, workers and every frame.
+    files: ['packages/core/src/**/*.ts'],
     languageOptions: { globals: { ...globals.es2022 } },
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...[
+          'window',
+          'document',
+          'navigator',
+          'location',
+          'history',
+          'self',
+          'MutationObserver',
+          'getComputedStyle',
+          'Node',
+          'Element',
+          'HTMLElement',
+          'indexedDB',
+        ].map((name) => ({ name, message: 'core must not use DOM globals; pass them in.' })),
+      ],
+    },
   },
   {
     files: ['packages/ui/**/*.{ts,tsx}', 'apps/extension/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.webextensions } },
+  },
+  {
+    // Tests assert on fixtures they control; non-null assertions keep them readable.
+    files: ['**/test/**/*.{ts,tsx}', 'e2e/**/*.ts'],
+    rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
   {
     files: ['fixtures/demo-app/public/**/*.js'],
