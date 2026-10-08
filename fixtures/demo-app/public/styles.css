@@ -1,0 +1,113 @@
+/* Ledgerline demo app: a fictional accounts-payable tool used only for Trailmark tests. */
+:root {
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --ink: #18202e;
+  --muted: #566176;
+  --line: #d6dbe6;
+  --brand: #3b3fb6;
+  --danger: #b42318;
+  font-family: system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+body {
+  margin: 0;
+}
+[hidden] {
+  display: none !important;
+}
+header.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px;
+  background: var(--brand);
+  color: #fff;
+}
+header.topbar a {
+  color: #fff;
+}
+header.topbar .who {
+  margin-left: auto;
+}
+main {
+  max-width: 880px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.field input:not([type='checkbox'], [type='radio']),
+.field select,
+.field textarea {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 0 0 14px;
+}
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--brand);
+  background: #fff;
+  color: var(--brand);
+  cursor: pointer;
+}
+button.primary {
+  background: var(--brand);
+  color: #fff;
+}
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+iframe {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+dialog {
+  border: none;
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 420px;
+}
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+.muted {
+  color: var(--muted);
+}
+.loading {
+  color: var(--muted);
+  font-style: italic;
+}

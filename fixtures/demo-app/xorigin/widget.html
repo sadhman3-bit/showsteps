@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cost centre lookup</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 8px;
+        font-family: system-ui, sans-serif;
+        background: #fffbea;
+      }
+      select,
+      button {
+        font: inherit;
+        padding: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="cc">Cost centre lookup</label>
+    <select id="cc" name="cc">
+      <option value="">Choose…</option>
+      <option value="CC-110 Finance">CC-110 Finance</option>
+      <option value="CC-220 Operations">CC-220 Operations</option>
+      <option value="CC-330 Marketing">CC-330 Marketing</option>
+    </select>
+    <button type="button" id="use">Use this cost centre</button>
+    <script>
+      (function () {
+        'use strict';
+        document.getElementById('use').addEventListener('click', function () {
+          const value = document.getElementById('cc').value;
+          if (!value) return;
+          // Parent origin is whatever page embedded us; the parent validates our origin.
+          window.parent.postMessage({ type: 'cost-centre', value: value }, '*');
+        });
+      })();
+    </script>
+  </body>
+</html>

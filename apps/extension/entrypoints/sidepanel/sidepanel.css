@@ -1,0 +1,14 @@
+.tm-sidepanel {
+  padding: var(--tm-space-4);
+}
+
+.tm-sidepanel h1 {
+  margin: 0 0 var(--tm-space-2);
+  font-size: 1.25rem;
+  color: var(--tm-accent);
+}
+
+.tm-sidepanel__note {
+  color: var(--tm-text-muted);
+  font-size: 0.875rem;
+}

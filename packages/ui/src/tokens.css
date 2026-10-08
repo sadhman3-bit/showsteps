@@ -1,0 +1,120 @@
+/*
+ * Trailmark design tokens. Every colour used by the UI comes from here.
+ * Palette: deep teal ("trail") accent on warm neutrals. Contrast pairs meet WCAG AA.
+ */
+:root {
+  color-scheme: light;
+  --tm-font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --tm-font-mono: 'Cascadia Code', Consolas, ui-monospace, monospace;
+
+  --tm-bg: #faf8f5;
+  --tm-surface: #ffffff;
+  --tm-surface-2: #f1eee9;
+  --tm-border: #d9d3ca;
+  --tm-text: #1f1c18;
+  --tm-text-muted: #5c554b;
+
+  --tm-accent: #0f6b62;
+  --tm-accent-hover: #0b554e;
+  --tm-on-accent: #ffffff;
+  --tm-focus: #c2410c;
+
+  --tm-tip: #166534;
+  --tm-note: #1d4ed8;
+  --tm-warning: #92400e;
+  --tm-alert: #b91c1c;
+
+  --tm-radius: 8px;
+  --tm-radius-sm: 4px;
+  --tm-space-1: 4px;
+  --tm-space-2: 8px;
+  --tm-space-3: 12px;
+  --tm-space-4: 16px;
+  --tm-space-6: 24px;
+  --tm-shadow: 0 1px 2px rgb(31 28 24 / 0.08), 0 4px 12px rgb(31 28 24 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --tm-bg: #161513;
+    --tm-surface: #1f1d1a;
+    --tm-surface-2: #2a2723;
+    --tm-border: #3d3933;
+    --tm-text: #f2eee8;
+    --tm-text-muted: #b5ada1;
+    --tm-accent: #4fbfb2;
+    --tm-accent-hover: #6fd3c7;
+    --tm-on-accent: #0b1513;
+    --tm-focus: #fb923c;
+    --tm-tip: #4ade80;
+    --tm-note: #93c5fd;
+    --tm-warning: #fbbf24;
+    --tm-alert: #fca5a5;
+    --tm-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.4);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --tm-bg: #161513;
+  --tm-surface: #1f1d1a;
+  --tm-surface-2: #2a2723;
+  --tm-border: #3d3933;
+  --tm-text: #f2eee8;
+  --tm-text-muted: #b5ada1;
+  --tm-accent: #4fbfb2;
+  --tm-accent-hover: #6fd3c7;
+  --tm-on-accent: #0b1513;
+  --tm-focus: #fb923c;
+  --tm-tip: #4ade80;
+  --tm-note: #93c5fd;
+  --tm-warning: #fbbf24;
+  --tm-alert: #fca5a5;
+  --tm-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.4);
+}
+
+body {
+  margin: 0;
+  background: var(--tm-bg);
+  color: var(--tm-text);
+  font-family: var(--tm-font);
+}
+
+:focus-visible {
+  outline: 2px solid var(--tm-focus);
+  outline-offset: 2px;
+}
+
+.tm-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  min-height: 36px;
+  padding: 0 var(--tm-space-4);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  background: var(--tm-surface);
+  color: var(--tm-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tm-button:hover {
+  background: var(--tm-surface-2);
+}
+
+.tm-button[data-variant='primary'] {
+  border-color: var(--tm-accent);
+  background: var(--tm-accent);
+  color: var(--tm-on-accent);
+}
+
+.tm-button[data-variant='primary']:hover {
+  background: var(--tm-accent-hover);
+}
+
+.tm-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

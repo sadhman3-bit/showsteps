@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Internal note</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body {
+        background: #fff;
+        padding: 8px;
+      }
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 70px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="field">
+      <label for="note">Note for approver</label>
+      <textarea id="note" name="note"></textarea>
+    </div>
+    <script src="/scramble.js"></script>
+    <script>
+      window.demoScramble(document);
+    </script>
+  </body>
+</html>

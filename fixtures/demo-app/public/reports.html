@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reports · Ledgerline</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>Ledgerline</strong>
+      <nav aria-label="Main"><a href="/app/">Dashboard</a></nav>
+    </header>
+    <main>
+      <section class="panel" aria-labelledby="reports-h">
+        <h1 id="reports-h">Reports</h1>
+        <p>A separate, fully loaded page (not part of the single-page app).</p>
+        <div class="field">
+          <label for="period">Period</label>
+          <select id="period">
+            <option>This month</option>
+            <option>Last month</option>
+            <option>This quarter</option>
+          </select>
+        </div>
+        <button type="button" class="primary" id="run">Run report</button>
+        <p id="out" role="status"></p>
+      </section>
+    </main>
+    <script src="/scramble.js"></script>
+    <script>
+      (function () {
+        'use strict';
+        const run = document.getElementById('run');
+        const out = document.getElementById('out');
+        const period = document.getElementById('period');
+        window.demoScramble(document);
+        run.addEventListener('click', function () {
+          out.textContent = 'Report ready for ' + period.value.toLowerCase() + '.';
+        });
+      })();
+    </script>
+  </body>
+</html>

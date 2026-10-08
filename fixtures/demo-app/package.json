@@ -1,0 +1,15 @@
+{
+  "name": "@trailmark/demo-app",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./server.mjs",
+    "./planted-secrets.json": "./planted-secrets.json"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "vitest run"
+  }
+}

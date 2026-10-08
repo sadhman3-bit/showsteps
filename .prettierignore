@@ -1,0 +1,9 @@
+node_modules
+dist
+.output
+.wxt
+coverage
+test-results
+playwright-report
+pnpm-lock.yaml
+BUILD_PROMPT.md

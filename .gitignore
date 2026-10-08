@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.output/
+.wxt/
+coverage/
+test-results/
+playwright-report/
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.env
+.env.*
