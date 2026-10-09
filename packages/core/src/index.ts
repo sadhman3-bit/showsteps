@@ -64,3 +64,34 @@ export * from './storage/types.js';
 export { FolderStore, type FileSystem } from './storage/folder.js';
 export { IndexedDbStore } from './storage/indexeddb.js';
 export { summarize } from './storage/summary.js';
+
+// Capture
+export {
+  CaptureSession,
+  attachScreenshot,
+  type CaptureEvent,
+  type ApplyResult,
+  type ElementKey,
+  type ShotInfo,
+} from './capture/session.js';
+export { isSensitiveField, isTextEntry } from './dom/sensitive.js';
+export {
+  scaleRect,
+  offsetRect,
+  roundRect,
+  clampRect,
+  intersects,
+  actionBoxFor,
+  autoCrop,
+  fitWidth,
+  type AutoCrop,
+} from './geometry.js';
+
+// Archives
+export {
+  ARCHIVE_EXTENSION,
+  exportGuideArchive,
+  importGuideArchive,
+  duplicateGuide,
+  type ImportResult,
+} from './archive.js';
