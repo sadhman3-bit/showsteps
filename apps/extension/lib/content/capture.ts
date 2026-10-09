@@ -47,6 +47,8 @@ export class PageRecorder {
   private readonly committed = new WeakMap<Element, string>();
   private lastPointer: { el: Element; at: number } | undefined;
   private listening = false;
+  /** A state pushed by the background is newer than any reply to our earlier hello. */
+  private pushed = false;
   private controller: Controller | undefined;
   private readonly blur = new LiveBlur();
   private outline: HTMLElement | undefined;
@@ -59,7 +61,7 @@ export class PageRecorder {
       this.announceToParent();
     }
     const reply = (await send({ type: 'hello' })) as { state?: CaptureState } | undefined;
-    if (reply?.state) this.apply(reply.state);
+    if (reply?.state && !this.pushed) this.apply(reply.state);
   }
 
   // ---------- State ----------
@@ -99,6 +101,7 @@ export class PageRecorder {
       window.removeEventListener('focusout', this.onFocusOut, true);
       window.removeEventListener('pointerover', this.onPointerOver, true);
       window.removeEventListener('resize', this.reportViewport);
+      window.removeEventListener('blur', this.onWindowBlur);
       this.listening = false;
     }
     this.controller?.unmount();
@@ -118,6 +121,7 @@ export class PageRecorder {
     window.addEventListener('focusout', this.onFocusOut, true);
     window.addEventListener('pointerover', this.onPointerOver, true);
     if (this.isTop) window.addEventListener('resize', this.reportViewport);
+    window.addEventListener('blur', this.onWindowBlur);
   }
 
   private readonly reportViewport = () => {
@@ -165,8 +169,13 @@ export class PageRecorder {
   private record(event: ContentEvent, withShot: boolean): void {
     const shotId = withShot ? crypto.randomUUID() : undefined;
     // Hide our toolbar now, so it is already gone when the background takes the picture.
-    if (shotId) void this.controller?.hideFor();
-    if (shotId) void send({ type: 'shot', shotId });
+    if (shotId) {
+      // Hide our toolbar, then ask for the picture as soon as that has been painted.
+      const controller = this.controller;
+      if (controller)
+        void controller.hideFor().then(() => send({ type: 'shot', shotId, uiHidden: true }));
+      else void send({ type: 'shot', shotId });
+    }
     void send({ type: 'event', ...(shotId ? { shotId } : {}), event });
   }
 
@@ -182,30 +191,36 @@ export class PageRecorder {
     return (el as HTMLElement).innerText ?? el.textContent ?? '';
   }
 
-  /** Record typed text if the field's value changed since focus or the last commit. */
-  private commitTyping(el: Element): boolean {
-    if (!isTextEntry(el)) return false;
+  /**
+   * The typing event for a field whose value changed since focus or the last commit, marking
+   * it committed; undefined when there is nothing new.
+   */
+  private takeTyping(el: Element): ContentEvent | undefined {
+    if (!isTextEntry(el)) return undefined;
     const value = this.valueOf(el);
     const before = this.committed.get(el) ?? this.baseline.get(el) ?? '';
-    if (value === before) return false;
+    if (value === before) return undefined;
     this.committed.set(el, value);
     const sensitive = isSensitiveField(el);
-    this.record(
-      {
-        kind: 'type',
-        target: this.describe(el),
-        element: this.keyOf(el),
-        sensitive,
-        ...(sensitive ? {} : { value }),
-      },
-      true,
-    );
-    return true;
+    return {
+      kind: 'type',
+      target: this.describe(el),
+      element: this.keyOf(el),
+      sensitive,
+      ...(sensitive ? {} : { value }),
+    };
   }
 
-  private commitPendingTyping(except?: Element): void {
+  /** Record typed text if the field's value changed since focus or the last commit. */
+  private commitTyping(el: Element, withShot = true): boolean {
+    const event = this.takeTyping(el);
+    if (event) this.record(event, withShot);
+    return !!event;
+  }
+
+  private commitPendingTyping(except?: Element, withShot = true): void {
     const active = this.activeElementDeep();
-    if (active && active !== except && isTextEntry(active)) this.commitTyping(active);
+    if (active && active !== except && isTextEntry(active)) this.commitTyping(active, withShot);
   }
 
   /** Whether a change event belongs to the element the user just clicked (merge, no new shot). */
@@ -328,6 +343,12 @@ export class PageRecorder {
     }
   };
 
+  /** Switching tab or window does not fire "change": commit typing when the page loses focus. */
+  private readonly onWindowBlur = (e: FocusEvent) => {
+    // No screenshot: another tab or window is now in front.
+    if (e.target === window && this.recording) this.commitPendingTyping(undefined, false);
+  };
+
   private readonly onKeyDown = (e: KeyboardEvent) => {
     if (!e.isTrusted || !this.recording || this.ours(e) || MODIFIER_KEYS.has(e.key)) return;
     const mods = e.ctrlKey || e.metaKey || e.altKey;
@@ -441,7 +462,16 @@ export class PageRecorder {
     if (!parsed.success) return false;
     const msg = parsed.data;
     if (msg.type === 'state') {
+      this.pushed = true;
       this.apply(msg.state);
+      return false;
+    }
+    if (msg.type === 'flush') {
+      // Reply with the pending typing instead of sending it, so the background can place it
+      // before anything that happened in the tab the user switched to.
+      const active = this.activeElementDeep();
+      const event = this.recording && active ? this.takeTyping(active) : undefined;
+      sendResponse({ event: event ?? null });
       return false;
     }
     if (msg.type === 'iframe-geometry') {

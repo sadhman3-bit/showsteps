@@ -36,3 +36,22 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Matcher tests** run against real Chromium DOM snapshots of the demo app (`pnpm snapshot:demo`), loaded into happy-dom; shadow roots are stored as `<template data-tm-shadow>` because happy-dom lacks declarative shadow DOM. Each page is captured twice so IDs/classes differ between "describe" and "find".
 - **Storage:** one `GuideStore` interface; `IndexedDbStore` (takes an `IDBFactory`) and `FolderStore` (takes a small `FileSystem`; Node implementation at `@trailmark/core/node`). Trash = `<root>/.trash/<id>/`; folders in `<root>/folders.json`; versions capped at 50; sidecar file names use a slug of the user name.
 - **Windows file locking:** the Node file system retries renames on EPERM/EBUSY/EACCES with backoff (OneDrive/antivirus).
+
+## M2
+
+- **Host access is optional** (`optional_host_permissions: <all_urls>`), requested by the side panel's Start button. The capture content script is registered at runtime for the granted origins only; nothing is injected outside a capture.
+- **e2e build** (`wxt build --mode e2e`, output `chrome-mv3-e2e`) adds `host_permissions: <all_urls>` (the state after the user grants access) and a `__trailmark` test hook in the service worker. Release builds contain neither; a test checks the release manifest.
+- **Screenshot timing:** the page hides Trailmark's toolbar on pointerdown, asks for the screenshot after the next paint, and sends the event at once (the page may unload right after). The background pairs them by id and waits up to 500 ms for a screenshot that is on its way. Under heavy CPU load a picture can occasionally show the page just after the click.
+- **Rate limit:** at most one capture per 520 ms (Chrome allows 2 per second). Skipped captures reuse the previous step's image (`reusedFromStepId`).
+- **Images:** full screenshot as WebP (quality 0.9; PNG if WebP encoding is unavailable) plus a 320-px-wide thumbnail, named `<stepId>.webp` / `<stepId>.thumb.webp`. Crop and zoom are stored as metadata, not a second image; maximum auto-zoom 2×. All human-layer rects are in image pixels.
+- **Live Blur** blurs elements on the page itself (inline `filter: blur(8px) !important`) while capturing, so secrets never reach a stored pixel. Blurs are removed when the capture ends.
+- **Typing** is recorded when committed: change event, Enter, Tab, focus leaving, a click elsewhere, or the user switching tab (the background asks the old tab for pending typing and orders it first). Value changes made by scripts count (frameworks and test tools set values that way); clicks and keys must be trusted user input.
+- **Key steps:** Enter, Esc, Tab and modifier shortcuts. Enter in multi-line fields is a new line, not a step; Tab right after typing is implied and skipped.
+- **Merges:** click into a field + typing → one Type step; dropdown click + choice → Select; checkbox click + change → one Check; both clicks of a double-click → one Double-click.
+- **First step** of a new capture is "Go to <site>" with a screenshot of the starting page. Direct navigations (address bar, back/forward) add "Go to" steps; navigations caused by recorded clicks do not.
+- **New guide title** defaults to the page title at capture start; renamed in the library.
+- **Library** is a full extension page (`library.html`, hash routes `#/` and `#/guide/<id>`); the side panel shows Start, status, the last 5 guides and a link to the library. Shared Preact components live in `packages/ui` for reuse by the desktop app.
+- **Capture more:** the guide view stores the request (guide, position) in session storage and opens the side panel; Start then records into the active tab and inserts at that position.
+- **Controller** uses an open shadow root (tests can reach it; styles stay isolated) and plain DOM rather than Preact, to keep the content script small.
+- **Extension icon:** an original design (dotted trail to a map pin on a teal tile), rendered from `apps/extension/assets/icon.svg` by `pnpm make:icons`.
+- **e2e workers:** 2 locally, 1 on CI; recording tests take real screenshots, and parallel browsers on small machines skew timing.

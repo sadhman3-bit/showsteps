@@ -15,6 +15,8 @@ export interface GuideSummary {
   author?: string;
   updatedBy?: string;
   stepCount: number;
+  /** Image name of the first step's thumbnail, for library cards. */
+  cover?: string;
   apps: AppRef[];
   /** Step titles as plain text, for full-text search without loading every guide. */
   searchText: string;

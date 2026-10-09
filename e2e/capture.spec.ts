@@ -109,7 +109,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   await human(page);
 
   // Dialog with the irreversible action
-  await page.getByRole('button', { name: 'Review invoice' }).click({ delay: 120 });
+  await page.getByRole('button', { name: 'Review invoice' }).click({ delay: 250 });
   await human(page);
   await page
     .getByRole('dialog')
@@ -169,7 +169,18 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
       expect(box.y + box.h).toBeLessThanOrEqual(shot!.height);
     }
   }
-  expect(fresh).toBeGreaterThanOrEqual(15);
+  // A skipped capture (Chrome allows two per second) reuses the previous step's image, which
+  // was taken at the same moment: e.g. typing committed by the click that follows it.
+  for (const [i, s] of steps.entries()) {
+    const from = s.human.screenshot?.reusedFromStepId;
+    if (!from) continue;
+    const source = steps.findIndex((x) => x.id === from);
+    expect(source, md(s)).toBeGreaterThanOrEqual(0);
+    expect(source).toBeLessThan(i);
+    expect(steps[source]!.human.screenshot?.reusedFromStepId).toBeUndefined();
+    expect(s.human.screenshot?.file).toBe(steps[source]!.human.screenshot?.file);
+  }
+  expect(fresh).toBeGreaterThanOrEqual(10);
 
   // Iframe and shadow DOM targets carry their context.
   const byTitle = (t: string) => steps.find((s) => md(s).includes(t))!;
@@ -211,5 +222,5 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   );
   writeFileSync(test.info().outputPath('review-step.png'), Buffer.from(png));
   // Taken on pointerdown, before the click opened the dialog (no dark backdrop yet).
-  expect(brightness).toBeGreaterThan(220);
+  expect(brightness, 'review screenshot taken after the dialog opened').toBeGreaterThan(220);
 });

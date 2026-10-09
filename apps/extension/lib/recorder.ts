@@ -20,11 +20,18 @@ export interface Viewport {
   dpr: number;
 }
 
+export interface ShotOptions {
+  /** Known window of the tab (saves a lookup on the hot path). */
+  windowId?: number;
+  /** The page already hid Trailmark's controls and painted, so no round trip is needed. */
+  uiHidden?: boolean;
+}
+
 export interface RecorderDeps {
   store: GuideStore;
   frames: FrameRegistry;
   /** chrome.tabs.captureVisibleTab for the window holding the tab. */
-  captureVisibleTab(tabId: number): Promise<string>;
+  captureVisibleTab(tabId: number, opts: ShotOptions): Promise<string>;
   encode(dataUrl: string): Promise<EncodedShot>;
   /** Push state to every frame of a tab's content scripts. */
   sendState(tabId: number, state: CaptureState): void;
@@ -60,6 +67,8 @@ export interface EventSender {
 }
 
 const PENDING_SHOT_TTL_MS = 30_000;
+/** How long an event waits for a screenshot request that its page said is on the way. */
+const SHOT_ARRIVAL_WAIT_MS = 500;
 
 /**
  * The background's capture engine: turns content-script events into saved steps with
@@ -73,6 +82,8 @@ export class Recorder {
   private isNew = false;
   private lastShot: (ShotInfo & { stepId: string }) | undefined;
   private readonly pending = new Map<string, { shot: Promise<PendingShot>; at: number }>();
+  /** Events that arrived before their screenshot request, waiting for it (shot id → wake-up). */
+  private readonly waiting = new Map<string, () => void>();
   private readonly viewports = new Map<number, Viewport>();
   private readonly tabs = new Set<number>();
   private readonly limiter: ShotLimiter;
@@ -84,6 +95,11 @@ export class Recorder {
 
   get current(): CaptureState {
     return { ...this.state };
+  }
+
+  /** Tabs with content scripts taking part in this capture. */
+  get trackedTabs(): number[] {
+    return [...this.tabs];
   }
 
   get isActive(): boolean {
@@ -248,12 +264,13 @@ export class Recorder {
   }
 
   /** Take (or skip, under the rate limit) the screenshot for an upcoming event. */
-  shot(tabId: number, shotId: string): Promise<void> {
+  shot(tabId: number, shotId: string, opts: ShotOptions = {}): Promise<void> {
     if (this.state.status !== 'recording') return Promise.resolve();
     // Not serialised: the screenshot must be taken now, before the page changes. The matching
     // event may arrive before the capture finishes; it waits on this promise.
-    const shot = this.takeShot(tabId);
+    const shot = this.takeShot(tabId, opts);
     this.pending.set(shotId, { shot, at: Date.now() });
+    this.waiting.get(shotId)?.();
     this.prunePending();
     return shot.then(() => undefined);
   }
@@ -261,22 +278,45 @@ export class Recorder {
   event(sender: EventSender, ev: ContentEvent, shotId?: string): Promise<void> {
     return this.serial(async () => {
       if (this.state.status !== 'recording') return;
-      const entry = shotId ? this.pending.get(shotId) : undefined;
+      const entry = shotId ? await this.pendingShot(shotId) : undefined;
       if (shotId) this.pending.delete(shotId);
       const shot = entry ? await entry.shot : undefined;
-
-      const mapped = await this.mapToTop(sender, ev);
-      if (!mapped) return;
-      const app: AppContext = webApp(
-        sender.tabUrl,
-        sender.tabTitle,
-        sender.frameId !== 0 ? sender.frameUrl : undefined,
-      );
-      const captureEvent = { ...mapped, app, at: nowIso(), tabId: sender.tabId } as CaptureEvent;
-      await this.applyEvent(captureEvent, shot);
+      await this.applyContentEvent(sender, ev, shot);
       await this.save();
       this.publish();
     });
+  }
+
+  /**
+   * The user switched away from a tab: collect typing it has not committed yet and record it
+   * before anything that follows. `collect` asks each frame of the tab for its pending event.
+   */
+  flush(collect: () => Promise<{ sender: EventSender; event: ContentEvent }[]>): Promise<void> {
+    return this.serial(async () => {
+      if (this.state.status !== 'recording') return;
+      const pending = await collect().catch(() => []);
+      if (!pending.length) return;
+      // No new screenshot: another tab is in front now. The step reuses the last one.
+      for (const p of pending) await this.applyContentEvent(p.sender, p.event, { kind: 'skipped' });
+      await this.save();
+      this.publish();
+    });
+  }
+
+  private async applyContentEvent(
+    sender: EventSender,
+    ev: ContentEvent,
+    shot: PendingShot | undefined,
+  ): Promise<void> {
+    const mapped = await this.mapToTop(sender, ev);
+    if (!mapped) return;
+    const app: AppContext = webApp(
+      sender.tabUrl,
+      sender.tabTitle,
+      sender.frameId !== 0 ? sender.frameUrl : undefined,
+    );
+    const captureEvent = { ...mapped, app, at: nowIso(), tabId: sender.tabId } as CaptureEvent;
+    await this.applyEvent(captureEvent, shot);
   }
 
   /** A navigation the user made directly (address bar, back/forward). */
@@ -295,10 +335,28 @@ export class Recorder {
 
   // ---------- Internals ----------
 
-  private async takeShot(tabId: number): Promise<PendingShot> {
+  /**
+   * The screenshot for an event. The page sends the event first (it may be about to unload)
+   * and the screenshot request right after its toolbar is hidden, so allow a short wait.
+   */
+  private async pendingShot(shotId: string) {
+    if (!this.pending.has(shotId)) {
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, SHOT_ARRIVAL_WAIT_MS);
+        this.waiting.set(shotId, () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+      this.waiting.delete(shotId);
+    }
+    return this.pending.get(shotId);
+  }
+
+  private async takeShot(tabId: number, opts: ShotOptions = {}): Promise<PendingShot> {
     if (!this.limiter.tryAcquire()) return { kind: 'skipped' };
     try {
-      const dataUrl = await this.deps.captureVisibleTab(tabId);
+      const dataUrl = await this.deps.captureVisibleTab(tabId, opts);
       const vp = this.viewports.get(tabId);
       return { kind: 'captured', dataUrl, viewportWidth: vp?.width ?? 0, dpr: vp?.dpr ?? 1 };
     } catch {

@@ -15,7 +15,8 @@
     "./strings": {
       "types": "./dist/strings.d.ts",
       "import": "./dist/strings.js"
-    }
+    },
+    "./app.css": "./src/app.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

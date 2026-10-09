@@ -1,0 +1,554 @@
+import {
+  ARCHIVE_EXTENSION,
+  createId,
+  duplicateGuide,
+  exportGuideArchive,
+  importGuideArchive,
+  type Folder,
+  type GuideStore,
+  type GuideSummary,
+} from '@trailmark/core';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { Button } from '../Button.js';
+import { ConfirmDialog, Dialog, PromptDialog } from '../components/Dialog.js';
+import { Icon } from '../components/Icon.js';
+import { downloadBytes, safeFileName, useImageUrl, usePreference } from '../hooks.js';
+import { strings } from '../strings.js';
+import { relativeTime } from '../time.js';
+import { facets, filterGuides, folderTree, parseTags, type Scope, type SortKey } from './filter.js';
+
+const s = strings.library;
+
+export interface LibraryProps {
+  store: GuideStore;
+  onOpen: (guideId: string) => void;
+  /** Bumped by the host when guides change elsewhere (e.g. a capture finished). */
+  refreshKey?: number;
+}
+
+type Modal =
+  | { kind: 'rename'; guide: GuideSummary }
+  | { kind: 'tags'; guide: GuideSummary }
+  | { kind: 'move'; guide: GuideSummary }
+  | { kind: 'purge'; guide: GuideSummary }
+  | { kind: 'new-folder'; parentId?: string }
+  | { kind: 'rename-folder'; folder: Folder }
+  | { kind: 'delete-folder'; folder: Folder };
+
+/** The guide library: folders, search, filters, grid/list, Trash, import and export. */
+export function Library({ store, onOpen, refreshKey }: LibraryProps) {
+  const [guides, setGuides] = useState<GuideSummary[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [scope, setScope] = useState<Scope>({ kind: 'all' });
+  const [text, setText] = useState('');
+  const [sort, setSort] = usePreference<SortKey>('library.sort', 'updated');
+  const [view, setView] = usePreference<'grid' | 'list'>('library.view', 'grid');
+  const [app, setApp] = useState('');
+  const [tag, setTag] = useState('');
+  const [modal, setModal] = useState<Modal | null>(null);
+  const [notice, setNotice] = useState<string>('');
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const reload = useCallback(async () => {
+    const [g, f] = await Promise.all([
+      store.listGuides({ includeTrashed: true }),
+      store.listFolders(),
+    ]);
+    setGuides(g);
+    setFolders(f);
+    setLoaded(true);
+  }, [store]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload, refreshKey]);
+
+  const shown = useMemo(
+    () =>
+      filterGuides(guides, { scope, text, sort, ...(app ? { app } : {}), ...(tag ? { tag } : {}) }),
+    [guides, scope, text, sort, app, tag],
+  );
+  const { apps, tags } = useMemo(() => facets(guides), [guides]);
+  const tree = useMemo(() => folderTree(folders), [folders]);
+  const inTrash = scope.kind === 'trash';
+  const currentFolder =
+    scope.kind === 'folder' ? folders.find((f) => f.id === scope.folderId) : undefined;
+
+  const act = async (fn: () => Promise<unknown>, done?: string) => {
+    try {
+      await fn();
+      if (done) setNotice(done);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : strings.errors.generic);
+    }
+    setModal(null);
+    await reload();
+  };
+
+  const updateGuide = (
+    id: string,
+    change: (g: NonNullable<Awaited<ReturnType<GuideStore['getGuide']>>>) => void,
+  ) =>
+    act(async () => {
+      const guide = await store.getGuide(id);
+      if (!guide) return;
+      change(guide);
+      await store.saveGuide(guide);
+    });
+
+  const onImportFile = async (file: File | undefined) => {
+    if (!file) return;
+    await act(async () => {
+      const result = await importGuideArchive(store, new Uint8Array(await file.arrayBuffer()));
+      if (scope.kind === 'folder') {
+        const g = await store.getGuide(result.guideId);
+        if (g) await store.saveGuide({ ...g, folderId: scope.folderId }, { snapshot: false });
+      }
+    }, s.importDone).catch(() => undefined);
+    if (fileInput.current) fileInput.current.value = '';
+  };
+
+  const exportGuide = (g: GuideSummary) =>
+    act(async () => {
+      const bytes = await exportGuideArchive(store, g.id);
+      downloadBytes(bytes, `${safeFileName(g.title)}${ARCHIVE_EXTENSION}`, 'application/zip');
+    });
+
+  return (
+    <div class="tm-library">
+      <aside class="tm-library__side" aria-label={s.folders}>
+        <h1 class="tm-brand">
+          <Icon name="trail" size={22} /> {strings.app.name}
+        </h1>
+        <nav>
+          <ul class="tm-nav">
+            <li>
+              <button
+                type="button"
+                class="tm-nav__item"
+                aria-current={scope.kind === 'all' ? 'page' : undefined}
+                onClick={() => setScope({ kind: 'all' })}
+              >
+                <Icon name="stack" /> {s.allGuides}
+              </button>
+            </li>
+            {tree.map(({ folder, depth }) => (
+              <li key={folder.id}>
+                <button
+                  type="button"
+                  class="tm-nav__item"
+                  style={{ paddingInlineStart: `${12 + depth * 16}px` }}
+                  aria-current={
+                    scope.kind === 'folder' && scope.folderId === folder.id ? 'page' : undefined
+                  }
+                  onClick={() => setScope({ kind: 'folder', folderId: folder.id })}
+                >
+                  <Icon name="folder" /> {folder.name}
+                </button>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                class="tm-nav__item"
+                aria-current={inTrash ? 'page' : undefined}
+                onClick={() => setScope({ kind: 'trash' })}
+              >
+                <Icon name="trash" /> {s.trash}
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <Button
+          variant="ghost"
+          onClick={() =>
+            setModal({
+              kind: 'new-folder',
+              ...(currentFolder ? { parentId: currentFolder.id } : {}),
+            })
+          }
+        >
+          <Icon name="plus" /> {s.newFolder}
+        </Button>
+      </aside>
+
+      <main class="tm-library__main">
+        <header class="tm-toolbar">
+          <h2 class="tm-toolbar__title">
+            {inTrash ? s.trash : (currentFolder?.name ?? s.allGuides)}
+          </h2>
+          {currentFolder ? (
+            <div class="tm-toolbar__group">
+              <Button
+                variant="ghost"
+                onClick={() => setModal({ kind: 'rename-folder', folder: currentFolder })}
+              >
+                {s.renameFolder}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setModal({ kind: 'delete-folder', folder: currentFolder })}
+              >
+                {s.deleteFolder}
+              </Button>
+            </div>
+          ) : null}
+          <div class="tm-toolbar__spacer" />
+          <Button onClick={() => fileInput.current?.click()}>
+            <Icon name="upload" /> {s.import}
+          </Button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={`${ARCHIVE_EXTENSION},application/zip`}
+            hidden
+            aria-label={s.import}
+            onChange={(e) => void onImportFile(e.currentTarget.files?.[0])}
+          />
+        </header>
+
+        <div class="tm-filters" role="search">
+          <label class="tm-search">
+            <Icon name="search" />
+            <span class="tm-sr">{s.search}</span>
+            <input
+              type="search"
+              class="tm-input"
+              placeholder={s.search}
+              value={text}
+              onInput={(e) => setText(e.currentTarget.value)}
+            />
+          </label>
+          {!inTrash ? (
+            <>
+              <label class="tm-select">
+                <span class="tm-sr">{s.sort}</span>
+                <select
+                  class="tm-input"
+                  value={sort}
+                  onChange={(e) => setSort(e.currentTarget.value as SortKey)}
+                >
+                  <option value="updated">{s.sortUpdated}</option>
+                  <option value="created">{s.sortCreated}</option>
+                  <option value="title">{s.sortTitle}</option>
+                  <option value="steps">{s.sortSteps}</option>
+                </select>
+              </label>
+              <label class="tm-select">
+                <span class="tm-sr">{s.filterApp}</span>
+                <select
+                  class="tm-input"
+                  value={app}
+                  onChange={(e) => setApp(e.currentTarget.value)}
+                >
+                  <option value="">{s.anyApp}</option>
+                  {apps.map((a) => (
+                    <option key={a.key} value={a.key}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {tags.length ? (
+                <label class="tm-select">
+                  <span class="tm-sr">{s.filterTag}</span>
+                  <select
+                    class="tm-input"
+                    value={tag}
+                    onChange={(e) => setTag(e.currentTarget.value)}
+                  >
+                    <option value="">{s.anyTag}</option>
+                    {tags.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </>
+          ) : null}
+          <div class="tm-segmented" role="group" aria-label={s.gridView + ' / ' + s.listView}>
+            <button
+              type="button"
+              aria-pressed={view === 'grid'}
+              aria-label={s.gridView}
+              onClick={() => setView('grid')}
+            >
+              <Icon name="grid" />
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === 'list'}
+              aria-label={s.listView}
+              onClick={() => setView('list')}
+            >
+              <Icon name="list" />
+            </button>
+          </div>
+        </div>
+
+        {notice ? (
+          <p class="tm-notice" role="status">
+            {notice}{' '}
+            <button type="button" class="tm-link" onClick={() => setNotice('')}>
+              {s.close}
+            </button>
+          </p>
+        ) : null}
+
+        {loaded && shown.length === 0 ? (
+          <p class="tm-empty">{inTrash ? s.emptyTrash : text ? s.emptySearch : s.empty}</p>
+        ) : null}
+
+        <ul class={view === 'grid' ? 'tm-cards' : 'tm-rows'} aria-label={s.title}>
+          {shown.map((g) => (
+            <GuideCard
+              key={g.id}
+              store={store}
+              guide={g}
+              view={view}
+              trash={inTrash}
+              onOpen={() => onOpen(g.id)}
+              onAction={(action) => {
+                switch (action) {
+                  case 'rename':
+                  case 'tags':
+                  case 'move':
+                  case 'purge':
+                    setModal({ kind: action, guide: g });
+                    break;
+                  case 'duplicate':
+                    void act(() => duplicateGuide(store, g.id, s.copyOf(g.title)));
+                    break;
+                  case 'export':
+                    void exportGuide(g);
+                    break;
+                  case 'trash':
+                    void act(() => store.trashGuide(g.id));
+                    break;
+                  case 'restore':
+                    void act(() => store.restoreGuide(g.id));
+                    break;
+                }
+              }}
+            />
+          ))}
+        </ul>
+      </main>
+
+      {modal?.kind === 'rename' ? (
+        <PromptDialog
+          title={s.rename}
+          label={s.guideTitle}
+          initial={modal.guide.title}
+          onClose={() => setModal(null)}
+          onSubmit={(title) => void updateGuide(modal.guide.id, (g) => (g.title = title))}
+        />
+      ) : null}
+      {modal?.kind === 'tags' ? (
+        <PromptDialog
+          title={s.tags}
+          label={s.tags}
+          hint={s.tagsHint}
+          initial={modal.guide.tags.join(', ')}
+          onClose={() => setModal(null)}
+          onSubmit={(value) => void updateGuide(modal.guide.id, (g) => (g.tags = parseTags(value)))}
+        />
+      ) : null}
+      {modal?.kind === 'move' ? (
+        <MoveDialog
+          folders={tree}
+          current={modal.guide.folderId}
+          onClose={() => setModal(null)}
+          onMove={(folderId) =>
+            void updateGuide(modal.guide.id, (g) => {
+              if (folderId) g.folderId = folderId;
+              else delete g.folderId;
+            })
+          }
+        />
+      ) : null}
+      {modal?.kind === 'purge' ? (
+        <ConfirmDialog
+          title={s.deleteForever}
+          message={s.deleteForeverConfirm(modal.guide.title)}
+          confirm={s.deleteForever}
+          onClose={() => setModal(null)}
+          onConfirm={() => void act(() => store.purgeGuide(modal.guide.id))}
+        />
+      ) : null}
+      {modal?.kind === 'new-folder' ? (
+        <PromptDialog
+          title={s.newFolder}
+          label={s.folderName}
+          onClose={() => setModal(null)}
+          onSubmit={(name) =>
+            void act(() =>
+              store.saveFolder({
+                id: createId(),
+                name,
+                ...(modal.parentId ? { parentId: modal.parentId } : {}),
+              }),
+            )
+          }
+        />
+      ) : null}
+      {modal?.kind === 'rename-folder' ? (
+        <PromptDialog
+          title={s.renameFolder}
+          label={s.folderName}
+          initial={modal.folder.name}
+          onClose={() => setModal(null)}
+          onSubmit={(name) => void act(() => store.saveFolder({ ...modal.folder, name }))}
+        />
+      ) : null}
+      {modal?.kind === 'delete-folder' ? (
+        <ConfirmDialog
+          title={s.deleteFolder}
+          message={s.deleteFolderConfirm(modal.folder.name)}
+          confirm={s.delete}
+          onClose={() => setModal(null)}
+          onConfirm={() =>
+            void act(async () => {
+              await store.deleteFolder(modal.folder.id);
+              setScope(
+                modal.folder.parentId
+                  ? { kind: 'folder', folderId: modal.folder.parentId }
+                  : { kind: 'all' },
+              );
+            })
+          }
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type CardAction =
+  'rename' | 'tags' | 'move' | 'duplicate' | 'export' | 'trash' | 'restore' | 'purge';
+
+function GuideCard(props: {
+  store: GuideStore;
+  guide: GuideSummary;
+  view: 'grid' | 'list';
+  trash: boolean;
+  onOpen: () => void;
+  onAction: (a: CardAction) => void;
+}) {
+  const { guide: g, trash } = props;
+  const cover = useImageUrl(props.store, g.id, props.view === 'grid' ? g.cover : undefined);
+  const when = trash
+    ? s.trashedOn(relativeTime(g.trashedAt ?? g.updatedAt))
+    : g.updatedBy
+      ? s.editedBy(g.updatedBy, relativeTime(g.updatedAt))
+      : s.edited(relativeTime(g.updatedAt));
+  const items: [CardAction, string][] = trash
+    ? [
+        ['restore', s.restore],
+        ['purge', s.deleteForever],
+      ]
+    : [
+        ['rename', s.rename],
+        ['tags', s.tags],
+        ['move', s.moveTo],
+        ['duplicate', s.duplicate],
+        ['export', s.export],
+        ['trash', s.moveToTrash],
+      ];
+  return (
+    <li class="tm-card" data-guide-id={g.id}>
+      {props.view === 'grid' ? (
+        <div class="tm-card__cover" aria-hidden="true">
+          {cover ? <img src={cover} alt="" /> : <Icon name="trail" size={40} />}
+        </div>
+      ) : null}
+      <div class="tm-card__body">
+        {trash ? (
+          <span class="tm-card__title">{g.title}</span>
+        ) : (
+          <button type="button" class="tm-card__title tm-link" onClick={props.onOpen}>
+            {g.title}
+          </button>
+        )}
+        <span class="tm-muted">
+          {s.steps(g.stepCount)} · {when}
+        </span>
+        {g.tags.length ? (
+          <span class="tm-tags">
+            {g.tags.map((t) => (
+              <span key={t} class="tm-tag">
+                {t}
+              </span>
+            ))}
+          </span>
+        ) : null}
+      </div>
+      <details class="tm-menu">
+        <summary aria-label={`${s.actions}: ${g.title}`}>
+          <Icon name="more" />
+        </summary>
+        <ul role="menu">
+          {items.map(([action, label]) => (
+            <li key={action} role="none">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(e) => {
+                  (
+                    e.currentTarget.closest('details') as HTMLDetailsElement | null
+                  )?.removeAttribute('open');
+                  props.onAction(action);
+                }}
+              >
+                {label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </li>
+  );
+}
+
+function MoveDialog(props: {
+  folders: ReturnType<typeof folderTree>;
+  current: string | undefined;
+  onClose: () => void;
+  onMove: (folderId: string | undefined) => void;
+}) {
+  const [value, setValue] = useState(props.current ?? '');
+  return (
+    <Dialog
+      title={s.moveTo}
+      onClose={props.onClose}
+      actions={
+        <>
+          <Button onClick={props.onClose}>{s.cancel}</Button>
+          <Button variant="primary" onClick={() => props.onMove(value || undefined)}>
+            {s.save}
+          </Button>
+        </>
+      }
+    >
+      <div class="tm-field">
+        <label for="tm-move-to">{s.folders}</label>
+        <select
+          id="tm-move-to"
+          class="tm-input"
+          value={value}
+          onChange={(e) => setValue(e.currentTarget.value)}
+        >
+          <option value="">{s.moveToRoot}</option>
+          {props.folders.map(({ folder, depth }) => (
+            <option key={folder.id} value={folder.id}>
+              {'  '.repeat(depth)}
+              {folder.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </Dialog>
+  );
+}

@@ -71,7 +71,7 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('hello') }),
   z.object({ type: z.literal('frame-register'), token: z.string().uuid() }),
   z.object({ type: z.literal('viewport'), viewport: Viewport }),
-  z.object({ type: z.literal('shot'), shotId: ShotId }),
+  z.object({ type: z.literal('shot'), shotId: ShotId, uiHidden: z.boolean().optional() }),
   z.object({ type: z.literal('event'), shotId: ShotId.optional(), event: ContentEventSchema }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
 ]);
@@ -110,6 +110,8 @@ export const BackgroundToContentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('iframe-geometry'), token: z.string().uuid() }),
   /** Hide Trailmark's on-page UI for a screenshot; the reply comes after it is painted. */
   z.object({ type: z.literal('overlays'), visible: z.boolean() }),
+  /** The user left this tab: record any typing not yet committed. */
+  z.object({ type: z.literal('flush') }),
 ]);
 export type BackgroundToContent = z.infer<typeof BackgroundToContentSchema>;
 
@@ -128,6 +130,8 @@ export const CaptureMoreSchema = z.object({
   guideId: z.string(),
   title: z.string(),
   insertAt: z.number().int().nonnegative(),
+  /** Number of steps before the insert position, for display. */
+  afterStep: z.number().int().nonnegative(),
 });
 export type CaptureMore = z.infer<typeof CaptureMoreSchema>;
 export const CAPTURE_MORE_KEY = 'captureMore';

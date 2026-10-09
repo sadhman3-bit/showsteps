@@ -63,7 +63,7 @@ export {
 export * from './storage/types.js';
 export { FolderStore, type FileSystem } from './storage/folder.js';
 export { IndexedDbStore } from './storage/indexeddb.js';
-export { summarize } from './storage/summary.js';
+export { summarize, thumbNameFor } from './storage/summary.js';
 
 // Capture
 export {

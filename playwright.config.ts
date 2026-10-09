@@ -5,6 +5,8 @@ const DEMO_PORT = Number(process.env.DEMO_PORT ?? 5173);
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
+  // Recording tests take real screenshots; parallel browsers on small CI machines skew timing.
+  workers: process.env.CI ? 1 : 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',

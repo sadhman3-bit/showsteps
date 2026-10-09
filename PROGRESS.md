@@ -6,7 +6,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 - [x] **M0** Monorepo scaffold, tooling, docs, demo app, CI
 - [x] **M1** `core`: schema and migrations, step-text writer, target descriptors, matching engine, storage interfaces, IndexedDB and Folder adapters
-- [ ] **M2** Extension capture C1–C7, C9; side panel; library L1–L2
+- [x] **M2** Extension capture C1–C7, C9; side panel; library L1–L2
 - [ ] **M3** Editor E1–E10 and image editor
 - [ ] **M4** Exports X1–X8, viewer
 - [ ] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
@@ -42,6 +42,18 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 **Acceptance:** 103 core unit tests. They cover every action's text, schema round-trips and migrations, and matcher round-trips for 26 demo-app elements across login, dashboard, form, dialog, shadow DOM and both iframes (each described in one page load and found in another load with different IDs). A shared storage contract suite runs against IndexedDB, real disk folders and an in-memory file system.
 
+## M2 detail (done 2026-10-10)
+
+- [x] Capture session rules in core (merges, insert position, restore), screenshot geometry, sensitive-field detection, .trailmark archives
+- [x] Background recorder: optional permission, runtime content-script registration, rate-limited screenshots with reuse, iframe mapping, tab following, navigation steps, persistence across worker restarts, Alt+Shift+R
+- [x] Content script in every frame: clicks, typing, selects, checks, uploads, keys, double and right clicks; never records secret values
+- [x] On-page controller (drag, pause/resume, delete last, Live Blur, finish, cancel), hidden from screenshots
+- [x] Side panel: Start, status, recent guides, capture-more hand-over
+- [x] Library page: grid/list, nested folders, move, rename, tags, search, sort, app/tag filters, Trash (restore, delete permanently), duplicate, import/export `.trailmark`; read-only guide view
+- [x] Extension icon
+
+**Acceptance:** `e2e/capture.spec.ts` records the demo "create invoice" flow (20 steps across 2 pages, a cross-origin and a same-origin iframe, shadow DOM and the dialog). It checks every title, screenshot, Action Box and frame chain, that the password is stored nowhere, and that the dialog-opening click's screenshot was taken before the dialog appeared. 13 e2e tests in total, stable across 3 repeated runs; 151 unit tests.
+
 ## Waiting on the owner
 
 - **.NET SDK** (needed from M6 for `uia-helper`). Not blocking M1–M5.
@@ -49,4 +61,3 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 ## Deferred
 
 - Desktop app package (`apps/desktop`) is created in M6, not as an empty scaffold now. Reason: no stub code in shipped paths; .NET SDK not yet installed.
-- Extension icon: designed with the capture UI in M2.

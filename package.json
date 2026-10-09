@@ -18,7 +18,8 @@
     "e2e": "node scripts/playwright.mjs test",
     "demo": "node fixtures/demo-app/server.mjs",
     "setup:browsers": "node scripts/playwright.mjs install chromium",
-    "snapshot:demo": "node scripts/snapshot-demo.mjs"
+    "snapshot:demo": "node scripts/snapshot-demo.mjs",
+    "make:icons": "node scripts/make-icons.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

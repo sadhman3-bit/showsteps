@@ -21,8 +21,8 @@ export const strings = {
     openLibrary: 'Open library',
     justFinished: 'Guide saved.',
     openGuide: 'Open guide',
-    captureMoreInto: (title: string, position: number) =>
-      `Adding steps to “${title}” after step ${position}. Switch to the tab you want to record, then start.`,
+    captureMoreInto: (title: string, afterStep: number) =>
+      `Adding steps to “${title}” ${afterStep ? `after step ${afterStep}` : 'at the start'}. Switch to the tab you want to record, then start.`,
     captureMoreCancel: 'Add to a new guide instead',
   },
   capture: {

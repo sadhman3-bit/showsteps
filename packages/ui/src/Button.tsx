@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ComponentChildren } from 'preact';
 
 export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> & {
-  variant?: 'primary' | 'default';
+  variant?: 'primary' | 'default' | 'danger' | 'ghost';
   type?: 'button' | 'submit';
   children: ComponentChildren;
 };

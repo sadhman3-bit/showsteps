@@ -27,6 +27,7 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 button.danger { border-color: var(--rec); color: var(--rec); }
 .hint { position: absolute; right: 0; bottom: calc(100% + 6px); background: var(--bg); color: var(--fg);
   border: 1px solid var(--accent); border-radius: 8px; padding: 6px 10px; white-space: nowrap; font-size: 12px; }
+.main { display: contents; }
 .confirm { display: none; }
 .confirming .main { display: none; }
 .confirming .confirm { display: contents; }
@@ -53,7 +54,7 @@ export class Controller {
     this.bar.setAttribute('aria-label', s.controllerLabel);
     this.bar.innerHTML = `
       <span class="grip" title="${s.drag}" aria-hidden="true">⋮⋮</span>
-      <span class="main" style="display:contents">
+      <span class="main">
         <span class="dot" aria-hidden="true"></span>
         <span class="status" data-el="status" role="status"></span>
         <span class="count" data-el="count"></span>

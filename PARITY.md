@@ -6,15 +6,15 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 
 ### Capture (extension)
 
-- [ ] C1 Toolbar icon opens the side panel with one clear **Start capture** button. Keyboard shortcut Alt+Shift+R starts and stops (`chrome.commands`, user-editable).
-- [ ] C2 On-page capture controller: small draggable toolbar, bottom-right by default, showing live step count, Pause/Resume, Delete last step, Live Blur toggle, Finish, Cancel. It is hidden from screenshots.
-- [ ] C3 Click-to-create: clicks, double and right clicks, committed text entry (on blur, Enter or Tab, never per keystroke), selects, checkboxes and radios, file uploads (file name only), key presses (Enter, Tab, Esc, shortcuts), and navigations each become a step with auto-written text.
-- [ ] C4 One screenshot per step via `chrome.tabs.captureVisibleTab`, taken on `pointerdown` in the capture phase, before the page changes. A queue respects Chrome's limit of 2 calls per second; when a capture is skipped, reuse the previous image and mark `reusedFromStepId`. Store the full image, an auto-crop that magnifies the area around the action, and the Action Box. Handle device pixel ratio, page zoom, scrolling, iframes (content script in all frames, coordinates mapped through frame offsets) and shadow DOM (`composedPath()`).
-- [ ] C5 Live Blur: while capturing, click elements to mark them blurred. Their regions are blurred in that and later screenshots while they stay on screen.
-- [ ] C6 Multi-tab: capture follows the active tab across tabs and windows in one session.
-- [ ] C7 Capture more: resume capture into an existing guide at a chosen position.
+- [x] C1 Toolbar icon opens the side panel with one clear **Start capture** button. Keyboard shortcut Alt+Shift+R starts and stops (`chrome.commands`, user-editable). _Tests: e2e/extension.spec.ts, e2e/library.spec.ts (side panel); MT-M2-1, MT-M2-2._
+- [x] C2 On-page capture controller: small draggable toolbar, bottom-right by default, showing live step count, Pause/Resume, Delete last step, Live Blur toggle, Finish, Cancel. It is hidden from screenshots. _Tests: e2e/controller.spec.ts; MT-M2-4 (drag)._
+- [x] C3 Click-to-create: clicks, double and right clicks, committed text entry (on blur, Enter or Tab, never per keystroke), selects, checkboxes and radios, file uploads (file name only), key presses (Enter, Tab, Esc, shortcuts), and navigations each become a step with auto-written text. _Tests: e2e/capture.spec.ts, e2e/controller.spec.ts, core test/capture.test.ts._
+- [x] C4 One screenshot per step via `chrome.tabs.captureVisibleTab`, taken on `pointerdown` in the capture phase, before the page changes. A queue respects Chrome's limit of 2 calls per second; when a capture is skipped, reuse the previous image and mark `reusedFromStepId`. Store the full image, an auto-crop that magnifies the area around the action, and the Action Box. Handle device pixel ratio, page zoom, scrolling, iframes (content script in all frames, coordinates mapped through frame offsets) and shadow DOM (`composedPath()`). _Tests: e2e/capture.spec.ts (pointerdown timing, reuse, Action Box, iframes, shadow DOM); MT-M2-5, MT-M2-6 (DPR, zoom, scrolling)._
+- [x] C5 Live Blur: while capturing, click elements to mark them blurred. Their regions are blurred in that and later screenshots while they stay on screen. _Tests: e2e/controller.spec.ts._
+- [x] C6 Multi-tab: capture follows the active tab across tabs and windows in one session. _Tests: e2e/controller.spec.ts; MT-M2-7._
+- [x] C7 Capture more: resume capture into an existing guide at a chosen position. _Tests: e2e/controller.spec.ts, e2e/library.spec.ts, extension test/recorder.test.ts._
 - [ ] C8 Desktop capture on Windows with the same step model (section 7).
-- [ ] C9 Secrets: password and payment fields never recorded (section 1).
+- [x] C9 Secrets: password and payment fields never recorded (section 1). _Tests: e2e/capture.spec.ts, core test/capture.test.ts, core test/schema.test.ts._
 - [ ] C10 Cross-app guides: one guide can hold web steps and desktop steps (needs M6 bridge).
 
 ### Editor
@@ -33,8 +33,8 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 
 ### Library (local workspace)
 
-- [ ] L1 Library home: grid and list views, nested folders, move, rename, Trash with restore and permanent delete, full-text search across titles and step text, sort, tags, filter by app or site.
-- [ ] L2 Duplicate a guide; import and export a guide as a `.trailmark` file (zip of the guide folder).
+- [x] L1 Library home: grid and list views, nested folders, move, rename, Trash with restore and permanent delete, full-text search across titles and step text, sort, tags, filter by app or site. _Tests: e2e/library.spec.ts, ui test/filter.test.ts._
+- [x] L2 Duplicate a guide; import and export a guide as a `.trailmark` file (zip of the guide folder). _Tests: e2e/library.spec.ts, core test/capture.test.ts._
 - [ ] L3 Team library, local equivalent: point Trailmark at a synced shared folder (SharedFolderAdapter). Others with Trailmark and the same folder see the guides. Show who last edited.
 - [ ] L4 Comments and emoji reactions on steps and on the end of a guide, local equivalent: stored in per-user sidecars so a synced folder never conflicts.
 - [ ] L5 Analytics, local equivalent: views, Guide Me runs, completions and step drop-off per guide, from per-user sidecars, shown on a small dashboard. Nothing leaves the machine.

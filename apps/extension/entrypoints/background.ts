@@ -1,15 +1,17 @@
 import { IndexedDbStore } from '@trailmark/core';
 import { FrameRegistry } from '../lib/frames';
 import {
+  ContentEventSchema,
   ContentMessageSchema,
   IframeGeometrySchema,
   PageMessageSchema,
   type Broadcast,
   type CaptureState,
+  type ContentEvent,
   type ContentMessage,
   type PageMessage,
 } from '../lib/messages';
-import { Recorder, type PersistedRecorder, type Viewport } from '../lib/recorder';
+import { Recorder, type EventSender, type PersistedRecorder, type Viewport } from '../lib/recorder';
 import { encodeScreenshot } from '../lib/shots';
 
 const SCRIPT_ID = 'trailmark-capture';
@@ -54,14 +56,17 @@ export default defineBackground(() => {
   const recorder = new Recorder({
     store,
     frames,
-    async captureVisibleTab(tabId) {
-      const tab = await browser.tabs.get(tabId);
-      // Keep Trailmark's own controls out of the picture.
-      await browser.tabs
-        .sendMessage(tabId, { type: 'overlays', visible: false }, { frameId: 0 })
-        .catch(() => undefined);
+    async captureVisibleTab(tabId, { windowId, uiHidden }) {
+      const window = windowId ?? (await browser.tabs.get(tabId)).windowId;
+      // Keep Trailmark's own controls out of the picture. Input in the top frame has already
+      // hidden them; anything else (iframes, navigations) asks the top frame first.
+      if (!uiHidden) {
+        await browser.tabs
+          .sendMessage(tabId, { type: 'overlays', visible: false }, { frameId: 0 })
+          .catch(() => undefined);
+      }
       try {
-        return await browser.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+        return await browser.tabs.captureVisibleTab(window, { format: 'png' });
       } finally {
         browser.tabs.sendMessage(tabId, { type: 'overlays', visible: true }).catch(() => undefined);
       }
@@ -181,7 +186,10 @@ export default defineBackground(() => {
         if (frameId === 0) recorder.setViewport(tabId, msg.viewport);
         return { ok: true };
       case 'shot':
-        await recorder.shot(tabId, msg.shotId);
+        await recorder.shot(tabId, msg.shotId, {
+          ...(sender.tab?.windowId !== undefined ? { windowId: sender.tab.windowId } : {}),
+          uiHidden: frameId === 0 && msg.uiHidden === true,
+        });
         return { ok: true };
       case 'event':
         void recorder
@@ -261,9 +269,43 @@ export default defineBackground(() => {
   });
 
   // Capture follows the active tab, across tabs and windows.
+  async function collectPendingTyping(tabIds: number[]) {
+    const out: { sender: EventSender; event: ContentEvent }[] = [];
+    for (const tabId of tabIds) {
+      const tab = await browser.tabs.get(tabId).catch(() => undefined);
+      if (!tab?.url) continue;
+      const frames = (await browser.webNavigation.getAllFrames({ tabId }).catch(() => null)) ?? [];
+      for (const frame of frames) {
+        const reply: unknown = await browser.tabs
+          .sendMessage(tabId, { type: 'flush' }, { frameId: frame.frameId })
+          .catch(() => undefined);
+        const parsed = ContentEventSchema.safeParse(
+          (reply as { event?: unknown } | undefined)?.event,
+        );
+        if (!parsed.success) continue;
+        out.push({
+          sender: {
+            tabId,
+            frameId: frame.frameId,
+            tabUrl: tab.url,
+            ...(tab.title ? { tabTitle: tab.title } : {}),
+            frameUrl: frame.url,
+          },
+          event: parsed.data,
+        });
+      }
+    }
+    return out;
+  }
+
   browser.tabs.onActivated.addListener(({ tabId }) => {
     void ready.then(() => {
-      if (recorder.isActive) void injectInto(tabId);
+      if (!recorder.isActive) return;
+      // Typing in the tab the user left has no "change" event yet: collect it from every frame
+      // of the other tabs, in order, before anything recorded in the new tab.
+      const others = recorder.trackedTabs.filter((t) => t !== tabId);
+      if (others.length) void recorder.flush(() => collectPendingTyping(others));
+      void injectInto(tabId);
     });
   });
 
