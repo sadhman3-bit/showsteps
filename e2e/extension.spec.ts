@@ -1,4 +1,5 @@
-import { expect, test } from './fixtures';
+import { readFileSync } from 'node:fs';
+import { RELEASE_MANIFEST, expect, test } from './fixtures';
 
 test('extension loads and its side panel renders', async ({ context, extensionId }) => {
   expect(extensionId).toMatch(/^[a-p]{32}$/);
@@ -14,10 +15,10 @@ test('extension loads and its side panel renders', async ({ context, extensionId
   expect(errors).toEqual([]);
 });
 
-test('manifest asks for no host permissions at install', async ({ context, extensionId }) => {
-  const page = await context.newPage();
-  await page.goto(`chrome-extension://${extensionId}/manifest.json`);
-  const manifest = JSON.parse((await page.locator('body').innerText()) || '{}');
+test('release manifest asks for no host permissions at install', () => {
+  const manifest = JSON.parse(readFileSync(RELEASE_MANIFEST, 'utf8'));
   expect(manifest.host_permissions ?? []).toEqual([]);
-  expect(manifest.permissions).not.toContain('<all_urls>');
+  expect(manifest.content_scripts ?? []).toEqual([]);
+  expect(manifest.optional_host_permissions).toEqual(['<all_urls>']);
+  expect(manifest.commands['toggle-capture'].suggested_key.default).toBe('Alt+Shift+R');
 });

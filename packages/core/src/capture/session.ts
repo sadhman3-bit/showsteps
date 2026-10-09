@@ -63,6 +63,20 @@ export class CaptureSession {
     readonly insertAt?: number,
   ) {}
 
+  /**
+   * Rebuild a session from steps saved earlier (the background worker can be stopped by the
+   * browser mid-recording). Element identities are not restored, so the next event never merges
+   * into a restored step.
+   */
+  static restore(steps: readonly Step[], insertAt?: number): CaptureSession {
+    const session = new CaptureSession(insertAt);
+    for (const step of steps) {
+      session.added.push(step);
+      session.keys.set(step.id, undefined);
+    }
+    return session;
+  }
+
   get steps(): readonly Step[] {
     return this.added;
   }
