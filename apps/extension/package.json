@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
-    "build": "wxt build && wxt build --mode e2e",
+    "build": "node ../../scripts/copy-ocr.mjs public/ocr && wxt build && wxt build --mode e2e",
     "zip": "wxt zip",
     "prepare:types": "wxt prepare",
     "typecheck": "wxt prepare && tsc --noEmit",

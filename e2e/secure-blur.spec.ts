@@ -1,3 +1,4 @@
+import type { BrowserContext, Worker } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
 import { startCaptureOn } from './helpers';
@@ -21,6 +22,8 @@ declare const __trailmark: {
     getGuide(id: string): Promise<Stored>;
     listImages(id: string): Promise<string[]>;
     getImage(g: string, n: string): Promise<Uint8Array | undefined>;
+    deleteImage(g: string, n: string): Promise<void>;
+    saveGuide(g: Stored): Promise<void>;
   };
 };
 
@@ -28,11 +31,8 @@ const planted = JSON.parse(
   readFileSync(new URL('../fixtures/demo-app/planted-secrets.json', import.meta.url), 'utf8'),
 ) as { values: { kind: string; text: string }[] };
 
-test('Secure Blur finds every planted value on the dashboard and blurs after review (E11)', async ({
-  context,
-  serviceWorker: sw,
-  extensionId,
-}) => {
+/** Record signing in and clicking the dashboard's "Supplier contact" heading (5 steps). */
+async function recordDashboard(context: BrowserContext, sw: Worker): Promise<string> {
   const page = await context.newPage();
   await page.goto('http://localhost:5173/login.html');
   await page.bringToFront();
@@ -57,6 +57,15 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
   await expect.poll(() => sw.evaluate(() => __trailmark.recorder.current.stepCount)).toBe(5);
   await page.waitForTimeout(400);
   await sw.evaluate(() => __trailmark.recorder.control('finish'));
+  return guideId;
+}
+
+test('Secure Blur finds every planted value on the dashboard and blurs after review (E11)', async ({
+  context,
+  serviceWorker: sw,
+  extensionId,
+}) => {
+  const guideId = await recordDashboard(context, sw);
 
   // Word files sit next to the pictures and never hold the password.
   const words = await sw.evaluate(async (id) => {
@@ -111,4 +120,77 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
   await editor.getByRole('button', { name: 'Secure Blur' }).click();
   await expect(region.getByRole('checkbox')).toHaveCount(1);
   await expect(region.getByText('Email', { exact: true })).toBeVisible();
+});
+
+test('OCR reads the screenshots that have no word positions, offline (U8, E11 for desktop and image steps)', async ({
+  context,
+  serviceWorker: sw,
+  extensionId,
+}) => {
+  test.setTimeout(180_000);
+  const guideId = await recordDashboard(context, sw);
+  // As for desktop and uploaded pictures: no word positions saved with the screenshots.
+  await sw.evaluate(async (id) => {
+    for (const name of await __trailmark.store.listImages(id))
+      if (name.endsWith('.words.json')) await __trailmark.store.deleteImage(id, name);
+  }, guideId);
+  // Nothing may come from the internet: the engine is bundled with the extension.
+  const remote: string[] = [];
+  context.on('request', (r) => {
+    if (!/^(chrome-extension|data|blob):|^http:\/\/(localhost|127\.0\.0\.1)/.test(r.url()))
+      remote.push(r.url());
+  });
+
+  const editor = await context.newPage();
+  await editor.goto(`chrome-extension://${extensionId}/library.html#/guide/${guideId}`);
+  await editor.getByRole('button', { name: 'Secure Blur' }).click();
+  const dialog = editor.getByRole('dialog', { name: 'Secure Blur' });
+  await expect(dialog.getByRole('status')).toContainText(/Reading the text|Looking through/);
+  const region = dialog.getByRole('region', { name: 'Secure Blur' });
+  await expect(region).toBeVisible({ timeout: 120_000 });
+  for (const label of [
+    'Email',
+    'Phone number',
+    'Card number',
+    'BSB',
+    'Account number',
+    'Tax file number',
+    'ABN',
+    'IBAN',
+  ])
+    await expect(region.getByText(label, { exact: true })).toBeVisible();
+  await editor.screenshot({ path: test.info().outputPath('secure-blur-ocr.png') });
+  // The text read is kept beside each picture, so the next scan needs no OCR.
+  const kept = await sw.evaluate(
+    async (id) =>
+      (await __trailmark.store.listImages(id)).filter((n) => n.endsWith('.words.json')).length,
+    guideId,
+  );
+  expect(kept).toBeGreaterThanOrEqual(3);
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+  // U8: a visual-only step gets the text around its action.
+  await sw.evaluate(async (id) => {
+    const g = await __trailmark.store.getGuide(id);
+    const last = g.blocks.filter((b) => b.kind === 'step').at(-1) as unknown as {
+      agent: { visualOnly: boolean };
+    };
+    last.agent.visualOnly = true;
+    await __trailmark.store.saveGuide(g);
+  }, guideId);
+  await editor.reload();
+  await expect
+    .poll(
+      async () =>
+        sw.evaluate(async (id) => {
+          const g = await __trailmark.store.getGuide(id);
+          const last = g.blocks.filter((b) => b.kind === 'step').at(-1) as unknown as {
+            target?: { ocrText?: string };
+          };
+          return last.target?.ocrText ?? '';
+        }, guideId),
+      { timeout: 90_000 },
+    )
+    .toContain('Supplier contact');
+  expect(remote).toEqual([]);
 });

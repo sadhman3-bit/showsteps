@@ -12,7 +12,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
 - [x] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
 - [x] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
-- [ ] **M8** U8 OCR, E11 for desktop and image steps
+- [x] **M8** U8 OCR, E11 for desktop and image steps
 - [ ] **M9** U7, U9, hardening, performance, docs, release
 
 ## M0 detail (done 2026-10-09)
@@ -121,8 +121,22 @@ Stable across 3 repeated runs. The installer builds, and the install/uninstall h
 `pnpm e2e`: 28 tests (the replay runs as its own project after the extension tests, because its second browser slowed timing-sensitive capture tests); `pnpm e2e:desktop`: 3 tests. Unit tests: 224.
 
 Fixes found while testing:
+
 - word positions are read after the screenshot is requested, and saved even if they arrive late;
 - the capture toolbar is shown again only when every pending screenshot is taken.
+
+## M8 detail (done 2026-10-11)
+
+- [x] Offline OCR: tesseract.js engine and English model copied into both apps at build time (`scripts/copy-ocr.mjs`), loaded on first use, WebAssembly allowed by CSP
+- [x] Secure Blur reads pictures without word positions (desktop, uploaded, older steps) and keeps the result
+- [x] Visual-only steps get `target.ocrText` (text around the action) when the guide is opened in the editor
+
+**Acceptance:**
+
+- Secure Blur finds all eight planted values on the demo dashboard screenshot by OCR alone, with no request leaving the machine (`e2e/secure-blur.spec.ts`), and on a pasted picture in the desktop app (`e2e/desktop-library.spec.ts`);
+- a visual-only step gets the text around its action.
+
+`pnpm e2e`: 29 tests; `pnpm e2e:desktop`: 4 tests; unit tests: 225.
 
 ## Waiting on the owner
 
@@ -132,4 +146,4 @@ Fixes found while testing:
 
 - Extension capture: screenshot encoding takes 1.5–2.5 s per step on a busy machine before the step appears (the step still lands in order). Look at faster encoding in M9's performance pass.
 - Expectations are not observed for actions inside iframes (the frame's own page changes are not diffed); authors can add them in the Agent view.
-- Secure Blur reads words only from the top frame of a web page; text inside iframes is left to OCR (M8).
+- Secure Blur reads words only from the top frame of a web page at capture; a picture with iframe text can be re-read with OCR by deleting its word file (no button for that yet).

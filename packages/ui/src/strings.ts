@@ -563,10 +563,12 @@ export const strings = {
     scan: 'Find again',
     scanning: 'Looking through screenshots…',
     none: 'Nothing sensitive found in the screenshots that could be checked.',
+    reading: (n: number, total: number) =>
+      `Reading the text in screenshot ${n} of ${total} on this computer…`,
     unscanned: (n: number) =>
       n === 1
-        ? '1 screenshot has no text positions (a desktop, uploaded or older step). Check it yourself and blur by hand in the image editor.'
-        : `${n} screenshots have no text positions (desktop, uploaded or older steps). Check them yourself and blur by hand in the image editor.`,
+        ? '1 screenshot could not be read. Check it yourself and blur by hand in the image editor.'
+        : `${n} screenshots could not be read. Check them yourself and blur by hand in the image editor.`,
     stepHeading: (n: number, title: string) => `Step ${n}: ${title}`,
     selectAll: 'Select all',
     selectNone: 'Select none',

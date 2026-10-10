@@ -13,6 +13,7 @@ export default tseslint.config(
       'test-results/**',
       'playwright-report/**',
       'e2e/.replay/**',
+      '**/public/ocr/**',
     ],
   },
   js.configs.recommended,

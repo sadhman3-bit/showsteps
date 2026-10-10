@@ -9,7 +9,7 @@
   "main": "dist/main/index.cjs",
   "scripts": {
     "build:native": "node scripts/build-native.mjs",
-    "build": "node scripts/build-native.mjs && vite build --config vite.main.config.ts && vite build --config vite.preload.config.ts && vite build",
+    "build": "node scripts/build-native.mjs && vite build --config vite.main.config.ts && vite build --config vite.preload.config.ts && node ../../scripts/copy-ocr.mjs src/renderer/public/ocr && vite build",
     "start": "electron .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

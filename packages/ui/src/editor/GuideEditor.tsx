@@ -33,7 +33,8 @@ import { Icon } from '../components/Icon.js';
 import { InputModeSelect } from '../components/InputModeSelect.js';
 import { GuideReader } from '../guide/GuideReader.js';
 import { Screenshot } from '../guide/Screenshot.js';
-import { usePreference } from '../hooks.js';
+import { mimeFor, usePreference } from '../hooks.js';
+import { readAround } from '../ocr/ocr.js';
 import { strings } from '../strings.js';
 import { ShareDialog } from '../export/ShareDialog.js';
 import { AgentView } from './AgentView.js';
@@ -228,6 +229,50 @@ export function GuideEditor({
     setGuide(h.current);
     schedule(h.current);
   };
+  // U8: a visual-only step gets the text around its action, read from its screenshot on this
+  // computer, so agents and the matcher have words to look for. Once per step, in the background.
+  const ocrTried = useRef(new Set<string>());
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!guide) return;
+    const todo = guide.blocks.flatMap((b) => {
+      if (b.kind !== 'step' || !b.agent.visualOnly || !b.target || b.target.ocrText) return [];
+      const shot = b.human.screenshot;
+      const box = b.human.actionBox;
+      if (!shot || !box || ocrTried.current.has(b.id)) return [];
+      return [{ id: b.id, name: shot.file.replace(/^img\//, ''), box }];
+    });
+    if (!todo.length) return;
+    for (const t of todo) ocrTried.current.add(t.id);
+    const guideId = guide.id;
+    void (async () => {
+      const texts = new Map<string, string>();
+      for (const t of todo) {
+        const bytes = await store.getImage(guideId, t.name).catch(() => undefined);
+        if (!bytes) continue;
+        const picture = new Blob([bytes.slice()], { type: mimeFor(t.name) });
+        const text = await readAround(picture, t.box).catch(() => '');
+        if (text) texts.set(t.id, text);
+      }
+      if (!mounted.current || !texts.size) return;
+      apply((g) => ({
+        ...g,
+        blocks: g.blocks.map((b) => {
+          const ocrText = texts.get(b.id);
+          return b.kind === 'step' && b.target && ocrText
+            ? { ...b, target: { ...b.target, ocrText } }
+            : b;
+        }),
+      }));
+    })();
+  }, [guide]);
+
   const endTyping = () => {
     typing.current = false;
   };

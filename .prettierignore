@@ -10,3 +10,5 @@ BUILD_PROMPT.md
 packages/core/test/fixtures/demo
 packages/core/test/golden
 e2e/.replay
+apps/extension/public/ocr
+apps/desktop/src/renderer/public/ocr

@@ -40,7 +40,8 @@ export default defineConfig({
       },
     },
     content_security_policy: {
-      extension_pages: "script-src 'self'; object-src 'self'",
+      // 'wasm-unsafe-eval' lets the bundled OCR engine (WebAssembly) run; no JavaScript eval.
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
     },
   }),
   vite: () => ({

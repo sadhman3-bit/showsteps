@@ -3,10 +3,12 @@ import {
   findSensitiveOnPage,
   maskValue,
   parsePageText,
+  serializePageText,
   toPlainText,
   wordsFileFor,
   type Guide,
   type GuideStore,
+  type PageText,
   type Rect,
   type SensitiveFinding,
   type Step,
@@ -14,7 +16,8 @@ import {
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
-import { useImageUrl, usePreference } from '../hooks.js';
+import { mimeFor, useImageUrl, usePreference } from '../hooks.js';
+import { readPicture } from '../ocr/ocr.js';
 import { strings } from '../strings.js';
 
 const s = strings.secureBlur;
@@ -25,35 +28,57 @@ interface StepFindings {
   findings: SensitiveFinding[];
 }
 
-/** Find sensitive values in every screenshot from the word positions saved at capture. */
+/**
+ * Find sensitive values in every screenshot: from the word positions saved at capture (web
+ * steps), or by reading the picture with OCR (desktop, uploaded and older steps). OCR results
+ * are saved next to the picture, so the next scan is instant.
+ */
 async function scan(
   store: GuideStore,
   guide: Guide,
   options: { amounts: boolean; names: string[] },
+  onReading: (done: number, total: number) => void,
 ): Promise<{ found: StepFindings[]; unscanned: number }> {
+  const steps = guide.blocks.filter((b): b is Step => b.kind === 'step');
+  const files = [
+    ...new Set(steps.flatMap((st) => (st.human.screenshot ? [st.human.screenshot.file] : []))),
+  ];
+  const pages = new Map<string, PageText | undefined>();
+  const toRead: string[] = [];
+  for (const file of files) {
+    const bytes = await store.getImage(guide.id, wordsFileFor(file)).catch(() => undefined);
+    const page = bytes ? parsePageText(bytes) : undefined;
+    pages.set(file, page);
+    if (!page) toRead.push(file);
+  }
+  for (const [i, file] of toRead.entries()) {
+    onReading(i, toRead.length);
+    const name = file.replace(/^img\//, '');
+    try {
+      const bytes = await store.getImage(guide.id, name);
+      if (!bytes) continue;
+      const page = await readPicture(new Blob([bytes.slice()], { type: mimeFor(name) }));
+      pages.set(file, page);
+      await store.putImage(guide.id, wordsFileFor(file), serializePageText(page));
+    } catch {
+      // Left as "not checked": the person blurs it by hand.
+    }
+  }
   const found: StepFindings[] = [];
   let unscanned = 0;
-  let number = 0;
-  const pages = new Map<string, ReturnType<typeof parsePageText>>();
-  for (const block of guide.blocks) {
-    if (block.kind !== 'step') continue;
-    number++;
-    const file = block.human.screenshot?.file;
-    if (!file) continue;
-    if (!pages.has(file)) {
-      const bytes = await store.getImage(guide.id, wordsFileFor(file)).catch(() => undefined);
-      pages.set(file, bytes ? parsePageText(bytes) : undefined);
-    }
+  steps.forEach((step, i) => {
+    const file = step.human.screenshot?.file;
+    if (!file) return;
     const page = pages.get(file);
     if (!page) {
       unscanned++;
-      continue;
+      return;
     }
     const findings = findSensitiveOnPage(page, options).filter(
-      (f) => !alreadyBlurred(block, f.rect),
+      (f) => !alreadyBlurred(step, f.rect),
     );
-    if (findings.length) found.push({ step: block, number, findings });
-  }
+    if (findings.length) found.push({ step, number: i + 1, findings });
+  });
   return { found, unscanned };
 }
 
@@ -74,6 +99,7 @@ export function SecureBlurDialog(props: {
   const [result, setResult] = useState<{ found: StepFindings[]; unscanned: number }>();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [run, setRun] = useState(0);
+  const [reading, setReading] = useState<[number, number]>();
 
   useEffect(() => {
     let live = true;
@@ -82,7 +108,15 @@ export function SecureBlurDialog(props: {
       .split(',')
       .map((n) => n.trim())
       .filter(Boolean);
-    void scan(props.store, props.guide, { amounts: amounts === 'on', names: list }).then((r) => {
+    setReading(undefined);
+    void scan(
+      props.store,
+      props.guide,
+      { amounts: amounts === 'on', names: list },
+      (done, total) => {
+        if (live) setReading([done + 1, total]);
+      },
+    ).then((r) => {
       if (!live) return;
       setResult(r);
       setSelected(
@@ -152,7 +186,7 @@ export function SecureBlurDialog(props: {
         </label>
       </div>
       {!result ? (
-        <p role="status">{s.scanning}</p>
+        <p role="status">{reading ? s.reading(reading[0], reading[1]) : s.scanning}</p>
       ) : (
         <div class="tm-secure" role="region" aria-label={s.title}>
           {result.found.length ? (

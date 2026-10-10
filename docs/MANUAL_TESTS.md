@@ -307,3 +307,25 @@ Export the guide as PDF, Word, Markdown and a web page.
 - the Word file opens normally;
 - the Markdown file ends with a collapsed "Agent procedure" block;
 - the web page's source has a `trailmark-procedure` JSON block and the page still runs no scripts.
+
+---
+
+## M8
+
+### MT-M8-1 Secure Blur on a pasted picture
+
+In the editor, add an image step by pasting a screenshot of a page that shows an email address and a phone number, for example from Outlook. Click **Secure Blur**.
+
+**Expected:** "Reading the text in screenshot 1 of 1 on this computer…" appears briefly. Then the email and the phone number are listed and outlined on the picture. Running Secure Blur again is instant.
+
+### MT-M8-2 Works offline
+
+Turn off Wi-Fi and repeat MT-M8-1 in both the extension and the desktop app.
+
+**Expected:** it works the same. Nothing is downloaded: the engine ships with the app.
+
+### MT-M8-3 Remote desktop steps
+
+Record a click in a Remote Desktop (mstsc) window with the desktop app, then open the guide in the editor and look at the **Agent** tab.
+
+**Expected:** the step shows the "visual only" warning. Shortly after the guide opens, its target shows the words near the click, and the Agent Pack lists them as "near the text …".

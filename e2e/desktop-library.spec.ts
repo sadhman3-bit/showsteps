@@ -1,5 +1,6 @@
 import { createGuide, createStep, FolderStore, plain, type Guide } from '@trailmark/core';
 import { nodeFileSystem } from '@trailmark/core/node';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from './desktop-fixtures';
 
@@ -74,4 +75,52 @@ test('team library: others’ guides, who edited them, read-only guides and pers
       return [g?.readOnly, g?.updatedBy];
     })
     .toEqual([true, 'Sam']);
+});
+
+test('Secure Blur reads an uploaded picture with the bundled OCR in the desktop app (E11, U8)', async ({
+  desktop,
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const planted = JSON.parse(
+    readFileSync(new URL('../fixtures/demo-app/planted-secrets.json', import.meta.url), 'utf8'),
+  ) as { values: { kind: string; text: string }[] };
+  // A picture of the planted values, as someone might paste from another app.
+  await page.setViewportSize({ width: 1000, height: 420 });
+  await page.setContent(
+    `<style>body{font:16px Segoe UI,sans-serif;margin:32px}td{padding:4px 16px}</style><h2>Supplier contact</h2><table>${[
+      ['Email', 'accounts@saltbush-supplies.example'],
+      ['Phone', '0412 345 678'],
+      ['Card on file', '4111 1111 1111 1111'],
+      ['BSB / Account', '123-456 / 98765432'],
+      ['TFN', '123 456 782'],
+      ['ABN', '51 824 753 556'],
+      ['IBAN', 'GB82 WEST 1234 5698 7654 32'],
+    ]
+      .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`)
+      .join('')}</table>`,
+  );
+  const png = await page.screenshot();
+  const store = new FolderStore(nodeFileSystem, desktop.library);
+  const step = createStep({
+    action: 'manual',
+    app: { kind: 'desktop', processName: 'excel', windowTitle: 'Suppliers - Excel' },
+    human: {
+      title: plain('Check the supplier details'),
+      screenshot: { file: 'img/pasted.png', width: 1000, height: 420, dpr: 1 },
+    },
+  });
+  const guide = { ...createGuide({ title: 'Check a supplier' }), blocks: [step] };
+  await store.saveGuide(guide);
+  await store.putImage(guide.id, 'pasted.png', new Uint8Array(png));
+
+  const win = await desktop.app.firstWindow();
+  await win.evaluate((id) => (location.hash = `#/guide/${id}`), guide.id);
+  await win.getByRole('button', { name: 'Secure Blur' }).click();
+  const region = win.getByRole('dialog', { name: 'Secure Blur' }).getByRole('region', {
+    name: 'Secure Blur',
+  });
+  await expect(region).toBeVisible({ timeout: 120_000 });
+  await expect(region.getByRole('checkbox')).toHaveCount(planted.values.length);
+  await win.screenshot({ path: test.info().outputPath('desktop-secure-blur.png') });
 });

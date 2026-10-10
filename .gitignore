@@ -12,3 +12,5 @@ Thumbs.db
 .env
 .env.*
 e2e/.replay/
+apps/extension/public/ocr/
+apps/desktop/src/renderer/public/ocr/
