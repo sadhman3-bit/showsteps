@@ -10,11 +10,13 @@ import { test as base } from './fixtures';
 const DESKTOP = fileURLToPath(new URL('../apps/desktop', import.meta.url));
 const ELECTRON = join(DESKTOP, 'node_modules', 'electron', 'dist', 'electron.exe');
 
+type Rect = { x: number; y: number; w: number; h: number };
+
 export interface UiaElementLite {
   name: string;
   controlType: string;
   automationId: string;
-  rect: { x: number; y: number; w: number; h: number };
+  rect: Rect;
   processName: string;
   windowTitle: string;
 }
@@ -28,7 +30,7 @@ export type InputAction =
 
 interface Hook {
   helper: {
-    input(actions: InputAction[]): Promise<unknown>;
+    input(actions: InputAction[], requireForeground?: string): Promise<unknown>;
     find(q: Record<string, string>): Promise<UiaElementLite[]>;
     call(cmd: string, args?: Record<string, unknown>): Promise<unknown>;
   };
@@ -87,10 +89,14 @@ export class Desktop {
     return new Desktop(app, dir);
   }
 
-  input(actions: InputAction[]): Promise<unknown> {
+  /**
+   * Real mouse and keyboard input, refused by the helper unless `app` is in front (and, for
+   * clicks, under the pointer), so a test can never type into someone else's window.
+   */
+  input(actions: InputAction[], app = 'notepad'): Promise<unknown> {
     return this.app.evaluate(
-      (_e, a) => (globalThis as unknown as Global).__trailmarkDesktop.helper.input(a),
-      actions,
+      (_e, [a, p]) => (globalThis as unknown as Global).__trailmarkDesktop.helper.input(a, p),
+      [actions, app] as const,
     );
   }
 
@@ -175,13 +181,38 @@ export class Desktop {
     );
   }
 
-  /** Click the centre of a screen rectangle with the real mouse. */
-  click(rect: { x: number; y: number; w: number; h: number }): Promise<unknown> {
-    return this.input([
-      { type: 'move', x: Math.round(rect.x + rect.w / 2), y: Math.round(rect.y + rect.h / 2) },
-      { type: 'wait', ms: 80 },
-      { type: 'click' },
-    ]);
+  /** The app that owns the top window at a screen point. */
+  processAt(x: number, y: number): Promise<string> {
+    return this.app.evaluate(
+      async (_e, [px, py]) =>
+        (
+          (await (globalThis as unknown as Global).__trailmarkDesktop.helper.call('windowAt', {
+            x: px,
+            y: py,
+          })) as { processName: string }
+        ).processName,
+      [x, y] as const,
+    );
+  }
+
+  /**
+   * Click a screen rectangle with the real mouse, at the point nearest its centre that `app`
+   * owns (always-on-top windows such as picture-in-picture videos can cover part of it).
+   */
+  async click(element: { rect: Rect }, app = 'notepad'): Promise<unknown> {
+    const { rect } = element;
+    const points: [number, number][] = [];
+    for (const fy of [0.5, 0.3, 0.7, 0.15, 0.85])
+      for (const fx of [0.5, 0.3, 0.7, 0.15, 0.85])
+        points.push([Math.round(rect.x + rect.w * fx), Math.round(rect.y + rect.h * fy)]);
+    const seen = new Set<string>();
+    for (const [x, y] of points) {
+      const owner = (await this.processAt(x, y)).toLowerCase();
+      seen.add(owner);
+      if (owner !== app) continue;
+      return this.input([{ type: 'move', x, y }, { type: 'wait', ms: 80 }, { type: 'click' }], app);
+    }
+    throw new Error(`No visible part of ${app} to click (covered by ${[...seen].join(', ')})`);
   }
 
   async close(): Promise<void> {
@@ -206,7 +237,10 @@ export async function openNotepad(
   for (let i = 0; i < 40; i++) {
     const [editor] = await desktop.find({ processName: 'notepad', controlType: 'Document' });
     if (editor) {
-      await desktop.activate('notepad');
+      if ((await desktop.activate('notepad')) !== true) {
+        await closeNotepad();
+        throw new Error('Could not bring Notepad to the front; no input was sent');
+      }
       return { proc, editor };
     }
     await new Promise((r) => setTimeout(r, 250));

@@ -55,13 +55,13 @@ test('desktop capture (C8): Notepad clicks and typing become steps with pre-clic
   expect(summary).toBeTruthy();
   const guide = await desktop.guide<Guide>(summary!.id);
   const steps = guide.blocks.filter((b) => b.kind === 'step');
-  console.log(JSON.stringify(steps.map((s) => [titleOf(s), s.action, s.input])));
-  expect(steps.map(titleOf).slice(0, 3)).toEqual([
-    'Click Text Editor',
+  // The click into the text box merges with the typing that follows it.
+  expect(steps.map(titleOf)).toEqual([
     'Type Invoice 1043 approved into Text Editor',
     'Click Format',
+    'Press Esc',
   ]);
-  expect(steps[1]!.input).toEqual({
+  expect(steps[0]!.input).toEqual({
     mode: 'fixed',
     value: 'Invoice 1043 approved',
     sensitive: false,
@@ -84,6 +84,8 @@ test('desktop capture (C8): Notepad clicks and typing become steps with pre-clic
   // The guide opens in the desktop app's editor.
   const win = await desktop.app.firstWindow();
   await win.evaluate((id) => (location.hash = `#/guide/${id}`), guide.id);
-  await expect(win.getByRole('textbox', { name: 'Step 1 title' })).toHaveText('Click Text Editor');
+  await expect(win.getByRole('textbox', { name: 'Step 1 title' })).toHaveText(
+    'Type Invoice 1043 approved into Text Editor',
+  );
   await win.screenshot({ path: test.info().outputPath('desktop-editor.png') });
 });

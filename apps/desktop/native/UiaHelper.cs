@@ -25,10 +25,15 @@ namespace Trailmark
         [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
         [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(POINT p);
         [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+        [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+        [DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr hwnd);
+        [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out RECT rect, int size);
+        [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int max);
         [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
         [DllImport("user32.dll")] public static extern uint SendInput(uint count, INPUT[] inputs, int size);
         [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+        [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
         [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hwnd);
         [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hwnd, int cmd);
@@ -351,6 +356,16 @@ namespace Trailmark
                         throw new InvalidOperationException("input refused: " + fg + " is in front, not " + requireForeground);
                 }
                 var type = Str(a, "type");
+                if (requireForeground != null && (type == "click" || type == "down"))
+                {
+                    // The window under the pointer must belong to the app too (always-on-top
+                    // windows of other apps can cover it).
+                    Native.POINT at;
+                    Native.GetCursorPos(out at);
+                    var under = (string)WindowAt(at.X, at.Y)["processName"];
+                    if (!string.Equals(under, requireForeground, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException("input refused: the pointer is over " + under + ", not " + requireForeground);
+                }
                 if (type == "move") Native.SetCursorPos(Convert.ToInt32(a["x"]), Convert.ToInt32(a["y"]));
                 else if (type == "down") Mouse(0x0002);
                 else if (type == "up") Mouse(0x0004);
@@ -402,10 +417,15 @@ namespace Trailmark
                 uint ignored;
                 var fgThread = Native.GetWindowThreadProcessId(Native.GetForegroundWindow(), out ignored);
                 var me = Native.GetCurrentThreadId();
+                // A zero-distance relative mouse move makes this process the last to send input,
+                // which Windows requires before it lets a background process change the
+                // foreground window. It moves nothing and clicks nothing.
+                Mouse(0x0001 /* MOUSEEVENTF_MOVE */);
                 var attached = fgThread != me && Native.AttachThreadInput(me, fgThread, true);
                 Native.BringWindowToTop(hwnd);
                 var ok = Native.SetForegroundWindow(hwnd);
                 if (attached) Native.AttachThreadInput(me, fgThread, false);
+                for (var i = 0; i < 20 && Native.GetForegroundWindow() != hwnd; i++) System.Threading.Thread.Sleep(50);
                 return ok && Native.GetForegroundWindow() == hwnd;
             }
             return false;
@@ -487,9 +507,9 @@ namespace Trailmark
                     var window = Program.WindowAt(x, y);
                     if (!ignore.Contains((int)window["pid"]))
                     {
-                        // Copy the screen now, before the press reaches the app; encode later.
-                        var screen = Screen.FromPoint(new Point(x, y));
-                        var b = screen.Bounds;
+                        // Copy the clicked app's window now, before the press reaches the app;
+                        // encode later. Other apps on screen stay out of the guide.
+                        var b = CaptureBounds(x, y);
                         var bmp = new Bitmap(b.Width, b.Height, PixelFormat.Format32bppArgb);
                         using (var g = Graphics.FromImage(bmp))
                             g.CopyFromScreen(b.X, b.Y, 0, 0, b.Size, CopyPixelOperation.SourceCopy);
@@ -500,6 +520,32 @@ namespace Trailmark
                 }
             }
             return Native.CallNextHookEx(mouseHook, code, wParam, lParam);
+        }
+
+        /** Visible bounds of a window, without the invisible resize borders. */
+        static Rectangle WindowBounds(IntPtr hwnd)
+        {
+            Native.RECT r;
+            if (Native.DwmGetWindowAttribute(hwnd, 9 /* DWMWA_EXTENDED_FRAME_BOUNDS */, out r, Marshal.SizeOf(typeof(Native.RECT))) != 0)
+                Native.GetWindowRect(hwnd, out r);
+            return Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
+        }
+
+        /**
+         * What a click's screenshot shows: the window clicked plus its owner (so a menu or dialog
+         * keeps its app around it), clipped to that monitor. Maximised windows fill the monitor.
+         */
+        internal static Rectangle CaptureBounds(int x, int y)
+        {
+            var screen = Screen.FromPoint(new Point(x, y)).Bounds;
+            var root = Native.GetAncestor(Native.WindowFromPoint(new Native.POINT { X = x, Y = y }), 2 /* GA_ROOT */);
+            if (root == IntPtr.Zero) return screen;
+            var owner = Native.GetAncestor(root, 3 /* GA_ROOTOWNER */);
+            if (Native.IsZoomed(root) || (owner != IntPtr.Zero && Native.IsZoomed(owner))) return screen;
+            var b = WindowBounds(root);
+            if (owner != IntPtr.Zero && owner != root) b = Rectangle.Union(b, WindowBounds(owner));
+            b.Intersect(screen);
+            return b.Width < 40 || b.Height < 40 ? screen : b;
         }
 
         static void Report(int n, string button, int x, int y, Rectangle b, Bitmap bmp, Dictionary<string, object> window, string at)

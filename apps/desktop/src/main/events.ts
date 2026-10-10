@@ -43,7 +43,7 @@ export function desktopApp(el: Pick<UiaElement, 'processName' | 'windowTitle'>):
   return { kind: 'desktop', processName: el.processName, windowTitle: el.windowTitle };
 }
 
-/** Where an element is, relative to the monitor picture (physical pixels). */
+/** Where an element is, relative to the screenshot (physical pixels; the clicked window). */
 function relative(rect: PxRect, monitor: PxRect): PxRect {
   return { x: rect.x - monitor.x, y: rect.y - monitor.y, w: rect.w, h: rect.h };
 }
