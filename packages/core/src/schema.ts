@@ -196,6 +196,10 @@ export const StepSchema = z
       actionBox: RectSchema.optional(),
       annotations: z.array(AnnotationSchema),
       blurs: z.array(RectSchema),
+      /** The screenshot and Action Box as captured, kept when the image is first edited. */
+      original: z
+        .object({ screenshot: ScreenshotSchema, actionBox: RectSchema.optional() })
+        .optional(),
     }),
     agent: z.object({
       intent: z.string().optional(),

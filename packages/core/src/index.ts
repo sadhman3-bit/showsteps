@@ -95,3 +95,14 @@ export {
   duplicateGuide,
   type ImportResult,
 } from './archive.js';
+
+// Editing
+export * from './editor/ops.js';
+export { History } from './editor/history.js';
+export {
+  withOriginal,
+  resetImage,
+  withMagnify,
+  bulkBlurCandidates,
+  applyBlurToSteps,
+} from './editor/image.js';
