@@ -104,7 +104,7 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Run values** are asked once at the start for inputs set to "ask" or tied to a variable. They live only in the session (memory and session storage), never in the guide.
 - **Overlays inside modal dialogs:** a modal `<dialog>` makes everything outside it inert, so Trailmark's on-page card and the capture toolbar move inside the topmost open modal dialog while one is open.
 - **Card placement** tries below, above, right and left of the target. In a frame too small to fit it without covering the target, the card is hidden (the side panel still shows the step).
-- **Notes and pins** are "page marks" kept in extension storage (`marks`), tied to a page (origin + path) and optionally to an element (a recorded target) or an iframe. Note text accepts **bold**, *italic* and links written Markdown-style. A note may also hold a guide; a pin is a mark whose job is to open a guide.
+- **Notes and pins** are "page marks" kept in extension storage (`marks`), tied to a page (origin + path) and optionally to an element (a recorded target) or an iframe. Note text accepts **bold**, _italic_ and links written Markdown-style. A note may also hold a guide; a pin is a mark whose job is to open a guide.
 - **Guidance switch** (side panel and Settings) hides notes, pins and Discover suggestions on pages. Guide Me and Run for me still run when someone starts them.
 - **Discover** lists guides whose recorded sites include the active tab's origin, newest first.
 - **Comments and reactions** live in per-user sidecars (`comments.<user>`), merged for reading. People can delete only their own. Reactions: 👍 🎉 ❤️ 👀 ❓.
