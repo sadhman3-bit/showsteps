@@ -1,5 +1,7 @@
-import { FolderStore } from '@trailmark/core';
+import { FolderStore, type CaptureEvent } from '@trailmark/core';
 import { nodeFileSystem } from '@trailmark/core/node';
+import { EventEmitter } from 'node:events';
+import { EventEmitter } from 'node:events';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -12,8 +14,8 @@ import {
   keyEvent,
   typeEvent,
 } from '../src/main/events';
-import type { UiaElement } from '../src/main/helper';
-import { LibrarySink } from '../src/main/recorder';
+import type { HelperEvent, UiaElement, UiaHelper } from '../src/main/helper';
+import { DesktopRecorder, LibrarySink, type CaptureSink } from '../src/main/recorder';
 
 const editor: UiaElement = {
   name: 'Text Editor',
@@ -116,5 +118,50 @@ describe('library sink', () => {
       dpr: 1.5,
     });
     expect((await store.listImages(guide.id)).sort()).toHaveLength(4);
+  });
+});
+
+describe('desktop recorder', () => {
+  /** A stand-in for uia-helper: emits hook events and answers "what has focus". */
+  function fakeHelper(focused: () => UiaElement | undefined) {
+    const emitter = new EventEmitter<{ event: [HelperEvent]; exit: [] }>();
+    return Object.assign(emitter, {
+      hook: async () => true,
+      focused: async () => focused(),
+    }) as unknown as UiaHelper & EventEmitter<{ event: [HelperEvent]; exit: [] }>;
+  }
+
+  it('commits typing as soon as another app comes to the front', async () => {
+    let focus: UiaElement | undefined = { ...editor, value: 'Invoice 1043' };
+    const helper = fakeHelper(() => focus);
+    const events: CaptureEvent[] = [];
+    const sink: CaptureSink = {
+      stepCount: 0,
+      event: async (ev) => void events.push(ev),
+      deleteLast: async () => undefined,
+      finish: async () => 'g1',
+      cancel: async () => undefined,
+    };
+    const recorder = new DesktopRecorder({
+      helper,
+      readShot: () => Promise.reject(new Error('no shots')),
+      ownPids: () => [],
+      shotDir: tmpdir(),
+      onState: () => undefined,
+    });
+    await recorder.start(sink, true);
+    helper.emit('event', { event: 'typing' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(events).toHaveLength(0);
+    // Same app in front again: nothing yet. The browser in front: the typing is a step now.
+    helper.emit('event', { event: 'foreground', pid: editor.pid, processName: 'notepad', at: '' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(events).toHaveLength(0);
+    focus = undefined;
+    helper.emit('event', { event: 'foreground', pid: 77, processName: 'chrome', at: '' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(events).toMatchObject([{ kind: 'type', value: 'Invoice 1043' }]);
+    await recorder.finish();
+    expect(events).toHaveLength(1);
   });
 });

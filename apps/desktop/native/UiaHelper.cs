@@ -51,6 +51,13 @@ namespace Trailmark
         [DllImport("user32.dll")] public static extern bool PostThreadMessage(uint thread, uint msg, IntPtr w, IntPtr l);
         [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
         public delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
+        public delegate bool EnumProc(IntPtr hwnd, IntPtr lParam);
+        [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc proc, IntPtr lParam);
+        [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);
+        [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr hwnd, uint cmd);
+        public delegate void WinEventProc(IntPtr hook, uint ev, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
+        [DllImport("user32.dll")] public static extern IntPtr SetWinEventHook(uint min, uint max, IntPtr mod, WinEventProc proc, uint pid, uint thread, uint flags);
+        [DllImport("user32.dll")] public static extern bool UnhookWinEvent(IntPtr hook);
 
         [StructLayout(LayoutKind.Sequential)] public struct MSLLHOOKSTRUCT { public POINT pt; public uint mouseData; public uint flags; public uint time; public IntPtr extra; }
         [StructLayout(LayoutKind.Sequential)] public struct KBDLLHOOKSTRUCT { public uint vkCode; public uint scanCode; public uint flags; public uint time; public IntPtr extra; }
@@ -220,7 +227,7 @@ namespace Trailmark
             return parts;
         }
 
-        static string ProcessName(int pid)
+        internal static string ProcessName(int pid)
         {
             try { return Process.GetProcessById(pid).ProcessName; } catch { return ""; }
         }
@@ -404,13 +411,32 @@ namespace Trailmark
             }
         }
 
+        /** Visible top-level windows of an app (every window, not just its "main" one). */
+        static List<IntPtr> TopWindows(string processName, string windowTitle)
+        {
+            var pids = new HashSet<int>();
+            foreach (var p in Process.GetProcessesByName(processName ?? "")) pids.Add(p.Id);
+            var found = new List<IntPtr>();
+            Native.EnumWindows((hwnd, _) =>
+            {
+                uint pid;
+                Native.GetWindowThreadProcessId(hwnd, out pid);
+                if (!pids.Contains((int)pid) || !Native.IsWindowVisible(hwnd)) return true;
+                if (Native.GetWindow(hwnd, 4 /* GW_OWNER */) != IntPtr.Zero) return true;
+                var title = new StringBuilder(512);
+                Native.GetWindowText(hwnd, title, title.Capacity);
+                if (title.Length == 0) return true;
+                if (windowTitle != null && title.ToString().IndexOf(windowTitle, StringComparison.OrdinalIgnoreCase) < 0) return true;
+                found.Add(hwnd);
+                return true;
+            }, IntPtr.Zero);
+            return found;
+        }
+
         static object Activate(string processName, string windowTitle)
         {
-            foreach (var p in Process.GetProcessesByName(processName ?? ""))
+            foreach (var hwnd in TopWindows(processName, windowTitle))
             {
-                if (p.MainWindowHandle == IntPtr.Zero) continue;
-                if (windowTitle != null && (p.MainWindowTitle ?? "").IndexOf(windowTitle, StringComparison.OrdinalIgnoreCase) < 0) continue;
-                var hwnd = p.MainWindowHandle;
                 if (Native.IsIconic(hwnd)) Native.ShowWindow(hwnd, 9 /* SW_RESTORE */);
                 // Windows only lets the foreground thread hand over focus: borrow its input
                 // state for the switch.
@@ -444,6 +470,8 @@ namespace Trailmark
         static uint hookThreadId;
         static IntPtr mouseHook, keyHook;
         static Native.HookProc mouseProc, keyProc; // kept alive while hooked
+        static Native.WinEventProc foregroundProc;
+        static IntPtr foregroundHook;
         static string dir;
         static HashSet<int> ignore = new HashSet<int>();
         static int seq;
@@ -474,8 +502,11 @@ namespace Trailmark
                 var mod = Native.GetModuleHandle(null);
                 mouseHook = Native.SetWindowsHookEx(14 /* WH_MOUSE_LL */, mouseProc, mod, 0);
                 keyHook = Native.SetWindowsHookEx(13 /* WH_KEYBOARD_LL */, keyProc, mod, 0);
+                foregroundProc = OnForeground;
+                foregroundHook = Native.SetWinEventHook(3, 3 /* EVENT_SYSTEM_FOREGROUND */, IntPtr.Zero, foregroundProc, 0, 0, 0 /* OUTOFCONTEXT */);
                 ready.Set();
                 Application.Run(); // message loop for the hooks
+                Native.UnhookWinEvent(foregroundHook);
                 Native.UnhookWindowsHookEx(mouseHook);
                 Native.UnhookWindowsHookEx(keyHook);
             });
@@ -546,6 +577,16 @@ namespace Trailmark
             if (owner != IntPtr.Zero && owner != root) b = Rectangle.Union(b, WindowBounds(owner));
             b.Intersect(screen);
             return b.Width < 40 || b.Height < 40 ? screen : b;
+        }
+
+        /** Another app came to the front (switching apps ends typing in the previous one). */
+        static void OnForeground(IntPtr hook, uint ev, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
+        {
+            uint pid;
+            Native.GetWindowThreadProcessId(hwnd, out pid);
+            var at = DateTime.UtcNow.ToString("o");
+            work.Add(() => Program.Write(new Dictionary<string, object> {
+                { "event", "foreground" }, { "pid", (int)pid }, { "processName", Program.ProcessName((int)pid) }, { "at", at } }));
         }
 
         static void Report(int n, string button, int x, int y, Rectangle b, Bitmap bmp, Dictionary<string, object> window, string at)

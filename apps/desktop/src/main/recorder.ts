@@ -158,6 +158,12 @@ export class DesktopRecorder {
       await this.noteTyping();
       return;
     }
+    if (ev.event === 'foreground') {
+      // Switching to another app (the browser, say) ends typing in this one, so it keeps its
+      // place before whatever happens next.
+      if (this.typing?.el && this.typing.el.pid !== ev.pid) await this.commitTyping();
+      return;
+    }
     if (ev.event === 'key') {
       const el = this.typing?.snapshot ?? this.typing?.el ?? (await this.deps.helper.focused());
       if (el && this.skip(el)) return;

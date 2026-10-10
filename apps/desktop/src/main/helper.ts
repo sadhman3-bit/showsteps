@@ -50,6 +50,12 @@ export const HelperEventSchema = z.discriminatedUnion('event', [
   }),
   z.object({ event: z.literal('key'), key: z.string(), at: z.string() }),
   z.object({ event: z.literal('typing') }),
+  z.object({
+    event: z.literal('foreground'),
+    pid: z.number(),
+    processName: z.string(),
+    at: z.string(),
+  }),
 ]);
 export type HelperEvent = z.infer<typeof HelperEventSchema>;
 

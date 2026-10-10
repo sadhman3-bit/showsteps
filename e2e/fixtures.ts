@@ -14,18 +14,21 @@ export const RELEASE_MANIFEST = fileURLToPath(
 
 /** Playwright fixtures that launch Chromium with the built, unpacked extension loaded. */
 export const test = base.extend<{
+  /** Show a real browser window (desktop tests switch between it and other apps). */
+  headed: boolean;
   context: BrowserContext;
   serviceWorker: Worker;
   extensionId: string;
 }>({
-  // eslint-disable-next-line no-empty-pattern
-  context: async ({}, use) => {
+  headed: [false, { option: true }],
+  context: async ({ headed }, use) => {
     if (!existsSync(join(EXTENSION_PATH, 'manifest.json'))) {
       throw new Error('The extension is not built. Run `pnpm build` before `pnpm e2e`.');
     }
     const userDataDir = mkdtempSync(join(tmpdir(), 'trailmark-e2e-'));
     const context = await chromium.launchPersistentContext(userDataDir, {
       channel: 'chromium',
+      headless: !headed,
       viewport: { width: 1280, height: 800 },
       args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`],
     });

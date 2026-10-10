@@ -711,6 +711,7 @@ export default defineBackground(() => {
         guidance,
         startGuidance,
         readMarks,
+        syncDesktop,
       },
     });
   }

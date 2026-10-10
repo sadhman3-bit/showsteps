@@ -107,14 +107,28 @@ export class Desktop {
     );
   }
 
-  activate(processName: string): Promise<unknown> {
+  /** Bring an app's window to the front; true when it is in front afterwards. */
+  activate(processName: string, windowTitle?: string): Promise<unknown> {
     return this.app.evaluate(
-      (_e, p) =>
+      (_e, [p, t]) =>
         (globalThis as unknown as Global).__trailmarkDesktop.helper.call('activate', {
           processName: p,
+          ...(t ? { windowTitle: t } : {}),
         }),
-      processName,
+      [processName, windowTitle] as const,
     );
+  }
+
+  /** The Guide Me overlay window's text while it is showing, else ''. */
+  async overlayText(): Promise<string> {
+    const overlay = this.app.windows().find((w) => w.url().includes('overlay.html'));
+    if (!overlay) return '';
+    const visible = await this.app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows().some(
+        (w) => w.webContents.getURL().includes('overlay.html') && w.isVisible(),
+      ),
+    );
+    return visible ? ((await overlay.locator('body').textContent()) ?? '') : '';
   }
 
   capture(): Promise<{ status: string; stepCount: number; shared: boolean; lastGuideId?: string }> {

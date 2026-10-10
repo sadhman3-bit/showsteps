@@ -195,7 +195,7 @@ export class DesktopGuide extends EventEmitter<{
   /** Hook input while guiding: a click in the ring, or typing there then moving on. */
   private onInput(ev: HelperEvent): void {
     const step = this.current();
-    if (!step || step.app.kind !== 'desktop' || !this.rect) return;
+    if (!step || step.app.kind !== 'desktop' || !this.rect || ev.event === 'foreground') return;
     const rect = this.rect;
     if (ev.event === 'typing') {
       if (step.action === 'type') this.typed = true;
