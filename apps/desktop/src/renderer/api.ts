@@ -1,3 +1,4 @@
+import type { InputMode } from '@trailmark/core';
 import { BRIDGE_STORE_METHODS, type GuideStore } from '@trailmark/core';
 import { useEffect, useState } from 'preact/hooks';
 
@@ -36,6 +37,7 @@ export interface DesktopSettingsView {
   sharedPath: string;
   active: 'personal' | 'shared';
   sharedAvailable: boolean;
+  defaultInputMode: InputMode;
 }
 
 export interface CaptureView {

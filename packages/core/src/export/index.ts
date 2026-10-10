@@ -13,5 +13,22 @@ export {
 } from './model.js';
 export { guideToMarkdown, guideToMarkdownZip } from './markdown.js';
 export { guideToHtml, guideToEmbedHtml, guideToClipboardHtml, guideToText } from './html.js';
-export { guideToPdf } from './pdf.js';
+export { guideToPdf, procedureFromPdf } from './pdf.js';
 export { guideToDocx } from './docx.js';
+export { procedureFromDocx, withProcedurePart, PROCEDURE_XML_NAMESPACE } from './docx.js';
+export {
+  guideToAgentPack,
+  agentPackFiles,
+  validateAgentPack,
+  skillName,
+  skillDescription,
+  skillMarkdown,
+  describeTarget,
+  describeExpectation,
+  SKILL_NAME_MAX,
+  SKILL_DESCRIPTION_MAX,
+  SKILL_MD_MAX_LINES,
+  type AgentPackOptions,
+  type PackProblem,
+} from './agentpack.js';
+export { replaySpec, locatorFor, envName } from './replay.js';

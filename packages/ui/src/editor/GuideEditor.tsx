@@ -2,6 +2,9 @@ import {
   History,
   applyBlurToSteps,
   applySecureBlur,
+  markSensitive,
+  setInputMode,
+  suggestAsk,
   deleteBlocks,
   duplicateBlocks,
   insertBlankStep,
@@ -27,11 +30,13 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
+import { InputModeSelect } from '../components/InputModeSelect.js';
 import { GuideReader } from '../guide/GuideReader.js';
 import { Screenshot } from '../guide/Screenshot.js';
 import { usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
 import { ShareDialog } from '../export/ShareDialog.js';
+import { AgentView } from './AgentView.js';
 import { AiTools } from './AiTools.js';
 import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs.js';
 import { ImageEditor } from './ImageEditor.js';
@@ -100,7 +105,7 @@ export function GuideEditor({
 }: GuideEditorProps) {
   const history = useRef<History<Guide> | null>(null);
   const [guide, setGuide] = useState<Guide | null | undefined>(undefined);
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [mode, setMode] = useState<'edit' | 'preview' | 'agent'>('edit');
   const [compact, setCompact] = usePreference<'on' | 'off'>('editor.compact', 'off');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [focused, setFocused] = useState<string>();
@@ -451,6 +456,9 @@ export function GuideEditor({
           >
             {e.preview}
           </button>
+          <button type="button" aria-pressed={mode === 'agent'} onClick={() => setMode('agent')}>
+            {strings.agent.tab}
+          </button>
         </div>
         {mode === 'edit' ? (
           <Button
@@ -511,7 +519,9 @@ export function GuideEditor({
         ) : null}
       </header>
 
-      {mode === 'preview' ? (
+      {mode === 'agent' ? (
+        <AgentView guide={guide} apply={apply} onEndTyping={endTyping} />
+      ) : mode === 'preview' ? (
         <div class="tm-page">
           <GuideReader
             store={store}
@@ -603,6 +613,7 @@ export function GuideEditor({
                     setDrop(null);
                   }}
                   onChange={(change, how) => apply((g) => updateBlock(g, b.id, change), how)}
+                  onGuide={(edit) => apply(edit)}
                   onEndTyping={endTyping}
                   onToggleCollapse={() => {
                     const next = new Set(collapsed);
@@ -790,6 +801,8 @@ function BlockCard(props: {
   onDragOver: (ev: DragEvent) => void;
   onDragEnd: () => void;
   onChange: (change: (latest: Block) => Block, how: 'push' | 'type') => void;
+  /** A change to the whole guide (input modes add or remove variables). */
+  onGuide: (edit: (latest: Guide) => Guide) => void;
   onEndTyping: () => void;
   onToggleCollapse: () => void;
   onEditImage: () => void;
@@ -930,6 +943,7 @@ function StepFields(props: {
   step: Step;
   num: number;
   onChange: (change: (latest: Block) => Block, how: 'push' | 'type') => void;
+  onGuide: (edit: (latest: Guide) => Guide) => void;
   onEndTyping: () => void;
   onEditImage: () => void;
   onAddImage: () => void;
@@ -963,6 +977,9 @@ function StepFields(props: {
         }
         onCommit={props.onEndTyping}
       />
+      {s.input && (s.action === 'type' || s.action === 'select') ? (
+        <InputControls step={s} num={num} onGuide={props.onGuide} onChange={props.onChange} />
+      ) : null}
       {s.human.screenshot ? (
         <div class="tm-eblock__shot">
           <button
@@ -1007,5 +1024,56 @@ function StepFields(props: {
         </div>
       ) : null}
     </>
+  );
+}
+
+/** U4: how a typed or chosen value is used, plus the sensitive flag and a suggestion. */
+function InputControls(props: {
+  step: Step;
+  num: number;
+  onGuide: (edit: (latest: Guide) => Guide) => void;
+  onChange: (change: (latest: Block) => Block, how: 'push' | 'type') => void;
+}) {
+  const { step: s } = props;
+  const m = strings.inputMode;
+  const input = s.input;
+  if (!input) return null;
+  if (input.sensitive && input.value === undefined)
+    return <p class="tm-muted tm-eblock__input">{m.secret}</p>;
+  const suggestion = suggestAsk(s);
+  return (
+    <div class="tm-eblock__input tm-row">
+      <label class="tm-row">
+        <span class="tm-muted">{m.label}</span>
+        <InputModeSelect
+          label={`${m.label}: ${e.stepTitle(props.num)}`}
+          value={input.mode}
+          onChange={(mode) => props.onGuide((g) => setInputMode(g, s.id, mode))}
+        />
+      </label>
+      {input.variable ? <code class="tm-muted">{m.variable(input.variable)}</code> : null}
+      <label class="tm-check">
+        <input
+          type="checkbox"
+          checked={input.sensitive}
+          onChange={(ev) => {
+            const sensitive = ev.currentTarget.checked;
+            props.onGuide((g) => markSensitive(g, s.id, sensitive));
+          }}
+        />{' '}
+        {m.sensitive}
+      </label>
+      {suggestion ? (
+        <span class="tm-eblock__suggest">
+          {m.suggest}{' '}
+          <Button
+            variant="ghost"
+            onClick={() => props.onGuide((g) => setInputMode(g, s.id, 'ask'))}
+          >
+            {m.suggestApply}
+          </Button>
+        </span>
+      ) : null}
+    </div>
   );
 }

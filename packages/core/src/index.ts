@@ -76,6 +76,7 @@ export {
 } from './capture/session.js';
 export { isSensitiveField, isTextEntry } from './dom/sensitive.js';
 export { collectPageText, type CollectOptions } from './dom/text.js';
+export { pageState, expectationsFrom, type PageState } from './dom/observe.js';
 export {
   scaleRect,
   offsetRect,
@@ -168,6 +169,7 @@ export {
   selectOption,
   pressKey,
   failedExpectations,
+  urlMatches,
 } from './dom/act.js';
 
 // On-device AI helpers (prompts and results only)
@@ -228,3 +230,31 @@ export {
   alreadyBlurred,
   applySecureBlur,
 } from './secure.js';
+export { needsConfirm, isIrreversibleName } from './agent/confirm.js';
+export {
+  valueKind,
+  suggestAsk,
+  variableName,
+  fieldLabel,
+  setInputMode,
+  markSensitive,
+  type ValueKind,
+} from './agent/variables.js';
+export {
+  toProcedure,
+  procedureJson,
+  PROCEDURE_FORMAT,
+  DEFAULT_ON_FAILURE,
+  type Procedure,
+  type ProcedureStep,
+  type ProcedureTarget,
+  type ProcedureVariable,
+} from './agent/procedure.js';
+export {
+  agentWarnings,
+  stepWarnings,
+  hasStableSelector,
+  STABLE_SCORE,
+  type AgentWarning,
+  type AgentWarningKind,
+} from './agent/warnings.js';

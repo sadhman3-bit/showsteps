@@ -236,6 +236,15 @@ export function performStep(el: Element, step: Step, value: string | undefined):
 }
 
 /** Which expectations do not hold on this page right now (Run for me stops on the first). */
+/** `matches` is a regular expression (as captured); plain text if it is not a valid one. */
+export function urlMatches(url: string, matches: string): boolean {
+  try {
+    return new RegExp(matches).test(url);
+  } catch {
+    return url.includes(matches);
+  }
+}
+
 export function failedExpectations(
   doc: Document,
   url: string,
@@ -245,7 +254,7 @@ export function failedExpectations(
   return (expectations ?? []).filter((e) => {
     switch (e.type) {
       case 'url':
-        return !url.includes(e.matches);
+        return !urlMatches(url, e.matches);
       case 'visible':
         return !findTarget(doc, e.target, opts);
       case 'hidden':

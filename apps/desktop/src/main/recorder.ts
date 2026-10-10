@@ -6,6 +6,7 @@ import {
   type CaptureEvent,
   type Guide,
   type GuideStore,
+  type InputMode,
   type Step,
 } from '@trailmark/core';
 import {
@@ -271,7 +272,7 @@ export class DesktopRecorder {
 
 /** Records into a guide in this app's library (no extension involved). */
 export class LibrarySink implements CaptureSink {
-  private readonly session = new CaptureSession();
+  private readonly session: CaptureSession;
   private guide: Guide;
   private lastShot:
     { file: string; width: number; height: number; dpr: number; stepId: string } | undefined;
@@ -279,8 +280,10 @@ export class LibrarySink implements CaptureSink {
   constructor(
     private readonly store: GuideStore,
     title: string,
+    defaultInputMode: InputMode = 'fixed',
   ) {
-    this.guide = createGuide({ title });
+    this.guide = createGuide({ title, settings: { defaultInputMode } });
+    this.session = new CaptureSession(undefined, defaultInputMode);
   }
 
   get stepCount(): number {

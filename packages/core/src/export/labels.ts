@@ -17,6 +17,9 @@ export const EXPORT_LABELS = {
   screenshotAlt: (n: number, title: string) => `Screenshot for step ${n}: ${title}`,
   page: (n: number, total: number) => `Page ${n} of ${total}`,
   noSteps: 'This guide has no steps yet.',
+  /** U3: the visible line in every export that carries the structured procedure. */
+  agentFooter: 'Agent-readable procedure embedded (Trailmark schema v1).',
+  agentProcedure: 'Agent procedure',
   months: [
     'January',
     'February',

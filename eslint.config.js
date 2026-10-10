@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/coverage/**',
       'test-results/**',
       'playwright-report/**',
+      'e2e/.replay/**',
     ],
   },
   js.configs.recommended,

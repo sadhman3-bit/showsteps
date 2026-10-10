@@ -1,4 +1,5 @@
 import { BRAND_FONTS, HIGHLIGHT_COLOR, accentOf, fontOf, textOn } from '../branding.js';
+import { procedureJson, toProcedure } from '../agent/procedure.js';
 import { escapeHtml, toHtml, toPlainText } from '../richText.js';
 import {
   dataUri,
@@ -7,6 +8,14 @@ import {
   type ExportInput,
   type ExportItem,
 } from './model.js';
+
+/**
+ * U3: the structured procedure as a JSON data block. Browsers never run `application/json`
+ * script elements, and the page's CSP allows no scripts at all.
+ */
+function procedureScript(input: ExportInput): string {
+  return `<script type="application/json" id="trailmark-procedure">${procedureJson(toProcedure(input.guide))}</script>`;
+}
 
 /** Exported pages run no scripts and load nothing: images are inline. */
 const CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'";
@@ -84,6 +93,7 @@ main>.callout{margin:16px 0}
 .step__nav a{text-decoration:none}
 .step__nav a:hover{text-decoration:underline}
 .done{margin:32px 0 0;padding:12px 16px;border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.agent-note{margin:32px 0 0;color:var(--muted);font-size:12px}
 @media (max-width:820px){.layout{display:block;padding:16px}.toc{position:static;max-height:none;margin-bottom:24px}.step__desc,.step figure,.step__nav{margin-left:0}}
 @media print{:root{--bg:#fff;--surface:#fff;--text:#000}.layout{display:block;padding:0;max-width:none}.toc,.step__nav{display:none}.step{break-inside:avoid;border:0;padding:0;margin:16px 0}.step:target{outline:0}main>h2{break-after:avoid}.shot{max-height:16cm;width:auto}a{text-decoration:none}}`;
 
@@ -165,8 +175,10 @@ export function guideToHtml(input: ExportInput): string {
     doc.success
       ? `<p class="done"><strong>${escapeHtml(L.success)}:</strong> ${escapeHtml(doc.success)}</p>`
       : '',
+    `<footer class="agent-note">${escapeHtml(L.agentFooter)}</footer>`,
     '</main>',
     '</div>',
+    procedureScript(input),
     '</body>',
     '</html>',
     '',

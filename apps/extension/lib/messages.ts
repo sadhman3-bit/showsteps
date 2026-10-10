@@ -1,6 +1,6 @@
 // Every message between extension contexts, validated with Zod on receipt.
 import { z } from 'zod';
-import { PageTextSchema, RectSchema, TargetSchema } from '@trailmark/core';
+import { ExpectationSchema, PageTextSchema, RectSchema, TargetSchema } from '@trailmark/core';
 
 const ElementKey = z.string().min(1).max(100);
 const ShotId = z.string().regex(/^[A-Za-z0-9-]{8,64}$/);
@@ -80,7 +80,18 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
     /** Words on screen in this frame (CSS pixels), for Secure Blur. */
     words: PageTextSchema.optional(),
   }),
-  z.object({ type: z.literal('event'), shotId: ShotId.optional(), event: ContentEventSchema }),
+  z.object({
+    type: z.literal('event'),
+    shotId: ShotId.optional(),
+    /** The page will report what this action changed under this id (U6). */
+    observeId: ShotId.optional(),
+    event: ContentEventSchema,
+  }),
+  z.object({
+    type: z.literal('observed'),
+    observeId: ShotId,
+    expect: z.array(ExpectationSchema).max(5),
+  }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
 ]);
 export type ContentMessage = z.infer<typeof ContentMessageSchema>;

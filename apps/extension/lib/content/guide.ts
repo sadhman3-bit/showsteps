@@ -318,6 +318,17 @@ export class GuidePage {
     const title = el('p', { class: 'title' });
     title.append(...richNodes(msg.step.human.title));
     tip.append(title);
+    // U4: a value asked for every run is the person's own; a default is offered.
+    const input = msg.step.input;
+    if (input && !input.sensitive && input.mode !== 'fixed') {
+      tip.append(
+        el(
+          'p',
+          { class: 'note' },
+          input.mode === 'default' && input.value ? g.suggestedValue(input.value) : g.ownValue,
+        ),
+      );
+    }
     if (msg.phase !== 'showing') {
       tip.append(el('p', { class: 'note' }, g.phase[msg.phase]));
     }

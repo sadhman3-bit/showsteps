@@ -1,6 +1,8 @@
 import {
   collectPageText,
   deepElements,
+  expectationsFrom,
+  pageState,
   describeElement,
   frameSelector,
   getRole,
@@ -21,6 +23,9 @@ import { Controller } from './controller';
 import { LiveBlur } from './liveBlur';
 
 const FRAME_HELLO = 'trailmark:frame-hello';
+/** Actions whose result is worth recording as an expectation, and when to look (U6). */
+const OBSERVED = new Set<ContentEvent['kind']>(['click', 'dblclick', 'key', 'select', 'check']);
+const OBSERVE_AFTER_MS = 800;
 const FRAME_HELLO_REQUEST = 'trailmark:frame-hello-request';
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 const KEY_NAMES: Record<string, string> = {
@@ -186,7 +191,28 @@ export class PageRecorder {
           .then(() => send({ type: 'shot', shotId, uiHidden: true, at, ...extra }));
       else void send({ type: 'shot', shotId, at, ...extra });
     }
-    void send({ type: 'event', ...(shotId ? { shotId } : {}), event });
+    const observeId = this.observe(event);
+    void send({
+      type: 'event',
+      ...(shotId ? { shotId } : {}),
+      ...(observeId ? { observeId } : {}),
+      event,
+    });
+  }
+
+  /**
+   * U6: for actions that change pages (clicks, keys, choices) in the top frame, note the page
+   * now and again shortly after, and report the difference as the step's expected result.
+   */
+  private observe(event: ContentEvent): string | undefined {
+    if (window !== window.top || !OBSERVED.has(event.kind)) return undefined;
+    const observeId = crypto.randomUUID();
+    const before = pageState(document);
+    setTimeout(() => {
+      const expect = expectationsFrom(before, pageState(document));
+      if (expect.length) void send({ type: 'observed', observeId, expect });
+    }, OBSERVE_AFTER_MS);
+    return observeId;
   }
 
   private activeElementDeep(): Element | null {

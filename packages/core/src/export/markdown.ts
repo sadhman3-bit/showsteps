@@ -1,4 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
+import { procedureJson, toProcedure } from '../agent/procedure.js';
 import { toMarkdown } from '../richText.js';
 import { extensionFor, exportDocument, type ExportInput } from './model.js';
 
@@ -41,6 +42,19 @@ export function guideToMarkdown(input: ExportInput): string {
     }
   }
   if (doc.success) out.push(`**${L.success}:** ${escapeText(doc.success)}`);
+  // U3: the structured procedure, collapsed at the end.
+  out.push(`*${L.agentFooter}*`);
+  out.push(
+    [
+      `<details><summary>${L.agentProcedure}</summary>`,
+      '',
+      '```json',
+      procedureJson(toProcedure(input.guide)),
+      '```',
+      '',
+      '</details>',
+    ].join('\n'),
+  );
   return out.join('\n\n') + '\n';
 }
 

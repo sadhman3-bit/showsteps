@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { userInfo } from 'node:os';
 import { join } from 'node:path';
+import { InputModeSchema } from '@trailmark/core';
 import { z } from 'zod';
 
 export const DesktopSettingsSchema = z.object({
@@ -13,6 +14,8 @@ export const DesktopSettingsSchema = z.object({
   sharedPath: z.string(),
   /** Which library the window shows. */
   active: z.enum(['personal', 'shared']),
+  /** How typed values in new guides are used (U4). */
+  defaultInputMode: InputModeSchema,
 });
 export type DesktopSettings = z.infer<typeof DesktopSettingsSchema>;
 
@@ -24,6 +27,7 @@ export function defaultSettings(documents: string): DesktopSettings {
     libraryPath: join(documents, 'Trailmark', 'Library'),
     sharedPath: '',
     active: 'personal',
+    defaultInputMode: 'fixed',
   };
 }
 

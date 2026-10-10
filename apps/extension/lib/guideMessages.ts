@@ -1,5 +1,5 @@
 // Messages for guidance (Guide Me, Run for me), notes and pins, validated with Zod on receipt.
-import { PageMarkSchema, StepSchema, TargetSchema } from '@trailmark/core';
+import { InputModeSchema, PageMarkSchema, StepSchema, TargetSchema } from '@trailmark/core';
 import { z } from 'zod';
 
 export const SpeedSchema = z.enum(['slow', 'normal', 'fast']);
@@ -75,6 +75,8 @@ export const SettingsSchema = z.object({
   desktopLibrary: z.boolean(),
   /** The move-to-desktop question was answered. */
   desktopAsked: z.boolean(),
+  /** How typed values in new guides are used (U4): fixed, ask every run, ask with a default. */
+  defaultInputMode: InputModeSchema,
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 export const DEFAULT_SETTINGS: Settings = {
@@ -84,6 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   desktopApp: false,
   desktopLibrary: false,
   desktopAsked: false,
+  defaultInputMode: 'fixed',
 };
 export const SETTINGS_KEY = 'settings';
 export const MARKS_KEY = 'marks';

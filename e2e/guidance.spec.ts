@@ -196,6 +196,10 @@ test('Run for me: does the flow, waits for the password and stops at the confirm
   await expect.poll(async () => (await state(sw)).phase).toBe('manual');
   expect((await state(sw)).reason).toBe('secret');
   await expect(page.getByLabel('Username')).toHaveValue('alex');
+  // The card on the page is watching the field once it shows the step.
+  await expect(page.locator('trailmark-guide').getByRole('dialog')).toContainText(
+    'Enter your password',
+  );
   await page.getByLabel('Password').fill('not-a-real-password');
   await page.getByLabel('Password').press('Tab');
 

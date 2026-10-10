@@ -4,6 +4,8 @@ const DEMO_PORT = Number(process.env.DEMO_PORT ?? 5173);
 
 export default defineConfig({
   testDir: './e2e',
+  // Agent Pack replays written by e2e/agent.spec.ts run in their own nested Playwright.
+  testIgnore: '**/.replay/**',
   fullyParallel: false,
   // Recording tests take real screenshots; parallel browsers on small CI machines skew timing.
   workers: process.env.CI ? 1 : 2,

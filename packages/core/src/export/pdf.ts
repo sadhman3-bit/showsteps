@@ -1,12 +1,21 @@
 import {
+  PDFArray,
+  PDFDict,
   PDFDocument,
+  PDFHexString,
+  PDFName,
+  PDFRawStream,
+  PDFString,
   StandardFonts,
+  decodePDFRawStream,
   rgb,
   type PDFFont,
   type PDFImage,
   type PDFPage,
   type RGB,
 } from 'pdf-lib';
+import { strToU8 } from 'fflate';
+import { procedureJson, toProcedure } from '../agent/procedure.js';
 import { SERIF_FONTS, accentOf, fontOf, textOn } from '../branding.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
@@ -397,6 +406,21 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
     );
   }
 
+  // U3: one visible line, and the procedure attached to the file as procedure.json.
+  w.ensure(30);
+  w.y -= 12;
+  w.lines(
+    layout([{ text: L.agentFooter, font: fonts.regular, color: MUTED }], 9, CONTENT_W),
+    MARGIN,
+    9,
+  );
+  await pdf.attach(strToU8(procedureJson(toProcedure(input.guide))), 'procedure.json', {
+    mimeType: 'application/json',
+    description: L.agentFooter,
+    creationDate: new Date(input.guide.createdAt),
+    modificationDate: new Date(input.guide.updatedAt),
+  });
+
   // ---------- Footers (every page after the cover) ----------
   const total = w.pages.length;
   w.pages.forEach((page, i) => {
@@ -423,4 +447,23 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   });
 
   return pdf.save();
+}
+
+/** The procedure JSON attached to a PDF made by Trailmark, if it has one. */
+export async function procedureFromPdf(bytes: Uint8Array): Promise<string | undefined> {
+  const pdf = await PDFDocument.load(bytes, { updateMetadata: false });
+  const names = pdf.catalog.lookupMaybe(PDFName.of('Names'), PDFDict);
+  const files = names?.lookupMaybe(PDFName.of('EmbeddedFiles'), PDFDict);
+  const list = files?.lookupMaybe(PDFName.of('Names'), PDFArray);
+  if (!list) return undefined;
+  for (let i = 0; i + 1 < list.size(); i += 2) {
+    const name = list.lookup(i);
+    if (!(name instanceof PDFString || name instanceof PDFHexString)) continue;
+    if (name.decodeText() !== 'procedure.json') continue;
+    const spec = list.lookup(i + 1, PDFDict);
+    const stream = spec.lookup(PDFName.of('EF'), PDFDict).lookup(PDFName.of('F'));
+    if (!(stream instanceof PDFRawStream)) return undefined;
+    return new TextDecoder().decode(decodePDFRawStream(stream).decode());
+  }
+  return undefined;
 }

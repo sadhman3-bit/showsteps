@@ -23,6 +23,7 @@ const MIME: Record<Format, string> = {
   html: 'text/html',
   embed: 'text/html',
   trailmark: 'application/zip',
+  agentpack: 'application/zip',
 };
 
 const encode = (text: string) => new TextEncoder().encode(text);
@@ -45,6 +46,8 @@ export function fileNameFor(title: string, format: Format): string {
       return `${base}.embed.html`;
     case 'trailmark':
       return `${base}${ARCHIVE_EXTENSION}`;
+    case 'agentpack':
+      return `${base} (Agent Pack).zip`;
   }
 }
 
@@ -84,6 +87,8 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
         return encode(x.guideToHtml(data));
       case 'embed':
         return encode(x.guideToEmbedHtml(data));
+      case 'agentpack':
+        return x.guideToAgentPack(data);
     }
   }
 

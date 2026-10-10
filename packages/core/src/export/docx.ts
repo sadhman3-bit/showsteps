@@ -13,6 +13,8 @@ import {
   ShadingType,
   TextRun,
 } from 'docx';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { procedureJson, toProcedure } from '../agent/procedure.js';
 import { accentOf, fontOf } from '../branding.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
@@ -164,6 +166,14 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
     );
   }
 
+  // U3: one visible line; the procedure itself goes into a custom XML part (below).
+  children.push(
+    new Paragraph({
+      spacing: { before: 360 },
+      children: [new TextRun({ text: L.agentFooter, color: MUTED, size: 16 })],
+    }),
+  );
+
   // "Page {n} of {total}" with live page fields in place of the numbers.
   const pageParts = L.page(-1, -2)
     .split(/(-1|-2)/)
@@ -227,5 +237,61 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
       },
     ],
   });
-  return new Uint8Array(await Packer.toArrayBuffer(file));
+  return withProcedurePart(
+    new Uint8Array(await Packer.toArrayBuffer(file)),
+    procedureJson(toProcedure(input.guide)),
+  );
+}
+
+export const PROCEDURE_XML_NAMESPACE = 'urn:trailmark:procedure:v1';
+const CUSTOM_XML_REL =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml';
+const CUSTOM_PROPS_REL =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps';
+
+const xmlText = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/**
+ * Add `customXml/item1.xml` (the procedure JSON inside a `<procedure>` element), its
+ * properties part and the relationships, the standard place for data a document carries.
+ */
+export function withProcedurePart(docx: Uint8Array, json: string): Uint8Array {
+  const files = unzipSync(docx);
+  const id = '{6F1D3C1E-7A2B-4C55-9E21-54524C4D4B31}';
+  files['customXml/item1.xml'] = strToU8(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<procedure xmlns="${PROCEDURE_XML_NAMESPACE}" format="trailmark-procedure" schemaVersion="1">${xmlText(json)}</procedure>`,
+  );
+  files['customXml/itemProps1.xml'] = strToU8(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ds:datastoreItem ds:itemID="${id}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml"><ds:schemaRefs><ds:schemaRef ds:uri="${PROCEDURE_XML_NAMESPACE}"/></ds:schemaRefs></ds:datastoreItem>`,
+  );
+  files['customXml/_rels/item1.xml.rels'] = strToU8(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${CUSTOM_PROPS_REL}" Target="itemProps1.xml"/></Relationships>`,
+  );
+  const typesFile = files['[Content_Types].xml'];
+  const relsFile = files['word/_rels/document.xml.rels'];
+  if (!typesFile || !relsFile) return docx;
+  const types = strFromU8(typesFile);
+  files['[Content_Types].xml'] = strToU8(
+    types.replace(
+      '</Types>',
+      '<Override PartName="/customXml/itemProps1.xml" ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/></Types>',
+    ),
+  );
+  const relsPath = 'word/_rels/document.xml.rels';
+  const rels = strFromU8(relsFile);
+  files[relsPath] = strToU8(
+    rels.replace(
+      '</Relationships>',
+      `<Relationship Id="rIdTrailmarkProcedure" Type="${CUSTOM_XML_REL}" Target="../customXml/item1.xml"/></Relationships>`,
+    ),
+  );
+  return zipSync(files, { level: 6 });
+}
+
+/** The procedure JSON from a Word file made by Trailmark, if it has one. */
+export function procedureFromDocx(docx: Uint8Array): string | undefined {
+  const item = unzipSync(docx)['customXml/item1.xml'];
+  if (!item) return undefined;
+  const m = /<procedure[^>]*>([\s\S]*)<\/procedure>/.exec(strFromU8(item));
+  return m?.[1]?.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 }

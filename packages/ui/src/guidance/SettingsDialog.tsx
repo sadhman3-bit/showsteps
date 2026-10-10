@@ -1,6 +1,8 @@
+import type { InputMode } from '@trailmark/core';
 import { useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
+import { InputModeSelect } from '../components/InputModeSelect.js';
 import { strings } from '../strings.js';
 
 const s = strings.settings;
@@ -11,6 +13,8 @@ export interface UserSettings {
   aiEnabled: boolean;
   /** Extension only: connect to the desktop app. */
   desktopApp?: boolean;
+  /** How typed values in new guides are used (U4). */
+  defaultInputMode?: InputMode;
 }
 
 /** Settings shared by the extension and the desktop app (grows with later milestones). */
@@ -65,6 +69,16 @@ export function SettingsDialog<T extends UserSettings>({
           />{' '}
           {s.guidance}
         </label>
+        {draft.defaultInputMode ? (
+          <label class="tm-field">
+            {s.inputMode}
+            <InputModeSelect
+              value={draft.defaultInputMode}
+              onChange={(mode) => setDraft({ ...draft, defaultInputMode: mode })}
+            />
+            <small class="tm-muted">{s.inputModeHint}</small>
+          </label>
+        ) : null}
         {desktop ? (
           <label class="tm-check">
             <input

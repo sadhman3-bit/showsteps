@@ -4,6 +4,8 @@ export { strings } from './strings.js';
 export type { Strings } from './strings.js';
 export { Icon, type IconName } from './components/Icon.js';
 export { Dialog, PromptDialog, ConfirmDialog } from './components/Dialog.js';
+export { InputModeSelect } from './components/InputModeSelect.js';
+export { AgentView, expectationText } from './editor/AgentView.js';
 export { RichText } from './components/RichText.js';
 export { useImageUrl, usePreference, downloadBytes, safeFileName, mimeFor } from './hooks.js';
 export { relativeTime } from './time.js';

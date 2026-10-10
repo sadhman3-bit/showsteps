@@ -1,0 +1,267 @@
+import {
+  agentWarnings,
+  stepNumbers,
+  toPlainText,
+  updateStep,
+  type Expectation,
+  type Guide,
+  type Step,
+  type Target,
+} from '@trailmark/core';
+import { useState } from 'preact/hooks';
+import { Button } from '../Button.js';
+import { InputModeSelect } from '../components/InputModeSelect.js';
+import { strings } from '../strings.js';
+import { TextField } from './TextField.js';
+
+const a = strings.agent;
+const m = strings.inputMode;
+
+function targetText(t: Partial<Target>): string {
+  if (t.role && t.name) return `${t.role} “${t.name}”`;
+  if (t.uia?.controlType && t.uia.name) return a.desktopTarget(t.uia.controlType, t.uia.name);
+  return t.label ?? t.name ?? t.text ?? t.role ?? '';
+}
+
+export function expectationText(e: Expectation): string {
+  switch (e.type) {
+    case 'url':
+      return a.expectation.url(e.matches);
+    case 'visible':
+      return a.expectation.visible(targetText(e.target));
+    case 'hidden':
+      return a.expectation.hidden(targetText(e.target));
+    case 'text':
+      return a.expectation.text(e.contains);
+    case 'window':
+      return a.expectation.window(e.titleContains);
+  }
+}
+
+type Apply = (edit: (latest: Guide) => Guide, how?: 'push' | 'type') => void;
+
+/**
+ * U1: per step, what an agent reads (how to find the element, the value, the expected result,
+ * what happens on failure, whether a person confirms first) and what needs attention.
+ */
+export function AgentView(props: { guide: Guide; apply: Apply; onEndTyping: () => void }) {
+  const { guide } = props;
+  const warnings = agentWarnings(guide);
+  const numbers = stepNumbers(guide);
+  const editStep = (id: string, change: (s: Step) => Step, how: 'push' | 'type' = 'push') =>
+    props.apply((g) => updateStep(g, id, change), how);
+  return (
+    <div class="tm-page tm-agent">
+      <h2>{a.title}</h2>
+      <p class="tm-muted">{a.intro}</p>
+      <label class="tm-field tm-agent__mode">
+        {a.defaultMode}
+        <InputModeSelect
+          value={guide.settings.defaultInputMode}
+          onChange={(mode) =>
+            props.apply((g) => ({ ...g, settings: { ...g.settings, defaultInputMode: mode } }))
+          }
+        />
+      </label>
+      <section class="tm-agent__warnings" aria-label={a.warningsTitle(warnings.length)}>
+        {warnings.length ? (
+          <>
+            <h3>{a.warningsTitle(warnings.length)}</h3>
+            <ul>
+              {warnings.map((w) => (
+                <li key={`${w.stepId}-${w.kind}`}>
+                  <a href={`#agent-${w.stepId}`}>{a.warnings[w.kind]?.(w.number)}</a>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p role="status">{a.noWarnings}</p>
+        )}
+      </section>
+      <ol class="tm-agent__steps">
+        {guide.blocks.map((b) =>
+          b.kind === 'step' ? (
+            <AgentStep
+              key={b.id}
+              step={b}
+              number={numbers.get(b.id) ?? 0}
+              warnings={warnings.filter((w) => w.stepId === b.id).map((w) => w.kind)}
+              edit={(change, how) => editStep(b.id, change, how)}
+              onEndTyping={props.onEndTyping}
+            />
+          ) : null,
+        )}
+      </ol>
+    </div>
+  );
+}
+
+function AgentStep(props: {
+  step: Step;
+  number: number;
+  warnings: string[];
+  edit: (change: (s: Step) => Step, how?: 'push' | 'type') => void;
+  onEndTyping: () => void;
+}) {
+  const { step: s, number: n } = props;
+  const [adding, setAdding] = useState(false);
+  const [text, setText] = useState('');
+  const t = s.target;
+  const expect = s.agent.expect ?? [];
+  const setExpect = (next: Expectation[]) =>
+    props.edit((x) => {
+      const agent = { ...x.agent };
+      if (next.length) agent.expect = next;
+      else delete agent.expect;
+      return { ...x, agent };
+    });
+  const title = toPlainText(s.human.title);
+  return (
+    <li class="tm-agent__step" id={`agent-${s.id}`} aria-label={`${a.step(n)}: ${title}`}>
+      <h3>
+        <span class="tm-step__num">{n}</span> {title}
+        {s.agent.confirm ? <span class="tm-badge">{a.confirmShort}</span> : null}
+      </h3>
+      {props.warnings.map((w) => (
+        <p key={w} class="tm-agent__warning" role="note">
+          {a.warnings[w]?.(n)}
+        </p>
+      ))}
+      <dl class="tm-agent__facts">
+        <dt>{a.target}</dt>
+        <dd>
+          {t ? (
+            <>
+              <strong>{targetText(t) || '—'}</strong>
+              {t.frames?.length ? (
+                <span class="tm-muted"> · iframe {t.frames.join(' → ')}</span>
+              ) : null}
+              {t.shadowHosts?.length ? (
+                <span class="tm-muted"> · shadow {t.shadowHosts.join(' → ')}</span>
+              ) : null}
+              {t.selectors.length ? (
+                <details>
+                  <summary>{a.strategies}</summary>
+                  <ul class="tm-agent__selectors">
+                    {[...t.selectors]
+                      .sort((x, y) => y.score - x.score)
+                      .map((sel) => (
+                        <li key={`${sel.type}:${sel.value}`}>
+                          <code>{sel.type}</code> <code>{sel.value}</code>{' '}
+                          <span class="tm-muted">{Math.round(sel.score * 100)}%</span>
+                        </li>
+                      ))}
+                  </ul>
+                </details>
+              ) : null}
+            </>
+          ) : (
+            <span class="tm-muted">{a.noTarget}</span>
+          )}
+        </dd>
+        {s.input ? (
+          <>
+            <dt>{a.input}</dt>
+            <dd>
+              {s.input.sensitive
+                ? m.secret
+                : s.input.variable
+                  ? `${m.variable(s.input.variable)} · ${m[s.input.mode]}`
+                  : `“${s.input.value ?? ''}” · ${m.fixed}`}
+            </dd>
+          </>
+        ) : null}
+        <dt>{a.expect}</dt>
+        <dd>
+          {expect.length ? (
+            <ul class="tm-agent__expect">
+              {expect.map((e, i) => (
+                <li key={`${i}-${JSON.stringify(e)}`}>
+                  {expectationText(e)}{' '}
+                  <Button
+                    variant="ghost"
+                    aria-label={a.removeExpect(expectationText(e))}
+                    onClick={() => setExpect(expect.filter((_, k) => k !== i))}
+                  >
+                    ×
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span class="tm-muted">{a.noExpect}</span>
+          )}
+          {adding ? (
+            <form
+              class="tm-row"
+              onSubmit={(ev) => {
+                ev.preventDefault();
+                const contains = text.trim();
+                if (contains) setExpect([...expect, { type: 'text', contains }]);
+                setText('');
+                setAdding(false);
+              }}
+            >
+              <input
+                class="tm-input"
+                aria-label={a.addTextPrompt}
+                value={text}
+                onInput={(ev) => setText(ev.currentTarget.value)}
+              />
+              <Button type="submit">{a.addText}</Button>
+            </form>
+          ) : (
+            <Button variant="ghost" onClick={() => setAdding(true)}>
+              {a.addText}
+            </Button>
+          )}
+        </dd>
+        <dt>{a.onFailure}</dt>
+        <dd>
+          <TextField
+            class="tm-input"
+            aria-label={`${a.onFailure}: ${a.step(n)}`}
+            placeholder={a.onFailurePlaceholder}
+            value={s.agent.onFailure ?? ''}
+            onValue={(v) =>
+              props.edit((x) => {
+                const agent = { ...x.agent };
+                if (v) agent.onFailure = v;
+                else delete agent.onFailure;
+                return { ...x, agent };
+              }, 'type')
+            }
+            onDone={props.onEndTyping}
+          />
+        </dd>
+        <dt>{a.timeout}</dt>
+        <dd>
+          <input
+            class="tm-input tm-agent__timeout"
+            type="number"
+            min={1}
+            max={300}
+            aria-label={`${a.timeout}: ${a.step(n)}`}
+            value={Math.round(s.agent.timeoutMs / 1000)}
+            onChange={(ev) => {
+              const seconds = Math.min(300, Math.max(1, Number(ev.currentTarget.value) || 10));
+              props.edit((x) => ({ ...x, agent: { ...x.agent, timeoutMs: seconds * 1000 } }));
+            }}
+          />
+        </dd>
+      </dl>
+      <label class="tm-check">
+        <input
+          type="checkbox"
+          checked={s.agent.confirm}
+          onChange={(ev) => {
+            const confirm = ev.currentTarget.checked;
+            props.edit((x) => ({ ...x, agent: { ...x.agent, confirm } }));
+          }}
+        />{' '}
+        {a.confirm}
+      </label>
+    </li>
+  );
+}

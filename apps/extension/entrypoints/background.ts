@@ -331,6 +331,7 @@ export default defineBackground(() => {
       ...(msg.guideId ? { guideId: msg.guideId } : {}),
       ...(msg.insertAt !== undefined ? { insertAt: msg.insertAt } : {}),
       ...(viewport ? { viewport } : {}),
+      defaultInputMode: (await readSettings()).defaultInputMode,
     });
     await registerScripts();
     await injectInto(msg.tabId);
@@ -378,8 +379,12 @@ export default defineBackground(() => {
             },
             msg.event,
             msg.shotId,
+            msg.observeId,
           )
           .catch((error: unknown) => console.error('Trailmark: could not record step', error));
+        return { ok: true };
+      case 'observed':
+        void recorder.observed(msg.observeId, msg.expect);
         return { ok: true };
       case 'control':
         return { state: await recorder.control(msg.action) };
@@ -627,6 +632,7 @@ export default defineBackground(() => {
       d.transitionQualifiers.includes('forward_back') ||
       d.transitionQualifiers.includes('from_address_bar');
     if (direct) pendingNav.add(d.tabId);
+    else void recorder.pageChanged(d.tabId, d.url);
   });
 
   browser.webNavigation.onCompleted.addListener((d) => {

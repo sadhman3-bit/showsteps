@@ -58,7 +58,9 @@ export interface PersistedGuidance {
 }
 
 /** Pause between Run for me steps, and how long the cursor takes to travel. */
-export const SPEED_DELAY: Record<Speed, number> = { slow: 1400, normal: 700, fast: 250 };
+export const CHECK_ATTEMPTS = 4;
+const CHECK_RETRY_MS = 750;
+const SPEED_DELAY: Record<Speed, number> = { slow: 1400, normal: 700, fast: 250 };
 const PAGE_LOAD_TIMEOUT = 15_000;
 const RETRY_MS = 250;
 
@@ -378,14 +380,20 @@ export class Guidance {
     await this.deps.waitLoaded(tabId, PAGE_LOAD_TIMEOUT);
     if (seq !== this.seq) return;
     if (step.agent.expect?.length) {
-      const reply = await this.deliver(
-        seq,
-        { ...step, app: { kind: 'web', url: step.app.kind === 'web' ? step.app.url : '' } },
-        { type: 'guide-check', step },
-        CheckReplySchema,
-        5000,
-      );
-      if (seq !== this.seq) return;
+      // Results can take a moment to appear (a dialog animating in, a message after a save).
+      let reply: { failed: string[] } | undefined;
+      for (let attempt = 0; attempt < CHECK_ATTEMPTS; attempt++) {
+        if (attempt) await this.deps.sleep(CHECK_RETRY_MS);
+        reply = await this.deliver(
+          seq,
+          { ...step, app: { kind: 'web', url: step.app.kind === 'web' ? step.app.url : '' } },
+          { type: 'guide-check', step },
+          CheckReplySchema,
+          5000,
+        );
+        if (seq !== this.seq) return;
+        if (!reply?.failed.length) break;
+      }
       if (reply?.failed.length) {
         this.set({ phase: 'failed', reason: `expect:${reply.failed.join(', ')}` });
         return;

@@ -73,7 +73,12 @@ describe('HTML (X4, X5, X6)', () => {
   });
 
   it('page is self-contained, script-free and escapes guide text', () => {
-    const html = guideToHtml(fixtureInput());
+    const page = guideToHtml(fixtureInput());
+    // The one script element is the procedure's JSON data block (U3), which never runs.
+    const html = page.replace(
+      /<script type="application\/json" id="trailmark-procedure">[^<]*(?:<(?!\/script>)[^<]*)*<\/script>/,
+      '',
+    );
     expect(html).not.toMatch(/<script|src="(?!data:)|href="(?!#|https:\/\/example\.com)/);
     expect(html).toContain("default-src 'none'");
     expect(html).toContain('<title>Pay a supplier &lt;invoice&gt; &amp; file it</title>');

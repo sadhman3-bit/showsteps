@@ -5,6 +5,7 @@ import {
   GuideEditor,
   GuideView,
   Icon,
+  InputModeSelect,
   Insights,
   Library,
   PrintView,
@@ -310,6 +311,7 @@ function DesktopSettings({
                 userName: draft.userName.trim() || value.userName,
                 guidanceEnabled: draft.guidanceEnabled,
                 aiEnabled: draft.aiEnabled,
+                defaultInputMode: draft.defaultInputMode,
                 libraryPath: draft.libraryPath,
                 sharedPath: draft.sharedPath,
                 ...(draft.sharedPath ? {} : { active: 'personal' as const }),
@@ -348,6 +350,14 @@ function DesktopSettings({
             ) : null}
           </div>
         </div>
+        <label class="tm-field">
+          {s.inputMode}
+          <InputModeSelect
+            value={draft.defaultInputMode}
+            onChange={(mode) => setDraft({ ...draft, defaultInputMode: mode })}
+          />
+          <small class="tm-muted">{s.inputModeHint}</small>
+        </label>
         <label class="tm-check">
           <input
             type="checkbox"

@@ -11,3 +11,4 @@ playwright-report/
 Thumbs.db
 .env
 .env.*
+e2e/.replay/

@@ -3,6 +3,7 @@ import {
   attachScreenshot,
   createGuide,
   isRemoteProcess,
+  expectationsFrom,
   nowIso,
   scalePageText,
   serializePageText,
@@ -10,7 +11,9 @@ import {
   type AppContext,
   type CaptureEvent,
   type Guide,
+  type Expectation,
   type GuideStore,
+  type InputMode,
   type PageText,
   type ShotInfo,
   type Step,
@@ -87,6 +90,8 @@ export interface EventSender {
 const PENDING_SHOT_TTL_MS = 30_000;
 /** How long an event waits for a screenshot request that its page said is on the way. */
 const SHOT_ARRIVAL_WAIT_MS = 500;
+/** A new page this soon after a step's action is that action's result (U6). */
+const PAGE_CHANGE_WINDOW_MS = 3000;
 
 /**
  * The background's capture engine: turns content-script events into saved steps with
@@ -100,6 +105,9 @@ export class Recorder {
   private isNew = false;
   private lastShot: (ShotInfo & { stepId: string }) | undefined;
   private readonly pending = new Map<string, { shot: Promise<PendingShot>; at: number }>();
+  /** Steps waiting for the page to say what their action changed (observe id → step id). */
+  private readonly observing = new Map<string, string>();
+  private lastActed: { tabId: number; stepId: string; at: number } | undefined;
   /** Events that arrived before their screenshot request, waiting for it (shot id → wake-up). */
   private readonly waiting = new Map<string, () => void>();
   private readonly viewports = new Map<number, Viewport>();
@@ -142,6 +150,8 @@ export class Recorder {
     guideId?: string;
     insertAt?: number;
     viewport?: Viewport;
+    /** For a new guide: how typed values are used (U4). */
+    defaultInputMode?: InputMode;
   }): Promise<CaptureState> {
     return this.serial(async () => {
       if (this.isActive) return this.current;
@@ -151,14 +161,17 @@ export class Recorder {
         if (!guide) throw new Error('That guide no longer exists.');
         this.isNew = false;
       } else {
-        guide = createGuide({ title: opts.title?.trim() || hostOf(opts.url) || 'New guide' });
+        guide = createGuide({
+          title: opts.title?.trim() || hostOf(opts.url) || 'New guide',
+          settings: { defaultInputMode: opts.defaultInputMode ?? 'fixed' },
+        });
         if (this.deps.user) guide.author = this.deps.user;
         this.isNew = true;
       }
       this.guide = guide;
       this.base = guide.blocks;
       const insertAt = opts.guideId ? opts.insertAt : undefined;
-      this.session = new CaptureSession(insertAt);
+      this.session = new CaptureSession(insertAt, guide.settings.defaultInputMode);
       this.lastShot = undefined;
       this.pending.clear();
       this.tabs.clear();
@@ -267,6 +280,8 @@ export class Recorder {
     this.base = [];
     this.lastShot = undefined;
     this.pending.clear();
+    this.observing.clear();
+    this.lastActed = undefined;
     this.tabs.clear();
   }
 
@@ -334,15 +349,54 @@ export class Recorder {
     });
   }
 
-  event(sender: EventSender, ev: ContentEvent, shotId?: string): Promise<void> {
+  event(sender: EventSender, ev: ContentEvent, shotId?: string, observeId?: string): Promise<void> {
     return this.serial(async () => {
       if (this.state.status !== 'recording') return;
       const entry = shotId ? await this.pendingShot(shotId) : undefined;
       if (shotId) this.pending.delete(shotId);
       const shot = entry ? await entry.shot : undefined;
-      await this.applyContentEvent(sender, ev, shot);
+      const step = await this.applyContentEvent(sender, ev, shot);
+      if (step && observeId) {
+        this.observing.set(observeId, step.id);
+        this.lastActed = { tabId: sender.tabId, stepId: step.id, at: Date.now() };
+      }
       await this.save();
       this.publish();
+    });
+  }
+
+  /** U6: what changed on the page after a step's action (sent by the page ~800 ms later). */
+  observed(observeId: string, expect: Expectation[]): Promise<void> {
+    return this.serial(async () => {
+      const stepId = this.observing.get(observeId);
+      this.observing.delete(observeId);
+      const step = this.session?.steps.find((s) => s.id === stepId);
+      if (!step || !expect.length) return;
+      const known = new Set((step.agent.expect ?? []).map((e) => JSON.stringify(e)));
+      const add = expect.filter((e) => !known.has(JSON.stringify(e)));
+      if (!add.length) return;
+      step.agent.expect = [...(step.agent.expect ?? []), ...add].slice(0, 3);
+      await this.save();
+    });
+  }
+
+  /**
+   * A page in a recorded tab was replaced by a link or form shortly after a step: the new
+   * address is that step's expected result (the old page could not report it).
+   */
+  pageChanged(tabId: number, url: string): Promise<void> {
+    return this.serial(async () => {
+      const last = this.lastActed;
+      if (!last || last.tabId !== tabId || Date.now() - last.at > PAGE_CHANGE_WINDOW_MS) return;
+      const step = this.session?.steps.find((s) => s.id === last.stepId);
+      if (!step || step.agent.expect?.some((e) => e.type === 'url')) return;
+      const after = expectationsFrom(
+        { url: step.app.kind === 'web' ? step.app.url : '', landmarks: [], messages: [] },
+        { url, landmarks: [], messages: [] },
+      );
+      if (!after.length) return;
+      step.agent.expect = [...after, ...(step.agent.expect ?? [])].slice(0, 3);
+      await this.save();
     });
   }
 
@@ -366,16 +420,16 @@ export class Recorder {
     sender: EventSender,
     ev: ContentEvent,
     shot: PendingShot | undefined,
-  ): Promise<void> {
+  ): Promise<Step | undefined> {
     const mapped = await this.mapToTop(sender, ev);
-    if (!mapped) return;
+    if (!mapped) return undefined;
     const app: AppContext = webApp(
       sender.tabUrl,
       sender.tabTitle,
       sender.frameId !== 0 ? sender.frameUrl : undefined,
     );
     const captureEvent = { ...mapped, app, at: nowIso(), tabId: sender.tabId } as CaptureEvent;
-    await this.applyEvent(captureEvent, shot);
+    return this.applyEvent(captureEvent, shot);
   }
 
   /** A navigation the user made directly (address bar, back/forward). */
@@ -457,12 +511,16 @@ export class Recorder {
     };
   }
 
-  private async applyEvent(ev: CaptureEvent, shot: PendingShot | undefined): Promise<void> {
-    if (!this.session || !this.guide) return;
+  private async applyEvent(
+    ev: CaptureEvent,
+    shot: PendingShot | undefined,
+  ): Promise<Step | undefined> {
+    if (!this.session || !this.guide) return undefined;
     const result = this.session.apply(ev);
     for (const removed of result.removed) await this.deleteStepImages([removed]);
     if (result.wantsShot) await this.attachShot(result.step, shot);
     this.state.stepCount = this.session.count;
+    return result.step;
   }
 
   private async attachShot(step: Step, shot: PendingShot | undefined): Promise<void> {
@@ -569,7 +627,7 @@ export class Recorder {
       const steps = guide.blocks.filter((b): b is Step => b.kind === 'step' && added.has(b.id));
       this.guide = guide;
       this.base = guide.blocks.filter((b) => !added.has(b.id));
-      this.session = CaptureSession.restore(steps, data.insertAt);
+      this.session = CaptureSession.restore(steps, data.insertAt, guide.settings.defaultInputMode);
       this.isNew = data.isNew;
       this.lastShot = data.lastShot;
       this.state = { ...data.state, stepCount: steps.length };

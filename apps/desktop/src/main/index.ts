@@ -129,7 +129,11 @@ async function startCapture(): Promise<void> {
     await recorder.start(new ExtensionSink(bridge), true);
     return;
   }
-  const sink = new LibrarySink(activeStore(), `Desktop process ${new Date().toLocaleString()}`);
+  const sink = new LibrarySink(
+    activeStore(),
+    `Desktop process ${new Date().toLocaleString()}`,
+    settings.defaultInputMode,
+  );
   await recorder.start(sink, false);
 }
 

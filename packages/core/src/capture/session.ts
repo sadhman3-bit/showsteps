@@ -1,6 +1,7 @@
+import { needsConfirm } from '../agent/confirm.js';
 import { createStep } from '../factory.js';
 import { actionBoxFor, autoCrop } from '../geometry.js';
-import type { AppContext, Guide, Step, Target } from '../schema.js';
+import type { AppContext, Guide, InputMode, Step, Target } from '../schema.js';
 import { writeStepTitle } from '../stepText.js';
 
 /** Identity of the element an event happened on, stable within one page (frame token + counter). */
@@ -61,6 +62,8 @@ export class CaptureSession {
   constructor(
     /** Index in the guide's blocks where new steps go (end of guide if omitted). */
     readonly insertAt?: number,
+    /** How new typed values are used (U4): the guide's default. */
+    readonly defaultInputMode: InputMode = 'fixed',
   ) {}
 
   /**
@@ -68,8 +71,12 @@ export class CaptureSession {
    * browser mid-recording). Element identities are not restored, so the next event never merges
    * into a restored step.
    */
-  static restore(steps: readonly Step[], insertAt?: number): CaptureSession {
-    const session = new CaptureSession(insertAt);
+  static restore(
+    steps: readonly Step[],
+    insertAt?: number,
+    defaultInputMode: InputMode = 'fixed',
+  ): CaptureSession {
+    const session = new CaptureSession(insertAt, defaultInputMode);
     for (const step of steps) {
       session.added.push(step);
       session.keys.set(step.id, undefined);
@@ -95,6 +102,8 @@ export class CaptureSession {
   }
 
   private add(step: Step, element: ElementKey | undefined): ApplyResult {
+    // U5: a control whose name means something irreversible asks before it is done.
+    if (needsConfirm(step)) step.agent.confirm = true;
     step.human.title = writeStepTitle(step);
     this.added.push(step);
     this.keys.set(step.id, element);
@@ -175,7 +184,7 @@ export class CaptureSession {
         const input = ev.sensitive
           ? { mode: 'fixed' as const, sensitive: true }
           : {
-              mode: 'fixed' as const,
+              mode: this.defaultInputMode,
               sensitive: false,
               ...(ev.value !== undefined ? { value: ev.value } : {}),
             };
