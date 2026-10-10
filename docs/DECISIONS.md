@@ -55,3 +55,21 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Controller** uses an open shadow root (tests can reach it; styles stay isolated) and plain DOM rather than Preact, to keep the content script small.
 - **Extension icon:** an original design (dotted trail to a map pin on a teal tile), rendered from `apps/extension/assets/icon.svg` by `pnpm make:icons`.
 - **e2e workers:** 2 locally, 1 on CI; recording tests take real screenshots, and parallel browsers on small machines skew timing.
+
+## M3
+
+- **Editing operations** live in `core` (`editor/ops.ts`, `editor/image.ts`) as pure functions, shared by both apps; undo/redo is a generic `History` of immutable guide snapshots (100 steps).
+- **Opening a guide** goes to the editor (`#/guide/<id>`); the reader is at `#/guide/<id>/view`, and step links are `#/guide/<id>/step/<stepId>`.
+- **Image edits are non-destructive:** crop, magnify, highlight box, blurs and annotations are metadata over the stored screenshot. The first edit keeps the captured screenshot in `human.original` (one schema addition) so "Reset to original" works. Exports (M4) burn blurs into the pixels.
+- **Blurs** render as a Gaussian-blurred copy of the image clipped to each region (SVG), strength ≈ image width / 90.
+- **Magnify** in the image editor always crops to the chosen zoom (1.25×–4×) centred on the highlight, unlike the auto-crop at capture time, which skips large targets.
+- **Re-capture** keeps blurs (they protect data) but clears the highlight box and annotations, whose positions belonged to the old picture.
+- **Merge** joins titles as "A, then b" and keeps the first step's action, target and screenshot. **Split** cuts the title at a word boundary near the middle; the second part becomes a manual step sharing the screenshot.
+- **Autosave** 0.6 s after the last change; a version is kept on the first save of a session, at most every 2 minutes after that, when leaving the editor, and before restoring a version.
+- **Text fields own their content while focused** (rich-text and plain), and all edits apply to the latest guide, so fast typing never loses characters or resets the caret.
+- **Keyboard and paste** are handled on the document while the editor is open, so shortcuts work wherever focus is.
+- **Compact view** hides screenshots and descriptions so long guides can be reordered by dragging; Alt+↑/↓ and Move up/down also reorder.
+- **Branding fonts** are system fonts only (Segoe UI, Calibri, Arial, Verdana, Georgia, Cambria): nothing is downloaded. The logo is stored as a guide image.
+- **Rich text** pastes as plain text; links are limited to http(s) and mailto; rendered HTML goes through DOMPurify with a strict allow-list.
+- **Screenshot timing (revised):** the page hides the toolbar, waits two frames, then asks for the screenshot, sending the input time. `captureVisibleTab` takes 50–80 ms (up to ~350 ms under load), so if the tab committed a new page after the input, the capture is discarded and the step reuses the previous screenshot (same page, moments earlier). Tests check both that the sign-in step shows the sign-in page and that the toolbar is never in a screenshot.
+- **Sample guides** are recorded from the demo app by `pnpm make:samples` and committed as `apps/extension/public/samples/*.trailmark`; they are imported on first install, and from the empty library on request. Test profiles skip the automatic import.

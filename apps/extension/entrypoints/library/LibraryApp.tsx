@@ -8,6 +8,7 @@ import {
   writeCaptureMore,
   writeRecapture,
 } from '../../lib/client';
+import { installSamples } from '../../lib/samples';
 
 type Route =
   | { page: 'library' }
@@ -92,6 +93,7 @@ export function LibraryApp() {
       store={store}
       refreshKey={libraryVersion}
       onOpen={(id) => go(`#/guide/${encodeURIComponent(id)}`)}
+      onAddSamples={() => installSamples(store)}
     />
   );
 }

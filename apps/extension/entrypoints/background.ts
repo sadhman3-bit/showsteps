@@ -13,6 +13,7 @@ import {
 } from '../lib/messages';
 import { Recorder, type EventSender, type PersistedRecorder, type Viewport } from '../lib/recorder';
 import { recaptureStep } from '../lib/recapture';
+import { installSamples } from '../lib/samples';
 import { encodeScreenshot } from '../lib/shots';
 
 const SCRIPT_ID = 'trailmark-capture';
@@ -94,6 +95,14 @@ export default defineBackground(() => {
       r[PERSIST_KEY] ? recorder.restore(r[PERSIST_KEY] as PersistedRecorder) : undefined,
     )
     .catch(() => undefined);
+
+  // First install: add the sample guides so the library is not empty. (Test profiles skip
+  // this so tests start from an empty library; they call installSamples through the hook.)
+  browser.runtime.onInstalled.addListener(({ reason }) => {
+    if (reason === 'install' && import.meta.env.MODE !== 'e2e') {
+      void installSamples(store).then(() => broadcast({ type: 'library-changed' }));
+    }
+  });
 
   browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error: unknown) => {
     console.error('Trailmark: could not set side panel behaviour', error);
@@ -359,6 +368,8 @@ export default defineBackground(() => {
 
   if (import.meta.env.MODE === 'e2e') {
     // Test hook for Playwright, compiled out of normal builds.
-    Object.assign(globalThis, { __trailmark: { recorder, store, startCapture } });
+    Object.assign(globalThis, {
+      __trailmark: { recorder, store, startCapture, installSamples: () => installSamples(store) },
+    });
   }
 });

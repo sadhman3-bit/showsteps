@@ -74,6 +74,7 @@ export const strings = {
     importDone: 'Guide imported.',
     importFailed: (reason: string) => `Could not import: ${reason}`,
     empty: 'No guides here yet.',
+    addSamples: 'Add the sample guides',
     emptySearch: 'No guides match your search.',
     emptyTrash: 'The Trash is empty.',
     steps: (n: number) => (n === 1 ? '1 step' : `${n} steps`),

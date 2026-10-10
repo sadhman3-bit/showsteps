@@ -24,6 +24,8 @@ export interface LibraryProps {
   onOpen: (guideId: string) => void;
   /** Bumped by the host when guides change elsewhere (e.g. a capture finished). */
   refreshKey?: number;
+  /** Offered when the library is empty: add the bundled sample guides. */
+  onAddSamples?: () => Promise<unknown>;
 }
 
 type Modal =
@@ -36,7 +38,7 @@ type Modal =
   | { kind: 'delete-folder'; folder: Folder };
 
 /** The guide library: folders, search, filters, grid/list, Trash, import and export. */
-export function Library({ store, onOpen, refreshKey }: LibraryProps) {
+export function Library({ store, onOpen, refreshKey, onAddSamples }: LibraryProps) {
   const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -300,6 +302,9 @@ export function Library({ store, onOpen, refreshKey }: LibraryProps) {
 
         {loaded && shown.length === 0 ? (
           <p class="tm-empty">{inTrash ? s.emptyTrash : text ? s.emptySearch : s.empty}</p>
+        ) : null}
+        {loaded && onAddSamples && !guides.some((g) => !g.trashedAt) && !inTrash ? (
+          <Button onClick={() => void act(onAddSamples)}>{s.addSamples}</Button>
         ) : null}
 
         <ul class={view === 'grid' ? 'tm-cards' : 'tm-rows'} aria-label={s.title}>

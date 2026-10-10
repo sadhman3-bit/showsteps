@@ -19,16 +19,16 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 
 ### Editor
 
-- [ ] E1 Edit guide title and description; step title (bold, italic, link), description and alt text.
-- [ ] E2 Step list: drag to reorder, multi-select, delete several, duplicate, insert blank step, insert heading, insert callout (Tip, Note, Warning, Alert), merge two steps, split a step.
-- [ ] E3 Headings act as sections and drag like steps.
-- [ ] E4 Image editor: crop, magnify toggle and zoom level, move and resize the Action Box, blur rectangles, bulk blur (apply a region to several screenshots at once), annotations (arrow, rectangle, ellipse, text, freehand pen, numbered badge), colour picker, undo and redo, replace image (upload, paste or re-capture), reset to original.
-- [ ] E5 Image-only steps from upload or clipboard paste.
-- [ ] E6 Keyboard: Tab through steps, Ctrl+Z / Ctrl+Y, Delete, Ctrl+D duplicate, Ctrl+Enter new step, `?` shows a shortcut sheet.
-- [ ] E7 Preview mode showing exactly what a reader sees, with copy-link-to-step (deep link in the library; anchor in exported HTML).
-- [ ] E8 Branding: logo, accent colour and font, applied to viewer and exports.
-- [ ] E9 Autosave and version history: keep the last 50 versions per guide, view and restore any.
-- [ ] E10 Two sample guides ship with the app, built from the demo app.
+- [x] E1 Edit guide title and description; step title (bold, italic, link), description and alt text. _Tests: e2e/editor.spec.ts (titles, bold, descriptions), e2e/library.spec.ts; alt text MT-M3-3._
+- [x] E2 Step list: drag to reorder, multi-select, delete several, duplicate, insert blank step, insert heading, insert callout (Tip, Note, Warning, Alert), merge two steps, split a step. _Tests: e2e/editor.spec.ts (drag, multi-select, duplicate, delete, insert, merge, split), core test/editor.test.ts._
+- [x] E3 Headings act as sections and drag like steps. _Tests: e2e/editor.spec.ts (heading drag), core test/editor.test.ts (sections)._
+- [x] E4 Image editor: crop, magnify toggle and zoom level, move and resize the Action Box, blur rectangles, bulk blur (apply a region to several screenshots at once), annotations (arrow, rectangle, ellipse, text, freehand pen, numbered badge), colour picker, undo and redo, replace image (upload, paste or re-capture), reset to original. _Tests: e2e/editor.spec.ts (blur, bulk blur, annotations, colour, magnify, undo, delete, reset); MT-M3-1 (replace, paste, re-capture)._
+- [x] E5 Image-only steps from upload or clipboard paste. _Tests: e2e/editor.spec.ts (upload); MT-M3-2 (paste)._
+- [x] E6 Keyboard: Tab through steps, Ctrl+Z / Ctrl+Y, Delete, Ctrl+D duplicate, Ctrl+Enter new step, `?` shows a shortcut sheet. _Tests: e2e/editor.spec.ts (Ctrl+Z/Y, Ctrl+Enter, ?), MT-M3-3._
+- [x] E7 Preview mode showing exactly what a reader sees, with copy-link-to-step (deep link in the library; anchor in exported HTML). _Tests: e2e/editor.spec.ts (preview, copy link, deep link)._
+- [x] E8 Branding: logo, accent colour and font, applied to viewer and exports. _Tests: e2e/editor.spec.ts (accent, font); MT-M3-4 (logo)._
+- [x] E9 Autosave and version history: keep the last 50 versions per guide, view and restore any. _Tests: e2e/editor.spec.ts (autosave, view and restore a version), core test/storage.test.ts (50 versions)._
+- [x] E10 Two sample guides ship with the app, built from the demo app. _Tests: e2e/library.spec.ts (sample guides)._
 - [ ] E11 Secure Blur equivalent: one click finds and blurs sensitive data in all screenshots. Web steps use DOM text positions saved at capture; desktop and image steps use OCR (M8). Detect emails, phone numbers, card numbers (Luhn check), Australian BSB and account numbers, TFN, ABN, IBAN, and optionally dollar amounts and personal names from a user list. Always show a review screen before applying.
 
 ### Library (local workspace)

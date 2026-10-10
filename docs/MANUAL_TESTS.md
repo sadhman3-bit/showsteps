@@ -99,3 +99,36 @@ Record a short, safe process in SharePoint, Redmap and Pronto Xi (for example: o
 3. Back on the page, click two more things, then **Finish**.
 
 **Expected:** the guide has all the steps.
+
+---
+
+## M3
+
+Open a guide from the library (it opens in the editor).
+
+### MT-M3-1 Replace, paste and re-capture a screenshot
+
+1. Click a step's screenshot to open the image editor. Click **Replace image…** and choose any picture: it replaces the screenshot.
+2. Copy part of your screen (Win+Shift+S), then click **Paste image**: the clipboard picture replaces it.
+3. Click **Re-capture**. The side panel opens with "Re-capture step N…". Switch to a website tab and click **Capture screen**: the step's picture becomes that tab.
+4. Open the image editor again and click **Reset to original**: the captured screenshot comes back.
+
+### MT-M3-2 Paste a screenshot as a new step
+
+Copy a screenshot (Win+Shift+S), click an empty part of the editor and press **Ctrl+V**. **Expected:** a new step with that picture appears after the step you last clicked in.
+
+### MT-M3-3 Keyboard only
+
+Without the mouse: Tab through the page; in a step title press **Ctrl+B**; press **Ctrl+Enter** for a new step; Tab to a step card and press **Delete**; press **Ctrl+Z** to bring it back; press **?** for the shortcut list; open **Alt text** on a step and type a description. **Expected:** everything works and the focused element always has a visible orange outline.
+
+### MT-M3-4 Branding with a logo
+
+Click **Branding**, choose a logo image, an accent colour and a font, then click **Preview**. **Expected:** the logo shows above the title; step numbers and the highlight use the accent colour; text uses the font.
+
+### MT-M3-5 Versions over time
+
+Edit a guide for a few minutes (a version is kept at most every 2 minutes and when you leave the editor), then open **Version history**. **Expected:** several versions with times; **View** shows the old guide; **Restore** brings it back and keeps your current guide as a version.
+
+### MT-M3-6 Sample guides on first install
+
+Remove Trailmark from `chrome://extensions`, then Load unpacked again and open the library. **Expected:** two sample guides are there ("Create a supplier invoice in Ledgerline" and "Run a monthly report in Ledgerline").

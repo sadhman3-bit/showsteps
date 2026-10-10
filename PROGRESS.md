@@ -7,7 +7,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M0** Monorepo scaffold, tooling, docs, demo app, CI
 - [x] **M1** `core`: schema and migrations, step-text writer, target descriptors, matching engine, storage interfaces, IndexedDB and Folder adapters
 - [x] **M2** Extension capture C1–C7, C9; side panel; library L1–L2
-- [ ] **M3** Editor E1–E10 and image editor
+- [x] **M3** Editor E1–E10 and image editor
 - [ ] **M4** Exports X1–X8, viewer
 - [ ] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
 - [ ] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
@@ -53,6 +53,17 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] Extension icon
 
 **Acceptance:** `e2e/capture.spec.ts` records the demo "create invoice" flow (20 steps across 2 pages, a cross-origin and a same-origin iframe, shadow DOM and the dialog). It checks every title, screenshot, Action Box and frame chain, that the password is stored nowhere, and that the dialog-opening click's screenshot was taken before the dialog appeared. 13 e2e tests in total, stable across 3 repeated runs; 151 unit tests.
+
+## M3 detail (done 2026-10-10)
+
+- [x] Core editing operations (move, delete, duplicate, insert, merge, split, sections) and undo history
+- [x] Guide editor: rich titles and descriptions, alt text, drag to reorder (with compact view), multi-select, headings, callouts, image steps (upload and paste), keyboard shortcuts with a shortcut sheet
+- [x] Image editor: highlight box, crop, magnify and zoom, blur, bulk blur, arrow, rectangle, ellipse, text, pen, numbered badge, colours, undo/redo, replace, paste, re-capture, reset to original
+- [x] Autosave and version history (view, restore); branding (logo, accent, font); preview with copy-link-to-step and deep links
+- [x] Two sample guides built from the demo app, installed on first run
+- [x] Capture fix found while testing: screenshots finished after the page was replaced are discarded and the previous screenshot is reused; the toolbar is reliably hidden
+
+**Acceptance:** `e2e/editor.spec.ts` reorders by drag, inserts a heading and a callout, blurs, annotates, undoes and redoes, and restores a version, plus multi-select, merge, split, keyboard shortcuts, autosave across reload, bulk blur, reset, branding, preview, step links and image-only steps. Stable across 3 repeated runs. 18 e2e tests in total; 164 unit tests.
 
 ## Waiting on the owner
 

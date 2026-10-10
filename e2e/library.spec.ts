@@ -178,3 +178,32 @@ test('side panel shows Start, recent guides and the capture-more hand-over', asy
   await panel.getByRole('button', { name: 'Add to a new guide instead' }).click();
   await expect(panel.getByText('Adding steps to', { exact: false })).toHaveCount(0);
 });
+
+test('sample guides (E10): added from an empty library, with sections, tips and screenshots', async ({
+  context,
+  extensionId,
+}) => {
+  const lib = await context.newPage();
+  await lib.goto(`chrome-extension://${extensionId}/library.html`);
+  await expect(lib.getByText('No guides here yet.')).toBeVisible();
+  await lib.getByRole('button', { name: 'Add the sample guides' }).click();
+  const list = lib.getByRole('list', { name: 'Library' });
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+  await expect(list).toContainText('Create a supplier invoice in Ledgerline');
+  await expect(list).toContainText('Run a monthly report in Ledgerline');
+  await expect(lib.getByRole('button', { name: 'Add the sample guides' })).toHaveCount(0);
+
+  await list.getByRole('button', { name: 'Create a supplier invoice in Ledgerline' }).click();
+  await lib.getByRole('button', { name: 'Preview' }).click();
+  const reader = lib.locator('.tm-reader');
+  await expect(reader.getByRole('heading', { level: 2 })).toHaveText([
+    'Sign in',
+    'Enter the invoice',
+    'Send for approval',
+  ]);
+  await expect(reader.locator('.tm-callout--warning')).toContainText('cannot be undone');
+  await expect(reader.locator('.tm-step')).toHaveCount(17);
+  await expect(reader.locator('.tm-step').last()).toContainText('Click Submit invoice');
+  await expect(reader.locator('.tm-step svg[role="img"]')).toHaveCount(17);
+  await lib.screenshot({ path: test.info().outputPath('sample-invoice.png'), fullPage: true });
+});
