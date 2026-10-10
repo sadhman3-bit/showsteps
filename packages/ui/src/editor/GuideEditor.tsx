@@ -1,6 +1,7 @@
 import {
   History,
   applyBlurToSteps,
+  applySecureBlur,
   deleteBlocks,
   duplicateBlocks,
   insertBlankStep,
@@ -36,6 +37,7 @@ import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs
 import { ImageEditor } from './ImageEditor.js';
 import { clipboardImage, encodeImage } from './imageio.js';
 import { RichTextField } from './RichTextField.js';
+import { SecureBlurDialog } from './SecureBlurDialog.js';
 import { TextField } from './TextField.js';
 
 const e = strings.editor;
@@ -63,7 +65,7 @@ export interface GuideEditorProps {
 }
 
 type SaveState = 'saved' | 'saving' | 'failed';
-type Modal = 'versions' | 'branding' | 'shortcuts' | 'share' | null;
+type Modal = 'versions' | 'branding' | 'shortcuts' | 'share' | 'secureBlur' | null;
 
 /** Same guide content, ignoring save bookkeeping (updatedAt, updatedBy). */
 function sameContent(a: Guide, b: Guide): boolean {
@@ -461,6 +463,7 @@ export function GuideEditor({
         ) : null}
         <Button onClick={() => setModal('versions')}>{e.versions}</Button>
         <Button onClick={() => setModal('share')}>{strings.share.button}</Button>
+        <Button onClick={() => setModal('secureBlur')}>{strings.secureBlur.button}</Button>
         {readOnlyToggle ? (
           <label class="tm-check" title={strings.readOnly.markHint}>
             <input
@@ -736,6 +739,17 @@ export function GuideEditor({
         />
       ) : null}
       {modal === 'shortcuts' ? <ShortcutsDialog onClose={() => setModal(null)} /> : null}
+      {modal === 'secureBlur' ? (
+        <SecureBlurDialog
+          store={store}
+          guide={guide}
+          onClose={() => setModal(null)}
+          onApply={(blurs) => {
+            setModal(null);
+            apply((g) => applySecureBlur(g, blurs));
+          }}
+        />
+      ) : null}
       {modal === 'share' ? (
         <ShareDialog
           store={store}

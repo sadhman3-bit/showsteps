@@ -15,7 +15,7 @@ if (process.platform !== 'win32') {
   process.exit(0);
 }
 
-const fw = join(process.env.WINDIR ?? 'C:\Windows', 'Microsoft.NET', 'Framework64', 'v4.0.30319');
+const fw = join(process.env.WINDIR ?? 'C:\\Windows', 'Microsoft.NET', 'Framework64', 'v4.0.30319');
 const csc = join(fw, 'csc.exe');
 if (!existsSync(csc)) {
   console.error(`build-native: ${csc} not found (needs the .NET Framework 4.8, part of Windows).`);

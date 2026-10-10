@@ -628,3 +628,42 @@ kbd {
 .tm-popmenu__list button:focus-visible {
   background: var(--tm-surface-2);
 }
+
+/* Secure Blur review */
+.tm-secure {
+  display: grid;
+  gap: 16px;
+  max-height: 60vh;
+  overflow: auto;
+}
+.tm-secure__options {
+  margin-bottom: 12px;
+}
+.tm-secure__step h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.tm-secure__preview {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius-sm);
+}
+.tm-secure__mark {
+  fill: none;
+  stroke: var(--tm-focus);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+.tm-secure__list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.tm-secure__list code {
+  font-family: var(--tm-font-mono);
+}

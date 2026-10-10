@@ -4,10 +4,14 @@ import {
   createGuide,
   isRemoteProcess,
   nowIso,
+  scalePageText,
+  serializePageText,
+  wordsFileFor,
   type AppContext,
   type CaptureEvent,
   type Guide,
   type GuideStore,
+  type PageText,
   type ShotInfo,
   type Step,
 } from '@trailmark/core';
@@ -37,6 +41,8 @@ export interface ShotOptions {
   uiHidden?: boolean;
   /** When the input happened (epoch ms, from the page). */
   inputAt?: number;
+  /** Words on screen, in CSS pixels of the top viewport (saved for Secure Blur). */
+  words?: PageText;
 }
 
 export interface RecorderDeps {
@@ -416,7 +422,13 @@ export class Recorder {
       // previous screenshot instead, which shows this page moments earlier.
       if ((this.navigatedAt.get(tabId) ?? 0) >= asked) return { kind: 'skipped' };
       const vp = this.viewports.get(tabId);
-      return { kind: 'captured', dataUrl, viewportWidth: vp?.width ?? 0, dpr: vp?.dpr ?? 1 };
+      return {
+        kind: 'captured',
+        dataUrl,
+        viewportWidth: vp?.width ?? 0,
+        dpr: vp?.dpr ?? 1,
+        ...(opts.words ? { words: opts.words } : {}),
+      };
     } catch {
       // e.g. the tab is not visible or not capturable; fall back to reuse.
       return { kind: 'skipped' };
@@ -474,6 +486,10 @@ export class Recorder {
       };
       attachScreenshot(step, info, this.deps.maxZoom);
       this.lastShot = { ...info, stepId: step.id };
+      if (shot.words) {
+        const words = scalePageText(shot.words, scale, encoded.width, encoded.height);
+        await this.deps.store.putImage(this.guide.id, wordsFileFor(name), serializePageText(words));
+      }
     } else if (!step.human.screenshot && this.lastShot) {
       const { stepId, ...info } = this.lastShot;
       attachScreenshot(step, { ...info, reusedFromStepId: stepId }, this.deps.maxZoom);

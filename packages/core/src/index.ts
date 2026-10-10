@@ -75,6 +75,7 @@ export {
   type ShotInfo,
 } from './capture/session.js';
 export { isSensitiveField, isTextEntry } from './dom/sensitive.js';
+export { collectPageText, type CollectOptions } from './dom/text.js';
 export {
   scaleRect,
   offsetRect,
@@ -204,3 +205,26 @@ export {
   isRemoteProcess,
   isBrowserProcess,
 } from './desktop.js';
+export {
+  TextRunSchema,
+  PageTextSchema,
+  type TextRun,
+  type PageText,
+  type SensitiveKind,
+  type SensitiveMatch,
+  type SensitiveFinding,
+  type DetectOptions,
+  wordsFileFor,
+  parsePageText,
+  serializePageText,
+  scalePageText,
+  luhn,
+  validTfn,
+  validAbn,
+  validIban,
+  detectSensitive,
+  findSensitiveOnPage,
+  maskValue,
+  alreadyBlurred,
+  applySecureBlur,
+} from './secure.js';

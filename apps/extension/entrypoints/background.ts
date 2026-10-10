@@ -363,6 +363,7 @@ export default defineBackground(() => {
           ...(sender.tab?.windowId !== undefined ? { windowId: sender.tab.windowId } : {}),
           uiHidden: frameId === 0 && msg.uiHidden === true,
           ...(msg.at ? { inputAt: msg.at } : {}),
+          ...(frameId === 0 && msg.words ? { words: msg.words } : {}),
         });
         return { ok: true };
       case 'event':

@@ -854,3 +854,13 @@
   background: var(--tm-surface);
   color: var(--tm-alert);
 }
+
+.tm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tm-row > .tm-input {
+  flex: 1 1 12rem;
+}

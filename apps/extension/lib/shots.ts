@@ -1,4 +1,4 @@
-import { fitWidth } from '@trailmark/core';
+import { fitWidth, type PageText } from '@trailmark/core';
 
 /** Chrome allows two captureVisibleTab calls per second; keep a small margin. */
 export const MIN_SHOT_INTERVAL_MS = 520;
@@ -23,7 +23,15 @@ export class ShotLimiter {
 }
 
 export type PendingShot =
-  { kind: 'captured'; dataUrl: string; viewportWidth: number; dpr: number } | { kind: 'skipped' };
+  | {
+      kind: 'captured';
+      dataUrl: string;
+      viewportWidth: number;
+      dpr: number;
+      /** Words on screen at that moment, in CSS pixels of the viewport (Secure Blur). */
+      words?: PageText;
+    }
+  | { kind: 'skipped' };
 
 export interface EncodedShot {
   full: Uint8Array;

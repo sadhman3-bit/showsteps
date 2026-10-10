@@ -1,6 +1,6 @@
 // Every message between extension contexts, validated with Zod on receipt.
 import { z } from 'zod';
-import { RectSchema, TargetSchema } from '@trailmark/core';
+import { PageTextSchema, RectSchema, TargetSchema } from '@trailmark/core';
 
 const ElementKey = z.string().min(1).max(100);
 const ShotId = z.string().regex(/^[A-Za-z0-9-]{8,64}$/);
@@ -77,6 +77,8 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
     uiHidden: z.boolean().optional(),
     /** When the input happened (epoch ms). */
     at: z.number().optional(),
+    /** Words on screen in this frame (CSS pixels), for Secure Blur. */
+    words: PageTextSchema.optional(),
   }),
   z.object({ type: z.literal('event'), shotId: ShotId.optional(), event: ContentEventSchema }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),

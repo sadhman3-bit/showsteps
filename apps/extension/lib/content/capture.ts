@@ -1,4 +1,5 @@
 import {
+  collectPageText,
   deepElements,
   describeElement,
   frameSelector,
@@ -172,10 +173,18 @@ export class PageRecorder {
       // Hide our toolbar, then ask for the picture once that has been painted. The input time
       // lets the background discard a picture that arrives after the page was replaced.
       const at = Date.now();
+      // Where each word is on screen, for Secure Blur (top frame: its viewport is the picture).
+      const words =
+        window === window.top
+          ? collectPageText(document, { skip: (el) => el.localName.startsWith('trailmark-') })
+          : undefined;
+      const extra = words ? { words } : {};
       const controller = this.controller;
       if (controller)
-        void controller.hideFor().then(() => send({ type: 'shot', shotId, uiHidden: true, at }));
-      else void send({ type: 'shot', shotId, at });
+        void controller
+          .hideFor()
+          .then(() => send({ type: 'shot', shotId, uiHidden: true, at, ...extra }));
+      else void send({ type: 'shot', shotId, at, ...extra });
     }
     void send({ type: 'event', ...(shotId ? { shotId } : {}), event });
   }
