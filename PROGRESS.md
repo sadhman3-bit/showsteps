@@ -8,7 +8,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M1** `core`: schema and migrations, step-text writer, target descriptors, matching engine, storage interfaces, IndexedDB and Folder adapters
 - [x] **M2** Extension capture C1–C7, C9; side panel; library L1–L2
 - [x] **M3** Editor E1–E10 and image editor
-- [ ] **M4** Exports X1–X8, viewer
+- [x] **M4** Exports X1–X8, viewer
 - [ ] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
 - [ ] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
 - [ ] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
@@ -64,6 +64,15 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] Capture fix found while testing: screenshots finished after the page was replaced are discarded and the previous screenshot is reused; the toolbar is reliably hidden
 
 **Acceptance:** `e2e/editor.spec.ts` reorders by drag, inserts a heading and a callout, blurs, annotates, undoes and redoes, and restores a version, plus multi-select, merge, split, keyboard shortcuts, autosave across reload, bulk blur, reset, branding, preview, step links and image-only steps. Stable across 3 repeated runs. 18 e2e tests in total; 164 unit tests.
+
+## M4 detail (done 2026-10-10)
+
+- [x] Exporters in core (`@trailmark/core/export`): PDF (pdf-lib), Word (docx), Markdown zip, self-contained HTML page, embed card, clipboard HTML and plain text, with branding
+- [x] Pictures flattened for export with blurs, highlight and annotations burned in
+- [x] Share dialog in the reader and the editor: six downloads, Copy HTML, Print, Save to shared folder (remembered, overwrites on re-save)
+- [x] Print view route
+
+**Acceptance:** golden-file tests for Markdown, the HTML page, the embed card and clipboard HTML. The PDF opens in pdf.js and the Word file in mammoth, each with every step and picture (unit tests and `e2e/export.spec.ts` on the 17-step sample). Copy HTML puts `text/html` and `text/plain` on the clipboard. A blurred region is measured as blurred in the exported picture. 20 e2e tests in total; 178 unit tests.
 
 ## Waiting on the owner
 

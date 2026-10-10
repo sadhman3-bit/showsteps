@@ -30,6 +30,7 @@ import { GuideReader } from '../guide/GuideReader.js';
 import { Screenshot } from '../guide/Screenshot.js';
 import { usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
+import { ShareDialog } from '../export/ShareDialog.js';
 import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs.js';
 import { ImageEditor } from './ImageEditor.js';
 import { clipboardImage, encodeImage } from './imageio.js';
@@ -48,12 +49,14 @@ export interface GuideEditorProps {
   onCaptureMore?: (guide: Guide, insertAt: number) => void;
   onRecapture?: (guide: Guide, stepId: string) => void;
   stepLink?: (guideId: string, stepId: string) => string;
+  /** Open the print view; enables Print in the Share dialog. */
+  onPrint?: () => void;
   /** Bumped when the guide may have changed elsewhere (e.g. re-captured); reloads if idle. */
   refreshKey?: number;
 }
 
 type SaveState = 'saved' | 'saving' | 'failed';
-type Modal = 'versions' | 'branding' | 'shortcuts' | null;
+type Modal = 'versions' | 'branding' | 'shortcuts' | 'share' | null;
 
 /** Same guide content, ignoring save bookkeeping (updatedAt, updatedBy). */
 function sameContent(a: Guide, b: Guide): boolean {
@@ -80,6 +83,7 @@ export function GuideEditor({
   onCaptureMore,
   onRecapture,
   stepLink,
+  onPrint,
   refreshKey,
 }: GuideEditorProps) {
   const history = useRef<History<Guide> | null>(null);
@@ -446,6 +450,7 @@ export function GuideEditor({
           </Button>
         ) : null}
         <Button onClick={() => setModal('versions')}>{e.versions}</Button>
+        <Button onClick={() => setModal('share')}>{strings.share.button}</Button>
         <Button onClick={() => setModal('branding')}>{e.branding}</Button>
         <Button
           variant="ghost"
@@ -697,6 +702,14 @@ export function GuideEditor({
         />
       ) : null}
       {modal === 'shortcuts' ? <ShortcutsDialog onClose={() => setModal(null)} /> : null}
+      {modal === 'share' ? (
+        <ShareDialog
+          store={store}
+          guide={guide}
+          onClose={() => setModal(null)}
+          {...(onPrint ? { onPrint } : {})}
+        />
+      ) : null}
     </main>
   );
 }

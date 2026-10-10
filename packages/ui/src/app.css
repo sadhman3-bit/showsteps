@@ -508,3 +508,133 @@
     margin-inline-start: 0;
   }
 }
+
+/* ---------- Share ---------- */
+
+.tm-dialog:has(.tm-share) {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.tm-share h3 {
+  margin: var(--tm-space-4) 0 var(--tm-space-2);
+  font-size: 0.95rem;
+}
+
+.tm-share > p:first-child {
+  margin-top: 0;
+}
+
+.tm-share__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--tm-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-share__format {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: var(--tm-space-2) var(--tm-space-3);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  background: var(--tm-surface);
+  color: var(--tm-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.tm-share__format span {
+  color: var(--tm-text-muted);
+  font-size: 0.8125rem;
+}
+
+.tm-share__format:hover:not(:disabled) {
+  border-color: var(--tm-accent);
+}
+
+.tm-share__format:focus-visible {
+  outline: 2px solid var(--tm-focus);
+  outline-offset: 2px;
+}
+
+.tm-share__format:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.tm-share__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tm-space-2);
+}
+
+.tm-share__folder {
+  flex: 1 1 180px;
+  overflow-wrap: anywhere;
+}
+
+.tm-share__hint {
+  margin: var(--tm-space-2) 0;
+  font-size: 0.8125rem;
+}
+
+.tm-share__status {
+  min-height: 1.5em;
+  margin: var(--tm-space-4) 0 0;
+  font-weight: 600;
+}
+
+/* ---------- Print view ---------- */
+
+.tm-print__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-3);
+  padding: var(--tm-space-3) var(--tm-space-4);
+  border-bottom: 1px solid var(--tm-border);
+  background: var(--tm-surface);
+}
+
+.tm-print .tm-reader {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--tm-space-6) var(--tm-space-4);
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --tm-bg: #ffffff;
+    --tm-surface: #ffffff;
+    --tm-surface-2: #ffffff;
+    --tm-text: #000000;
+  }
+
+  .tm-print__bar {
+    display: none;
+  }
+
+  .tm-print .tm-reader {
+    max-width: none;
+    padding: 0;
+  }
+
+  .tm-print .tm-step {
+    break-inside: avoid;
+  }
+
+  .tm-print .tm-block--heading {
+    break-after: avoid;
+  }
+
+  .tm-print .tm-shot {
+    max-height: 16cm;
+  }
+}

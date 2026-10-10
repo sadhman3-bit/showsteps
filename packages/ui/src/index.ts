@@ -30,3 +30,6 @@ export { encodeImage, clipboardImage } from './editor/imageio.js';
 export { AnnotationShape } from './components/Annotations.js';
 export { brandStyle, BRAND_FONTS, textOn } from './brand.js';
 export { ImageLayers, blurRadius } from './guide/Screenshot.js';
+export { PrintView } from './guide/PrintView.js';
+export { ShareDialog, fileNameFor, type ShareDialogProps } from './export/ShareDialog.js';
+export { flattenStepImage, prepareExport } from './export/flatten.js';

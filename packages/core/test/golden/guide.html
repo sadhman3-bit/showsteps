@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="Trailmark">
+<title>Pay a supplier &lt;invoice&gt; &amp; file it</title>
+<style>:root{color-scheme:light dark;--accent:#7c3aed;--on-accent:#ffffff;--highlight:#c2410c;--bg:#faf8f5;--surface:#ffffff;--border:#d9d3ca;--text:#1f1c18;--muted:#5c554b;--tip:#166534;--note:#1d4ed8;--warning:#92400e;--alert:#b91c1c;font-family:Georgia, Cambria, serif}
+@media (prefers-color-scheme:dark){:root{--bg:#161513;--surface:#1f1d1a;--border:#3d3933;--text:#f2eee8;--muted:#b5ada1;--tip:#4ade80;--note:#93c5fd;--warning:#fbbf24;--alert:#fca5a5}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}
+a{color:inherit}
+img{max-width:100%;height:auto}
+.callout{margin:0;padding:10px 14px;border-left:4px solid var(--tone);border-radius:6px;background:color-mix(in srgb,var(--tone) 10%,var(--surface))}
+.callout strong{color:var(--tone)}
+.callout--tip{--tone:var(--tip)}.callout--note{--tone:var(--note)}.callout--warning{--tone:var(--warning)}.callout--alert{--tone:var(--alert)}
+.num{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;text-decoration:none}
+.shot{display:block;border:1px solid var(--border);border-radius:8px}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;padding:32px 24px}
+.toc{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;font-size:14px}
+.toc p{margin:0 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc li{margin:2px 0}
+.toc a{display:flex;gap:8px;padding:4px 8px;border-radius:6px;text-decoration:none}
+.toc a:hover,.toc a:focus-visible{background:var(--surface)}
+.toc .toc__section{margin-top:12px;font-weight:700}
+.toc .toc__n{color:var(--muted);min-width:1.6em;text-align:right}
+header{margin-bottom:24px}
+.logo{display:block;max-height:56px;width:auto;margin-bottom:16px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+.desc{font-size:17px;margin:0 0 8px}
+.meta{color:var(--muted);margin:0}
+.before{margin:16px 0 0;padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.before h2{font-size:15px;margin:0 0 4px}
+.before ul{margin:0;padding-left:20px}
+main>h2{font-size:22px;margin:40px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+main>.callout{margin:16px 0}
+.step{margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);scroll-margin-top:16px}
+.step:target{outline:3px solid var(--highlight);outline-offset:2px}
+.step__head{display:flex;gap:12px;align-items:flex-start}
+.step h3{margin:2px 0 0;font-size:17px;font-weight:600}
+.step__desc{margin:8px 0 0 40px}
+.step figure{margin:12px 0 0 40px}
+.step__nav{display:flex;justify-content:space-between;margin:10px 0 0 40px;font-size:13px;color:var(--muted)}
+.step__nav a{text-decoration:none}
+.step__nav a:hover{text-decoration:underline}
+.done{margin:32px 0 0;padding:12px 16px;border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+@media (max-width:820px){.layout{display:block;padding:16px}.toc{position:static;max-height:none;margin-bottom:24px}.step__desc,.step figure,.step__nav{margin-left:0}}
+@media print{:root{--bg:#fff;--surface:#fff;--text:#000}.layout{display:block;padding:0;max-width:none}.toc,.step__nav{display:none}.step{break-inside:avoid;border:0;padding:0;margin:16px 0}.step:target{outline:0}main>h2{break-after:avoid}.shot{max-height:16cm;width:auto}a{text-decoration:none}}</style>
+</head>
+<body id="top">
+<div class="layout">
+<nav class="toc" aria-label="Contents"><p>Contents</p><ol>
+<li class="toc__section"><a href="#section-1">Sign in</a></li>
+<li><a href="#step-1"><span class="toc__n">1</span><span>Type alex into Username</span></a></li>
+<li><a href="#step-2"><span class="toc__n">2</span><span>Enter your password</span></a></li>
+<li class="toc__section"><a href="#section-2">Enter the invoice</a></li>
+<li><a href="#step-3"><span class="toc__n">3</span><span>Click New invoice (see the policy)</span></a></li>
+<li><a href="#step-4"><span class="toc__n">4</span><span>Click Submit → done</span></a></li>
+</ol></nav>
+<main>
+<header>
+<img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAD0lEQVR4nGOosXoLRygcAKbKDRmGFMK0AAAAAElFTkSuQmCC" alt="" width="4" height="2">
+<h1>Pay a supplier &lt;invoice&gt; &amp; file it</h1>
+<p class="desc">Enter a supplier invoice and send it for approval.</p>
+<p class="meta">4 steps · Updated 9 October 2026</p>
+<section class="before"><h2>Before you start</h2><ul><li>You can sign in to Ledgerline</li><li>You have the invoice PDF</li></ul></section>
+</header>
+<h2 id="section-1">Sign in</h2>
+<article class="step" id="step-1" data-step-id="s1">
+<div class="step__head"><a class="num" href="#step-1" aria-label="Step 1">1</a><h3>Type <strong>alex</strong> into <strong>Username</strong></h3></div>
+<p class="step__desc">Use your own username.</p>
+<figure><img class="shot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAIAAAD38zoCAAAAEElEQVR4nGM4YSOCFdFDAgDLkyvB2iqbqwAAAABJRU5ErkJggg==" alt="Screenshot for step 1: Type alex into Username" width="8" height="5"></figure>
+<nav class="step__nav"><span></span><a href="#step-2">Next →</a></nav>
+</article>
+<article class="step" id="step-2" data-step-id="s2">
+<div class="step__head"><a class="num" href="#step-2" aria-label="Step 2">2</a><h3>Enter your password</h3></div>
+<figure><img class="shot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAGCAIAAABvrngfAAAAEElEQVR4nGMQqTiBhmgsBACNCC/RpPu8pwAAAABJRU5ErkJggg==" alt="The sign-in form" width="6" height="6"></figure>
+<nav class="step__nav"><a href="#step-1">← Previous</a><a href="#step-3">Next →</a></nav>
+</article>
+<aside class="callout callout--tip"><strong>Tip:</strong> Ask IT if you are locked out.<br>They answer within an hour.</aside>
+<h2 id="section-2">Enter the invoice</h2>
+<article class="step" id="step-3" data-step-id="s3">
+<div class="step__head"><a class="num" href="#step-3" aria-label="Step 3">3</a><h3>Click <strong>New invoice</strong> (see <a href="https://example.com/policy?a=1&amp;b=2" rel="noopener noreferrer"><em>the policy</em></a>)</h3></div>
+<nav class="step__nav"><a href="#step-2">← Previous</a><a href="#step-4">Next →</a></nav>
+</article>
+<aside class="callout callout--warning"><strong>Warning:</strong> Submitting cannot be undone.</aside>
+<article class="step" id="step-4" data-step-id="s4">
+<div class="step__head"><a class="num" href="#step-4" aria-label="Step 4">4</a><h3>Click <strong>Submit → done</strong></h3></div>
+<figure><img class="shot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAECAIAAAA4WjmaAAAAEElEQVR4nGPQWBCAB9FUGgCTUivBQ1PVQQAAAABJRU5ErkJggg==" alt="Screenshot for step 4: Click Submit → done" width="10" height="4"></figure>
+<nav class="step__nav"><a href="#step-3">← Previous</a><a href="#top">Back to top ↑</a></nav>
+</article>
+<p class="done"><strong>You’re done when:</strong> The page says “Invoice submitted”.</p>
+</main>
+</div>
+</body>
+</html>

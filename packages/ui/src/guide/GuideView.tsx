@@ -2,6 +2,7 @@ import type { Guide, GuideStore } from '@trailmark/core';
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
+import { ShareDialog } from '../export/ShareDialog.js';
 import { strings } from '../strings.js';
 import { GuideReader } from './GuideReader.js';
 
@@ -12,6 +13,8 @@ export interface GuideViewProps {
   guideId: string;
   onBack: () => void;
   onEdit?: () => void;
+  /** Open the print view; enables Print in the Share dialog. */
+  onPrint?: () => void;
   focusStepId?: string;
   /** Build a shareable link to a step; enables "copy link" buttons. */
   stepLink?: (guideId: string, stepId: string) => string;
@@ -25,12 +28,14 @@ export function GuideView({
   guideId,
   onBack,
   onEdit,
+  onPrint,
   focusStepId,
   stepLink,
   refreshKey,
 }: GuideViewProps) {
   const [guide, setGuide] = useState<Guide | null | undefined>(undefined);
   const [copied, setCopied] = useState<string>();
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -50,6 +55,7 @@ export function GuideView({
         <Button variant="ghost" onClick={onBack}>
           <Icon name="back" /> {s.back}
         </Button>
+        {guide ? <Button onClick={() => setSharing(true)}>{strings.share.button}</Button> : null}
         {guide && onEdit ? <Button onClick={onEdit}>{strings.editor.edit}</Button> : null}
       </nav>
       {guide === null ? (
@@ -71,6 +77,14 @@ export function GuideView({
             : {})}
         />
       )}
+      {guide && sharing ? (
+        <ShareDialog
+          store={store}
+          guide={guide}
+          onClose={() => setSharing(false)}
+          {...(onPrint ? { onPrint } : {})}
+        />
+      ) : null}
     </main>
   );
 }

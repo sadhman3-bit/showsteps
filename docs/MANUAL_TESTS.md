@@ -132,3 +132,51 @@ Edit a guide for a few minutes (a version is kept at most every 2 minutes and wh
 ### MT-M3-6 Sample guides on first install
 
 Remove Trailmark from `chrome://extensions`, then Load unpacked again and open the library. **Expected:** two sample guides are there ("Create a supplier invoice in Ledgerline" and "Run a monthly report in Ledgerline").
+
+---
+
+## M4
+
+Open a guide (a sample guide is fine), then click **Share**.
+
+### MT-M4-1 Files open in their apps
+
+Download **PDF**, **Word**, **Markdown** and **Web page**.
+
+**Expected:**
+
+- The PDF opens in Edge or Acrobat with a cover page, numbered steps, pictures with the orange highlight, and "Page N of M" at the bottom.
+- The Word file opens in Word without a repair prompt. Steps are a numbered list; Heading 1 sections appear in the Navigation pane; right-click a picture → **View Alt Text** shows the step's description.
+- The Markdown zip contains `guide.md` and an `img` folder; `guide.md` previews with pictures in VS Code.
+- The web page works offline, and switches to dark colours when Windows is in dark mode.
+
+### MT-M4-2 Copy HTML into each app (X5)
+
+Click **Copy HTML**, then paste into each app below. Record what happens in the table: do the pictures, numbering, bold and callout colours survive?
+
+| Target                | Pictures | Formatting | Notes |
+| --------------------- | -------- | ---------- | ----- |
+| Word (desktop)        |          |            |       |
+| Outlook (new message) |          |            |       |
+| OneNote               |          |            |       |
+| Teams (chat message)  |          |            |       |
+| Confluence            |          |            |       |
+| Notion                |          |            |       |
+
+Some apps refuse pictures stored inside pasted HTML. If one does, note it here; the workaround is to download the Word or PDF file and attach or insert it.
+
+### MT-M4-3 Embed card on SharePoint (X6)
+
+1. **Share → Save to shared folder → Choose folder…** and pick a folder in a SharePoint document library synced by OneDrive. Click **Save to folder**.
+2. On a SharePoint page, add an **Embed** web part that points to the `.embed.html` file.
+3. Edit the guide, then **Save to folder** again.
+
+**Expected:** the embed shows one step at a time with Previous and Next. After step 3 and a page refresh, it shows the change. If SharePoint downloads the file instead of showing it, note it: many tenants block HTML files from rendering. A fallback is to rename the file to `.aspx` in the library.
+
+### MT-M4-4 Print
+
+**Share → Print… → Print**. **Expected:** the print preview hides the toolbar, keeps each step and its picture together, and "Save as PDF" works.
+
+### MT-M4-5 Folder permission after a restart
+
+Save to a folder, restart Chrome, open Share again and click **Save to folder**. **Expected:** Chrome asks once to allow editing files in that folder; after **Allow**, the files are updated.

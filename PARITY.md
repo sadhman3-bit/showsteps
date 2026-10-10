@@ -42,14 +42,14 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 
 ### Share and export (all free)
 
-- [ ] X1 PDF: cover with title and description, numbered steps with screenshots and Action Box, headings, callouts, page numbers, branding. Build with pdf-lib; in the desktop app, Electron `printToPDF` of the viewer is an acceptable alternative if it looks better.
-- [ ] X2 Word (.docx) with the `docx` library: real headings, numbered steps, images with alt text, callouts as shaded paragraphs.
-- [ ] X3 Markdown: `guide.md` plus `img/`, zipped.
-- [ ] X4 HTML: one self-contained file (images inlined), with step navigation, deep links, dark mode and print styles.
-- [ ] X5 Copy HTML (Tango's "Magic Copy" equivalent): rich clipboard (`text/html` and `text/plain`) that pastes with images into Word, Outlook, OneNote, Teams, Confluence and Notion. Document any target that strips inline images.
-- [ ] X6 Embed, local equivalent: a compact "embed card" HTML export suitable for an iframe on a SharePoint page. Re-exporting to the same path updates the embed.
-- [ ] X7 Print view.
-- [ ] X8 Share, local equivalent: "Share" offers file exports, Copy HTML, and "Save to shared folder". No hosted links.
+- [x] X1 PDF: cover with title and description, numbered steps with screenshots and Action Box, headings, callouts, page numbers, branding. Build with pdf-lib; in the desktop app, Electron `printToPDF` of the viewer is an acceptable alternative if it looks better. _Tests: core test/export.test.ts (opens with pdf.js: cover, steps, pictures, headings, callouts, page numbers), e2e/export.spec.ts (17-step sample: every title and picture); MT-M4-1._
+- [x] X2 Word (.docx) with the `docx` library: real headings, numbered steps, images with alt text, callouts as shaded paragraphs. _Tests: core test/export.test.ts (valid XML, Heading 1, numbered list, alt text, shading; read back with mammoth), e2e/export.spec.ts; MT-M4-1._
+- [x] X3 Markdown: `guide.md` plus `img/`, zipped. _Tests: core test/export.test.ts (golden file, zip contents), e2e/export.spec.ts (blur burned into the picture); MT-M4-1._
+- [x] X4 HTML: one self-contained file (images inlined), with step navigation, deep links, dark mode and print styles. _Tests: core test/export.test.ts (golden file, no scripts, escaping), e2e/export.spec.ts (deep link, contents navigation, dark mode, print styles)._
+- [x] X5 Copy HTML (Tango's "Magic Copy" equivalent): rich clipboard (`text/html` and `text/plain`) that pastes with images into Word, Outlook, OneNote, Teams, Confluence and Notion. Document any target that strips inline images. _Tests: e2e/export.spec.ts (text/html and text/plain on the clipboard with 17 pictures), core golden file; MT-M4-2 records which apps keep pictures._
+- [x] X6 Embed, local equivalent: a compact "embed card" HTML export suitable for an iframe on a SharePoint page. Re-exporting to the same path updates the embed. _Tests: core test/export.test.ts (golden file), e2e/export.spec.ts (one step at a time, Next; saving again updates the same file); MT-M4-3._
+- [x] X7 Print view. _Tests: e2e/export.spec.ts (print view, toolbar hidden in print); MT-M4-4._
+- [x] X8 Share, local equivalent: "Share" offers file exports, Copy HTML, and "Save to shared folder". No hosted links. _Tests: e2e/export.spec.ts (Share dialog: downloads, Copy HTML, Save to shared folder twice), ui test/share.test.ts; MT-M4-3, MT-M4-5._
 
 ### Guidance
 

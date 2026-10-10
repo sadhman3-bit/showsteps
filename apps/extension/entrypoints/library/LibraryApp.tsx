@@ -1,5 +1,5 @@
 import { stepNumbers, toPlainText } from '@trailmark/core';
-import { GuideEditor, GuideView, Library } from '@trailmark/ui';
+import { GuideEditor, GuideView, Library, PrintView } from '@trailmark/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
   getStore,
@@ -13,19 +13,25 @@ import { installSamples } from '../../lib/samples';
 type Route =
   | { page: 'library' }
   | { page: 'edit'; id: string }
-  | { page: 'view'; id: string; stepId?: string };
+  | { page: 'view'; id: string; stepId?: string }
+  | { page: 'print'; id: string };
 
-/** Hash routes: #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId> (reader). */
+/**
+ * Hash routes: #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId>
+ * (reader) · #/guide/<id>/print.
+ */
 export function parseRoute(hash: string): Route {
-  const m = /^#\/guide\/([^/?]+)(?:\/(view|step)(?:\/([^/?]+))?)?/.exec(hash);
+  const m = /^#\/guide\/([^/?]+)(?:\/(view|step|print)(?:\/([^/?]+))?)?/.exec(hash);
   if (!m?.[1]) return { page: 'library' };
   const id = decodeURIComponent(m[1]);
   if (m[2] === 'step' && m[3]) return { page: 'view', id, stepId: decodeURIComponent(m[3]) };
   if (m[2] === 'view') return { page: 'view', id };
+  if (m[2] === 'print') return { page: 'print', id };
   return { page: 'edit', id };
 }
 
 const go = (hash: string) => (location.hash = hash);
+const printRoute = (id: string) => `#/guide/${encodeURIComponent(id)}/print`;
 
 /** Full-page library (opened in a tab). */
 export function LibraryApp() {
@@ -54,6 +60,7 @@ export function LibraryApp() {
         guideId={route.id}
         refreshKey={libraryVersion}
         stepLink={stepUrl}
+        onPrint={() => go(printRoute(route.id))}
         onBack={() => go('#/')}
         onCaptureMore={(guide, insertAt) => {
           // Hand over to the side panel, which records into the tab the user picks.
@@ -85,6 +92,19 @@ export function LibraryApp() {
         {...(route.stepId ? { focusStepId: route.stepId } : {})}
         onBack={() => go('#/')}
         onEdit={() => go(`#/guide/${encodeURIComponent(route.id)}`)}
+        onPrint={() => go(printRoute(route.id))}
+      />
+    );
+  }
+  if (route.page === 'print') {
+    return (
+      <PrintView
+        key={route.id}
+        store={store}
+        guideId={route.id}
+        onBack={() =>
+          history.length > 1 ? history.back() : go(`#/guide/${encodeURIComponent(route.id)}`)
+        }
       />
     );
   }

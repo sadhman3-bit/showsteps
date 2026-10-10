@@ -14,6 +14,10 @@
     "./node": {
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.js"
+    },
+    "./export": {
+      "types": "./dist/export/index.d.ts",
+      "import": "./dist/export/index.js"
     }
   },
   "scripts": {
@@ -22,12 +26,17 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "docx": "^9.9.0",
     "fflate": "^0.8.3",
+    "pdf-lib": "^1.17.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
-    "happy-dom": "^20.14.5"
+    "fast-xml-parser": "^5.11.2",
+    "happy-dom": "^20.14.5",
+    "mammoth": "^1.13.0",
+    "pdfjs-dist": "^6.4.299"
   },
   "sideEffects": false
 }

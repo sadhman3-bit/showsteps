@@ -27,5 +27,7 @@ export default defineConfig({
   }),
   vite: () => ({
     plugins: [preact()],
+    // The exporters chunk (PDF and Word libraries, ~0.9 MB) loads only when someone exports.
+    build: { chunkSizeWarningLimit: 1024 },
   }),
 });

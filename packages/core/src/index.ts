@@ -106,3 +106,15 @@ export {
   bulkBlurCandidates,
   applyBlurToSteps,
 } from './editor/image.js';
+
+// Branding
+export {
+  BRAND_FONTS,
+  SERIF_FONTS,
+  DEFAULT_ACCENT,
+  HIGHLIGHT_COLOR,
+  isHexColor,
+  textOn,
+  accentOf,
+  fontOf,
+} from './branding.js';

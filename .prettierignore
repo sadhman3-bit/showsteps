@@ -8,3 +8,4 @@ playwright-report
 pnpm-lock.yaml
 BUILD_PROMPT.md
 packages/core/test/fixtures/demo
+packages/core/test/golden

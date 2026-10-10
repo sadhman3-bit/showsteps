@@ -73,3 +73,22 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Rich text** pastes as plain text; links are limited to http(s) and mailto; rendered HTML goes through DOMPurify with a strict allow-list.
 - **Screenshot timing (revised):** the page hides the toolbar, waits two frames, then asks for the screenshot, sending the input time. `captureVisibleTab` takes 50–80 ms (up to ~350 ms under load), so if the tab committed a new page after the input, the capture is discarded and the step reuses the previous screenshot (same page, moments earlier). Tests check both that the sign-in step shows the sign-in page and that the toolbar is never in a screenshot.
 - **Sample guides** are recorded from the demo app by `pnpm make:samples` and committed as `apps/extension/public/samples/*.trailmark`; they are imported on first install, and from the empty library on request. Test profiles skip the automatic import.
+
+## M4
+
+- **Exporters live in `core`** (`src/export/`, entry point `@trailmark/core/export`) and take finished pictures as input, so they run in the browser, Electron and Node tests alike. The extension loads them on demand (a ~0.9 MB chunk with pdf-lib and docx).
+- **Pictures are flattened in the UI** (`packages/ui/src/export/flatten.ts`) on a canvas: crop when magnified, blurs, highlight box and annotations are burned into a PNG, at most 1600 px wide. Exported files never contain the unblurred pixels.
+- **One format for exported pictures:** PNG. PDF (pdf-lib) and Word accept only PNG/JPEG, and lossy JPEG blurs small screen text.
+- **Reader-facing export text** ("Step 3 of 17", "Before you start", tone names, months) lives in `core/src/export/labels.ts`, next to the step-text writer; UI text stays in `ui/strings.ts`.
+- **Branding constants** (`BRAND_FONTS`, `textOn`, accent and highlight colours) moved to `core/src/branding.ts` so exporters and the UI share them.
+- **No "Made with Trailmark" footer** in exports: the brief rules out watermarks.
+- **Dates in exports** are UTC ("9 October 2026"), formatted without `Intl`, so output is identical on every machine (golden files depend on it).
+- **PDF:** A4, cover page then steps; built-in Helvetica (or Times for the Georgia and Cambria brand fonts), because pdf-lib cannot embed system fonts without shipping font files. Characters those fonts lack become close ASCII stand-ins (→ becomes ->). Page numbers on every page after the cover.
+- **Word:** A4, Title and Heading 1 styles, steps as a real numbered list, the brand font name as the document font, callouts as shaded paragraphs with a coloured left border, "Page X of Y" fields in the footer.
+- **Markdown:** steps are "**3.** Title" paragraphs (not a Markdown list, which breaks around images); callouts are quoted "**Tip:** …" lines, which every Markdown viewer shows.
+- **HTML page:** no scripts at all and a Content-Security-Policy of `default-src 'none'`; contents sidebar, Previous/Next links, deep links `#step-N` (by step number), `:target` highlight, dark mode by `prefers-color-scheme`, print styles that hide navigation.
+- **Embed card:** one step at a time using CSS `:target` and `:has()` (no scripts, so it works where scripts are blocked); headings and callouts show above the step they precede.
+- **Copy HTML** writes `text/html` (inline styles, pictures as data URIs 600 px wide) and `text/plain` in one clipboard item, started inside the click so the browser allows it.
+- **Save to shared folder** uses the File System Access API; the chosen folder is remembered (IndexedDB) and writes the web page, the embed card and the `.trailmark` file named after the guide title, so saving again overwrites them. Renaming a guide writes new files beside the old ones.
+- **Print view** is a library route (`#/guide/<id>/print`) showing the reader with a Print button; the browser's print dialog also offers "Save as PDF".
+- **Export file names:** `<title>.pdf`, `.docx`, `<title> (Markdown).zip`, `.html`, `.embed.html`, `.trailmark`; unsafe characters become spaces.

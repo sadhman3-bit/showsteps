@@ -85,7 +85,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   ]);
 
   // Undo and redo (E6): focus is on the page, not a text field
-  await page.locator('.tm-editor__bar').click({ position: { x: 600, y: 10 } });
+  await page.locator('.tm-save').click(); // a non-interactive spot: focus leaves the fields
   await page.keyboard.press('Control+z');
   expect(await outline(page)).toEqual([
     'Go to localhost:5173',
@@ -167,7 +167,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   await page.getByRole('textbox', { name: 'Step 1 title' }).click();
   await page.keyboard.press('Control+Enter');
   expect((await outline(page)).length).toBe(count + 1);
-  await page.locator('.tm-editor__bar').click({ position: { x: 600, y: 10 } });
+  await page.locator('.tm-save').click(); // a non-interactive spot: focus leaves the fields
   await page.keyboard.press('?');
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
   await page.keyboard.press('Escape');
