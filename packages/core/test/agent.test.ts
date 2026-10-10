@@ -201,6 +201,10 @@ describe('Agent Pack (U2)', () => {
     expect(skill).toContain('| `{{password}}` | Password | yes |');
     expect(skill).toContain('inside iframe `iframe[title="Cost centre lookup"]`');
     expect(skill).toContain('On failure:');
+    // A callout sits between the steps it was written between.
+    expect(skill).toMatch(
+      /Type 1280\.50[^]*> Note: Enter the amount including GST[^]*9\. Select AUD/,
+    );
     expect(skill).not.toMatch(/\bignore\b|you must/i);
     // A confirm step carries the marker.
     const confirmed = {

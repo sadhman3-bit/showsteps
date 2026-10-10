@@ -40,6 +40,8 @@ export class Controller {
   private readonly root: ShadowRoot;
   private readonly bar: HTMLElement;
   private readonly els: Record<string, HTMLElement> = {};
+  /** Pictures asked for and not yet taken (see `hideFor`). */
+  private holds = 0;
   private hiddenSince = 0;
   private showTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -152,10 +154,12 @@ export class Controller {
   }
 
   /**
-   * Hide for a screenshot (re-shown by `show` or after `ms` as a safety net). Resolves at once
-   * if it has already been hidden for a frame, otherwise after the next paint.
+   * Hide for a screenshot. Each call is matched by one `release` when that picture is taken;
+   * the toolbar comes back once no picture is pending (or after `ms` as a safety net). Resolves
+   * at once if it has already been hidden for a frame, otherwise after the next paint.
    */
-  hideFor(ms = 1500): Promise<void> {
+  hideFor(ms = 5000): Promise<void> {
+    this.holds++;
     const alreadyPainted = this.hiddenSince > 0 && performance.now() - this.hiddenSince > 20;
     if (!this.hiddenSince) this.hiddenSince = performance.now();
     this.host.style.visibility = 'hidden';
@@ -168,8 +172,15 @@ export class Controller {
     );
   }
 
+  /** One picture is taken: show the toolbar again if no other is pending. */
+  release(): void {
+    this.holds = Math.max(0, this.holds - 1);
+    if (!this.holds) this.show();
+  }
+
   show(): void {
     clearTimeout(this.showTimer);
+    this.holds = 0;
     this.hiddenSince = 0;
     this.host.style.visibility = '';
   }

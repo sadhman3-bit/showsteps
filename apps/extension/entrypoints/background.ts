@@ -134,7 +134,11 @@ export default defineBackground(() => {
       try {
         return await browser.tabs.captureVisibleTab(window, { format: 'png' });
       } finally {
-        browser.tabs.sendMessage(tabId, { type: 'overlays', visible: true }).catch(() => undefined);
+        // Release the hiding asked for above (input in the page releases its own, below).
+        if (!uiHidden)
+          browser.tabs
+            .sendMessage(tabId, { type: 'overlays', visible: true }, { frameId: 0 })
+            .catch(() => undefined);
       }
     },
     encode: (dataUrl) => encodeScreenshot(dataUrl),
@@ -364,8 +368,12 @@ export default defineBackground(() => {
           ...(sender.tab?.windowId !== undefined ? { windowId: sender.tab.windowId } : {}),
           uiHidden: frameId === 0 && msg.uiHidden === true,
           ...(msg.at ? { inputAt: msg.at } : {}),
-          ...(frameId === 0 && msg.words ? { words: msg.words } : {}),
         });
+        // The page hid its toolbar for this picture: taken (or skipped), so release it.
+        if (frameId === 0 && msg.uiHidden)
+          browser.tabs
+            .sendMessage(tabId, { type: 'overlays', visible: true }, { frameId: 0 })
+            .catch(() => undefined);
         return { ok: true };
       case 'event':
         void recorder
@@ -382,6 +390,9 @@ export default defineBackground(() => {
             msg.observeId,
           )
           .catch((error: unknown) => console.error('Trailmark: could not record step', error));
+        return { ok: true };
+      case 'shot-words':
+        if (frameId === 0) recorder.shotWords(msg.shotId, msg.words);
         return { ok: true };
       case 'observed':
         void recorder.observed(msg.observeId, msg.expect);

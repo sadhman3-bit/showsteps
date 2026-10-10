@@ -11,7 +11,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M4** Exports X1–X8, viewer
 - [x] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
 - [x] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
-- [ ] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
+- [x] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
 - [ ] **M8** U8 OCR, E11 for desktop and image steps
 - [ ] **M9** U7, U9, hardening, performance, docs, release
 
@@ -102,6 +102,28 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 Stable across 3 repeated runs. The installer builds, and the install/uninstall hooks were checked against the registry. `pnpm e2e`: 26 tests. Unit tests: 207. PARITY.md is fully ticked except U1–U10 and E11 for desktop and image steps (M8).
 
+## M7 detail (done 2026-10-11)
+
+- [x] Core: procedure model, confirm detection, variable suggestions and input modes, sensitive marking, agent warnings, page observation for expectations
+- [x] Exports: Agent Pack (SKILL.md, procedure.json, screenshots, Playwright replay) with a validator; procedure embedded in HTML, Markdown, Word (custom XML) and PDF (attachment)
+- [x] Capture: confirm flags, captured expectations (page diff after 800 ms, new address from the background), default input mode
+- [x] Editor: Agent tab, value controls with suggestions, Agent Pack in Share; Settings default for typed values (extension and desktop); Guide Me card says what to type
+- [x] Run for me checks captured expectations (regular expressions for addresses, retried briefly)
+- [x] Sample guides recorded again with these features
+
+**Acceptance:**
+
+- the Agent Pack passes the format checks (core tests, and the e2e download);
+- embedded copies are read back from all four formats;
+- the generated Playwright replay runs the demo flow, stops before "Submit invoice", and completes with `TRAILMARK_ALLOW_CONFIRM=1`;
+- a fresh AI agent with only the Agent Pack completed the demo flow (`docs/agent-run-transcript.md`).
+
+`pnpm e2e`: 28 tests (the replay runs as its own project after the extension tests, because its second browser slowed timing-sensitive capture tests); `pnpm e2e:desktop`: 3 tests. Unit tests: 224.
+
+Fixes found while testing:
+- word positions are read after the screenshot is requested, and saved even if they arrive late;
+- the capture toolbar is shown again only when every pending screenshot is taken.
+
 ## Waiting on the owner
 
 - Nothing.
@@ -109,4 +131,5 @@ Stable across 3 repeated runs. The installer builds, and the install/uninstall h
 ## Deferred
 
 - Extension capture: screenshot encoding takes 1.5–2.5 s per step on a busy machine before the step appears (the step still lands in order). Look at faster encoding in M9's performance pass.
+- Expectations are not observed for actions inside iframes (the frame's own page changes are not diffed); authors can add them in the Agent view.
 - Secure Blur reads words only from the top frame of a web page; text inside iframes is left to OCR (M8).

@@ -77,8 +77,12 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
     uiHidden: z.boolean().optional(),
     /** When the input happened (epoch ms). */
     at: z.number().optional(),
-    /** Words on screen in this frame (CSS pixels), for Secure Blur. */
-    words: PageTextSchema.optional(),
+  }),
+  z.object({
+    type: z.literal('shot-words'),
+    shotId: ShotId,
+    /** Words on screen in the top frame (CSS pixels) when the picture was taken. */
+    words: PageTextSchema,
   }),
   z.object({
     type: z.literal('event'),

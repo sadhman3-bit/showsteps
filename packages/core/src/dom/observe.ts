@@ -14,7 +14,17 @@ export interface PageState {
 
 const WATCHED = new Set(['dialog', 'alertdialog', 'heading', 'alert', 'status']);
 /** Cheap enough to run on every click: elements that can have a watched role. */
-const CANDIDATES = 'dialog, [role], h1, h2, h3, h4, h5, h6, output';
+const CANDIDATES = [
+  'dialog',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'output',
+  ...[...WATCHED].map((r) => `[role="${r}"]`),
+].join(', ');
 const MAX_TEXT = 80;
 
 const isShown = (el: Element): boolean => {

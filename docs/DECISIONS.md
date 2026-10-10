@@ -132,3 +132,55 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Installer:** electron-builder NSIS, per user (no admin rights, `%LOCALAPPDATA%\Programs\Trailmark`), with a choice of folder. It registers the browser bridge by running `Trailmark.exe --register-native-host`; uninstalling runs `--unregister-native-host` and also deletes the registry keys and host manifest itself. Guides and settings are kept. The installer is not code-signed (no certificate), so Windows SmartScreen may warn.
 - **Everything the app runs is bundled** by Vite into `dist/`; the installer ships no `node_modules`.
 - **Desktop e2e tests drive the real mouse and keyboard**, so they only touch a Notepad window they opened on a uniquely named file. The helper refuses input unless that window is in front and refuses clicks unless the pointer is over it; the tests close only the processes they started; a lock file stops two desktop tests from ever running at once. They run only through `pnpm e2e:desktop`, never in `pnpm e2e`.
+
+## M7
+
+- **The procedure** (`core/src/agent/procedure.ts`) is the one agent-readable form of a guide. It holds:
+  - steps with their section, the callouts before them, the target (role and name first, then every selector, sorted by score), the input, expectations, failure rule, confirm flag and timeout;
+  - variables;
+  - no screenshots and no secret values.
+
+  Secrets, and values asked for every run, become variables. A password field gets a sensitive variable named after its label (`{{password}}`).
+
+- **Failure rule:** a step's `onFailure` defaults to "The procedure stops here…". The embedded text describes the procedure and never addresses whoever reads it.
+- **Agent Pack** (Share → Agent Pack), a zip with one folder named after the guide:
+  - `SKILL.md`: frontmatter `name` and `description`, then sections and numbered steps, with a **CONFIRM** marker where relevant;
+  - `references/procedure.json`;
+  - `assets/screenshots/step-NN.png`: blurs burned in; can be turned off;
+  - `scripts/replay.spec.ts`.
+
+  `name` is the title as lowercase words joined by single hyphens (at most 64 characters). `description` says what the procedure does and "Use when asked to …" (at most 1024 characters). If SKILL.md would reach 500 lines, each step gets one detail line instead. `validateAgentPack` checks the Agent Skills rules in tests; `skills-ref` was not installed on the build machine.
+
+- **Embedded copies (U3):**
+  - HTML: a `<script type="application/json" id="trailmark-procedure">` data block. It never runs, and the page's CSP allows no scripts.
+  - Markdown: a closed `<details><summary>Agent procedure</summary>` block with fenced JSON at the end.
+  - Word: `customXml/item1.xml` (namespace `urn:trailmark:procedure:v1`) with its properties part and relationships.
+  - PDF: an attached `procedure.json`.
+
+  Each also shows the line "Agent-readable procedure embedded (Trailmark schema v1)." The embed card and clipboard HTML carry no copy, because they are fragments for other pages.
+
+- **Input modes (U4):** Fixed text, Ask every run, or Ask with this as the default.
+  - The default for new guides is in Settings (extension and desktop app); the default for one guide is in its Agent view.
+  - "Ask" and "default" make the value a named variable, called after the field ("Invoice no." → `{{invoice_no}}`), keeping the recorded text as its example or default.
+  - Back to Fixed drops the variable when no other step uses it.
+  - Marking a value sensitive deletes the recorded value from the step, its title and its variable, and cannot be undone.
+  - Values that look like numbers, dates, IDs (letters and digits) or emails get the suggestion "Ask every run".
+  - Guide Me says "Type the value for this case" or "Suggested value: …".
+  - Trailmark refreshes a step title it wrote when the mode changes; a title the author wrote is kept.
+- **Confirm flags (U5)** are set at capture on buttons, links, menu items, options and tabs (and the same Windows control types) whose name contains submit, send, delete, remove, approve, post, pay, publish, finalise/finalize or confirm, as a whole word. They can be changed per step in the Agent view.
+- **Captured expectations (U6):**
+  - For clicks, double clicks, keys, choices and checkboxes in the top frame, the page notes its address, open dialogs, headings, and alert and status messages. It looks again 800 ms later and records up to three changes, in this order: new address; dialog opened or closed; new message (its first line); new heading, unless it repeats a dialog's name.
+  - If the page is replaced within 3 s, the new address is recorded from the background.
+  - Steps inside iframes are not observed.
+  - Addresses are regular expressions on the path (`/app/$`); Run for me and the replay test them as such, and as plain text if they are not valid expressions.
+  - Run for me checks expectations up to 4 times, 750 ms apart.
+  - In the Agent view, expectations can be removed, and "text appears" expectations added.
+- **Agent view (U1)** is a third editor tab (Edit · Preview · Agent). It lists:
+  - warnings: no stable selector (no role and name, and no selector scoring 0.6 or more), visual only, no element details, looks irreversible but not confirmed, fixed value that looks like data;
+  - each step's target and the ways to find it, the typed value, expectations, failure rule, wait time and confirm flag.
+- **Playwright replay (U10):**
+  - Elements are found by role and name, then label, text, test id, placeholder, and CSS or XPath last. iframes are reached with `frameLocator`; open shadow roots are pierced by Playwright itself.
+  - Variables come from `TM_<NAME>` environment variables, with the example or default as fallback; sensitive ones are required. A file for an upload step comes from `TM_FILE_STEP_<n>`.
+  - Desktop and manual steps are noted as annotations.
+  - Confirm steps end the test, with an annotation, unless `TRAILMARK_ALLOW_CONFIRM=1`.
+- **Sample guides** are recorded again with these features: "Submit invoice" asks for confirmation, and its expectations (address, dialog closing, "Invoice submitted") come from the capture.

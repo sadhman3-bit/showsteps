@@ -47,7 +47,11 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
   await page.waitForURL(/\/app\/$/);
   // Bring the supplier contact panel into view and click its heading.
   const heading = page.getByRole('heading', { name: 'Supplier contact' });
-  await heading.scrollIntoViewIfNeeded();
+  // The slow "Recent invoices" section moves the table down when it loads: wait for it.
+  await expect(page.getByText('Loading recent invoices…')).toHaveCount(0, { timeout: 10_000 });
+  // The whole table on screen: its last row is the IBAN.
+  await page.getByRole('cell', { name: 'GB82 WEST 1234 5698 7654 32' }).scrollIntoViewIfNeeded();
+  await expect(heading).toBeInViewport();
   await page.waitForTimeout(650);
   await heading.click({ delay: 120 });
   await expect.poll(() => sw.evaluate(() => __trailmark.recorder.current.stepCount)).toBe(5);
@@ -62,7 +66,9 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
         out.push(new TextDecoder().decode(await __trailmark.store.getImage(id, name)));
     return out;
   }, guideId);
-  expect(words.length).toBeGreaterThanOrEqual(3);
+  // Each picture taken from the page has its words (how many pictures there are depends on
+  // Chrome's two-per-second limit: a step may reuse the previous one).
+  expect(words.some((w) => w.includes('accounts@saltbush-supplies.example'))).toBe(true);
   for (const w of words) expect(w).not.toContain('not-a-real-password');
 
   const editor = await context.newPage();

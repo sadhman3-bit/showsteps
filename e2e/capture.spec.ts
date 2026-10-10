@@ -109,7 +109,9 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   await human(page);
 
   // Dialog with the irreversible action
-  await page.getByRole('button', { name: 'Review invoice' }).click({ delay: 250 });
+  // The press lasts long enough for Chrome to take the picture on a busy machine (it can take
+  // 300 ms there); the dialog opens on release.
+  await page.getByRole('button', { name: 'Review invoice' }).click({ delay: 600 });
   await human(page);
   await page
     .getByRole('dialog')

@@ -179,17 +179,25 @@ export class PageRecorder {
       // lets the background discard a picture that arrives after the page was replaced.
       const at = Date.now();
       // Where each word is on screen, for Secure Blur (top frame: its viewport is the picture).
-      const words =
-        window === window.top
-          ? collectPageText(document, { skip: (el) => el.localName.startsWith('trailmark-') })
-          : undefined;
-      const extra = words ? { words } : {};
+      // Read only once the picture has been asked for: reading earlier would hold up the paint
+      // the request waits for, and a fast click could change the page first.
+      const sendWords = () => {
+        if (window !== window.top) return;
+        const words = collectPageText(document, {
+          skip: (el) => el.localName.startsWith('trailmark-'),
+        });
+        void send({ type: 'shot-words', shotId, words });
+      };
       const controller = this.controller;
       if (controller)
-        void controller
-          .hideFor()
-          .then(() => send({ type: 'shot', shotId, uiHidden: true, at, ...extra }));
-      else void send({ type: 'shot', shotId, at, ...extra });
+        void controller.hideFor().then(() => {
+          void send({ type: 'shot', shotId, uiHidden: true, at });
+          sendWords();
+        });
+      else {
+        void send({ type: 'shot', shotId, at });
+        sendWords();
+      }
     }
     const observeId = this.observe(event);
     void send({
@@ -520,7 +528,7 @@ export class PageRecorder {
       return false;
     }
     if (msg.visible) {
-      this.controller.show();
+      this.controller.release();
       sendResponse({ ok: true });
       return false;
     }

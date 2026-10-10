@@ -44,8 +44,6 @@ export interface ShotOptions {
   uiHidden?: boolean;
   /** When the input happened (epoch ms, from the page). */
   inputAt?: number;
-  /** Words on screen, in CSS pixels of the top viewport (saved for Secure Blur). */
-  words?: PageText;
 }
 
 export interface RecorderDeps {
@@ -105,6 +103,13 @@ export class Recorder {
   private isNew = false;
   private lastShot: (ShotInfo & { stepId: string }) | undefined;
   private readonly pending = new Map<string, { shot: Promise<PendingShot>; at: number }>();
+  /** Word positions sent with a picture request (shot id → words), for Secure Blur. */
+  private readonly wordsByShot = new Map<string, PageText>();
+  /** Pictures saved before their word positions arrived (shot id → picture). */
+  private readonly awaitingWords = new Map<
+    string,
+    { file: string; width: number; height: number; scale: number }
+  >();
   /** Steps waiting for the page to say what their action changed (observe id → step id). */
   private readonly observing = new Map<string, string>();
   private lastActed: { tabId: number; stepId: string; at: number } | undefined;
@@ -280,6 +285,8 @@ export class Recorder {
     this.base = [];
     this.lastShot = undefined;
     this.pending.clear();
+    this.wordsByShot.clear();
+    this.awaitingWords.clear();
     this.observing.clear();
     this.lastActed = undefined;
     this.tabs.clear();
@@ -354,8 +361,24 @@ export class Recorder {
       if (this.state.status !== 'recording') return;
       const entry = shotId ? await this.pendingShot(shotId) : undefined;
       if (shotId) this.pending.delete(shotId);
-      const shot = entry ? await entry.shot : undefined;
+      const taken = entry ? await entry.shot : undefined;
+      const words = shotId ? this.wordsByShot.get(shotId) : undefined;
+      if (shotId) this.wordsByShot.delete(shotId);
+      const shot = taken?.kind === 'captured' && words ? { ...taken, words } : taken;
       const step = await this.applyContentEvent(sender, ev, shot);
+      // Word positions still on their way (a busy machine): saved when they arrive.
+      const picture = step?.human.screenshot;
+      if (shotId && !words && taken?.kind === 'captured' && picture && !picture.reusedFromStepId)
+        this.awaitingWords.set(shotId, {
+          file: picture.file,
+          width: picture.width,
+          height: picture.height,
+          scale: taken.viewportWidth > 0 ? picture.width / taken.viewportWidth : taken.dpr,
+        });
+      if (this.awaitingWords.size > 20) {
+        const oldest = this.awaitingWords.keys().next().value;
+        if (oldest !== undefined) this.awaitingWords.delete(oldest);
+      }
       if (step && observeId) {
         this.observing.set(observeId, step.id);
         this.lastActed = { tabId: sender.tabId, stepId: step.id, at: Date.now() };
@@ -363,6 +386,31 @@ export class Recorder {
       await this.save();
       this.publish();
     });
+  }
+
+  /** The words on screen when a picture was asked for (top frame). */
+  shotWords(shotId: string, words: PageText): void {
+    if (this.state.status !== 'recording') return;
+    const late = this.awaitingWords.get(shotId);
+    if (late) {
+      this.awaitingWords.delete(shotId);
+      void this.serial(async () => {
+        if (!this.guide) return;
+        const page = scalePageText(words, late.scale, late.width, late.height);
+        await this.deps.store.putImage(
+          this.guide.id,
+          wordsFileFor(late.file),
+          serializePageText(page),
+        );
+      });
+      return;
+    }
+    this.wordsByShot.set(shotId, words);
+    // Never more than a handful are waiting; drop the oldest beyond that.
+    if (this.wordsByShot.size > 20) {
+      const oldest = this.wordsByShot.keys().next().value;
+      if (oldest !== undefined) this.wordsByShot.delete(oldest);
+    }
   }
 
   /** U6: what changed on the page after a step's action (sent by the page ~800 ms later). */
@@ -481,7 +529,6 @@ export class Recorder {
         dataUrl,
         viewportWidth: vp?.width ?? 0,
         dpr: vp?.dpr ?? 1,
-        ...(opts.words ? { words: opts.words } : {}),
       };
     } catch {
       // e.g. the tab is not visible or not capturable; fall back to reuse.

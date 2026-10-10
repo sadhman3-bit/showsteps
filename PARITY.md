@@ -64,8 +64,8 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 
 ## Part B: Upgrades
 
-- [ ] U1 **Agent view in the editor:** a tab showing per step what an agent reads (target strategies, expectations, failure rule, confirm flag) with warnings, e.g. "Step 5 has no stable selector" or "Step 9 is visual only".
-- [ ] U2 **Agent Pack export** in the open Agent Skills format:
+- [x] U1 **Agent view in the editor:** a tab showing per step what an agent reads (target strategies, expectations, failure rule, confirm flag) with warnings, e.g. "Step 5 has no stable selector" or "Step 9 is visual only". _Tests: e2e/agent.spec.ts (warnings, targets, iframe chain, confirm, expectations, failure rule), core test/agent.test.ts (warnings); MT-M7-1._
+- [x] U2 **Agent Pack export** in the open Agent Skills format:
   ```
   <guide-slug>/
     SKILL.md                     # frontmatter: name, description; then steps
@@ -74,17 +74,19 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
     scripts/replay.spec.ts       # Playwright replay of web steps
   ```
   `name`: lowercase letters, digits and single hyphens, at most 64 characters, matching the folder name. `description`: at most 1024 characters, saying what the procedure does and when to use it. Keep SKILL.md under 500 lines. Each step in SKILL.md: number, plain-language instruction, target (role and name first, then other selectors), input or variable, expected result, failure rule, and a CONFIRM marker where relevant. A "Variables" section lists every variable with description and whether it is sensitive. Validate the output with a test (and with `skills-ref validate` if it is installed).
-- [ ] U3 **Embedded agent copy in every human export,** invisible to readers but clearly labelled:
+  _Tests: core test/agent.test.ts (layout, name and description rules, under 500 lines, CONFIRM markers, validator), e2e/agent.spec.ts (download from Share, validated); docs/agent-run-transcript.md (a fresh agent completed the demo flow from the pack alone); MT-M7-3._
+- [x] U3 **Embedded agent copy in every human export,** invisible to readers but clearly labelled:
   - HTML: `<script type="application/json" id="trailmark-procedure">`.
   - Markdown: a collapsed `<details><summary>Agent procedure</summary>` block at the end containing fenced JSON.
   - Word: a custom XML part (`customXml/item1.xml` plus properties and relationship) holding the procedure.
   - PDF: `procedure.json` attached inside the PDF (pdf-lib `attach`).
   - Every export gets a one-line visible footer: "Agent-readable procedure embedded (Trailmark schema v1)."
   - The embedded text describes the procedure. It never addresses an AI or gives it orders ("ignore", "you must"), so agents don't mistake it for prompt injection.
-- [ ] U4 **Input modes:** each typed value can be Fixed text, Ask every run, or Ask with a default; plus a sensitive flag. A global default lives in Settings and per guide. Detect likely variables (numbers, dates, IDs, emails) and suggest "Ask every run". Guide Me shows what to type; Run for me prompts for values once at the start.
-- [ ] U5 **Confirm flags:** auto-set `confirm` on buttons whose name means an irreversible action (submit, send, delete, remove, approve, post, pay, publish, finalise, confirm). Editable per step.
-- [ ] U6 **Captured expectations:** about 800 ms after each action, diff URL, dialogs and the accessibility tree around the target to record what changed (URL, dialog appeared, element appeared or disappeared, text appeared). Editable.
+    _Tests: core test/agent.test.ts (procedure read back from HTML, Markdown, Word custom XML and the PDF attachment, plus the visible line), core golden files; MT-M7-5._
+- [x] U4 **Input modes:** each typed value can be Fixed text, Ask every run, or Ask with a default; plus a sensitive flag. A global default lives in Settings and per guide. Detect likely variables (numbers, dates, IDs, emails) and suggest "Ask every run". Guide Me shows what to type; Run for me prompts for values once at the start. _Tests: core test/agent.test.ts (suggestions, variables, defaults, back to fixed, sensitive), e2e/agent.spec.ts (suggestion, Ask every run, secrets), e2e/guidance.spec.ts (Run for me values); MT-M7-2._
+- [x] U5 **Confirm flags:** auto-set `confirm` on buttons whose name means an irreversible action (submit, send, delete, remove, approve, post, pay, publish, finalise, confirm). Editable per step. _Tests: core test/agent.test.ts (irreversible names, roles), e2e/agent.spec.ts (Submit invoice marked at capture, editable), e2e/guidance.spec.ts (Run for me stops)._
+- [x] U6 **Captured expectations:** about 800 ms after each action, diff URL, dialogs and the accessibility tree around the target to record what changed (URL, dialog appeared, element appeared or disappeared, text appeared). Editable. _Tests: core test/agent.test.ts (address, dialogs, messages, headings), e2e/agent.spec.ts (recorded expectations on the re-recorded sample; add text), e2e/guidance.spec.ts (Run for me checks them)._
 - [ ] U7 **Agent self-check:** dry-run a guide in a new tab, resolving every target and expectation without clicking (highlight only), then report per step: found, ambiguous or missing.
 - [ ] U8 **OCR for visual-only steps** with tesseract.js, bundled offline (worker, core and English data inside the bundle, no CDN). Fills `target.ocrText` with text around the click so agents and the matcher have anchors. Also powers E11 on desktop and image steps.
 - [ ] U9 **Guide health:** when Guide Me or Run for me can't find a target, offer "Re-capture this step" in place, keeping the rest of the guide.
-- [ ] U10 **Playwright replay** (`scripts/replay.spec.ts`) uses `getByRole` / `getByLabel` / `getByText` first, CSS last, reads variables from environment variables, and stops before confirm steps unless `TRAILMARK_ALLOW_CONFIRM=1` is set.
+- [x] U10 **Playwright replay** (`scripts/replay.spec.ts`) uses `getByRole` / `getByLabel` / `getByText` first, CSS last, reads variables from environment variables, and stops before confirm steps unless `TRAILMARK_ALLOW_CONFIRM=1` is set. _Tests: e2e/agent.spec.ts (the generated replay runs against the demo app: stops before Submit, completes with TRAILMARK_ALLOW_CONFIRM=1), core test/agent.test.ts (locators, environment variables)._

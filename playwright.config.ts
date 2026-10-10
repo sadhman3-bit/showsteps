@@ -17,7 +17,13 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /desktop.*.spec.ts/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: [/desktop.*.spec.ts/, /agent-replay.spec.ts/, '**/.replay/**'],
+    },
+    // Starts a second Playwright and browser: after the extension tests, so it never slows them.
+    { name: 'replay', testMatch: /agent-replay.spec.ts/, dependencies: ['chromium'] },
     // Windows only: drives the real mouse and keyboard, so it runs on its own (pnpm e2e:desktop).
     { name: 'desktop', testMatch: /desktop.*.spec.ts/ },
   ],

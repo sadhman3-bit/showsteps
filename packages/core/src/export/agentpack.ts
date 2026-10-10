@@ -121,7 +121,6 @@ function stepSection(step: ProcedureStep, p: Procedure, compact: boolean): strin
       .join('. ');
     return [...lines, `   - ${detail || `On failure: ${step.onFailure}`}`];
   }
-  for (const n of step.notes ?? []) sub.push(`Note: ${n.replace(/\n+/g, ' ')}`);
   if (step.description) sub.push(step.description.replace(/\n+/g, ' '));
   if (step.target) sub.push(`Target: ${describeTarget(step.target)}`);
   const input = inputLine(step, p);
@@ -192,6 +191,8 @@ function skillMarkdownWith(
       section = step.section;
       out.push(`### ${section}`, '');
     }
+    // Callouts sit where the author wrote them: between the steps, not inside one.
+    for (const n of step.notes ?? []) out.push(`> Note: ${n.replace(/\n+/g, ' ')}`, '');
     out.push(...stepSection(step, p, compact), '');
   }
   if (p.success) out.push('## Done when', '', p.success, '');

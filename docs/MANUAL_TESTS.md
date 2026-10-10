@@ -259,3 +259,51 @@ In the desktop app's **Settings**, choose a OneDrive folder as the team library 
 Sign in to the demo app and record a click on the dashboard's **Supplier contact** heading. In the editor click **Secure Blur**.
 
 **Expected:** eight items are listed and outlined on the picture: email, phone, card, BSB, account, TFN, ABN and IBAN, each masked to its last characters. Untick one and click **Blur 7 items**: the picture has seven blurred regions, and running Secure Blur again lists only the one left.
+
+---
+
+## M7
+
+Use the normal build with the sample guides installed.
+
+### MT-M7-1 Agent view
+
+Open "Create a supplier invoice in Ledgerline" in the editor and click **Agent**.
+
+**Expected:**
+
+- "Things to check" lists steps 7, 8 and 10 as fixed values that look like they change.
+- Step 17 has **Confirm first**.
+- Step 16 expects the "Review invoice" dialog to appear.
+- Step 12's target names the cost-centre iframe.
+
+Untick the confirm box on step 17; a new warning says it looks irreversible.
+
+### MT-M7-2 Ask every run
+
+In **Edit**, on step 7 click **Ask every run**, then start **Run for me** from the reader.
+
+**Expected:** the step title becomes "Type {{invoice_no}} into Invoice no." Run for me asks for "Invoice no." before it starts and types what you enter. In Guide Me the card says "Type the value for this case."
+
+### MT-M7-3 Agent Pack with a real agent
+
+Download **Share → Agent Pack** and unzip it. Give the folder to an AI agent that can drive a browser, such as an AI coding agent with a Playwright MCP server or a browser tool, and ask it to follow `SKILL.md` against the demo app.
+
+**Expected:** it completes the flow and pauses for approval at "Submit invoice". See `docs/agent-run-transcript.md` for a recorded run.
+
+### MT-M7-4 Replay script
+
+In the unzipped pack, run `npx playwright test scripts/replay.spec.ts` with `TM_PASSWORD` set and the demo app running. Run it again with `TRAILMARK_ALLOW_CONFIRM=1`.
+
+**Expected:** the first run passes and stops before "Submit invoice" with an annotation; the second submits the invoice.
+
+### MT-M7-5 Embedded copies
+
+Export the guide as PDF, Word, Markdown and a web page.
+
+**Expected:** each ends with "Agent-readable procedure embedded (Trailmark schema v1)." In detail:
+
+- the PDF has an attachment, `procedure.json` (in Acrobat or Edge, the attachments pane);
+- the Word file opens normally;
+- the Markdown file ends with a collapsed "Agent procedure" block;
+- the web page's source has a `trailmark-procedure` JSON block and the page still runs no scripts.
