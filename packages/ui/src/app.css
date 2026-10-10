@@ -1,3 +1,5 @@
+@import './editor.css';
+
 /* Trailmark component styles. Colours come only from tokens.css. */
 
 .tm-icon {
@@ -472,10 +474,10 @@
   background: var(--tm-surface-2);
 }
 
-.tm-shot img {
-  position: absolute;
-  max-width: none;
-  user-select: none;
+.tm-shot__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .tm-shot__loading {
@@ -484,11 +486,7 @@
 }
 
 .tm-shot__box {
-  position: absolute;
-  border: 3px solid var(--tm-focus);
-  border-radius: 6px;
-  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.08);
-  pointer-events: none;
+  stroke: var(--tm-focus);
 }
 
 @media (max-width: 720px) {

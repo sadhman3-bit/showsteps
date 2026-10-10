@@ -143,7 +143,10 @@ export class Controller {
     clearTimeout(this.showTimer);
     this.showTimer = setTimeout(() => this.show(), ms);
     if (alreadyPainted) return Promise.resolve();
-    return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    // Two frames: the hidden toolbar has then been composited even on a busy machine.
+    return new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0))),
+    );
   }
 
   show(): void {

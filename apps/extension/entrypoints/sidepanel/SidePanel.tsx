@@ -5,11 +5,13 @@ import {
   getStore,
   libraryUrl,
   readCaptureMore,
+  readRecapture,
+  writeRecapture,
   request,
   useBackground,
   writeCaptureMore,
 } from '../../lib/client';
-import type { CaptureMore, CaptureState, ControlAction } from '../../lib/messages';
+import type { CaptureMore, CaptureState, ControlAction, Recapture } from '../../lib/messages';
 
 const s = strings.sidePanel;
 const c = strings.capture;
@@ -110,6 +112,8 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
         </p>
       ) : null}
 
+      <RecaptureCard />
+
       {more ? (
         <p class="tm-notice">
           {s.captureMoreInto(more.title, more.afterStep)}{' '}
@@ -202,5 +206,63 @@ function Recording({ state }: { state: CaptureState }) {
         </div>
       )}
     </main>
+  );
+}
+
+/** Re-capture hand-over from the editor: replace one step's screenshot with this window's tab. */
+function RecaptureCard() {
+  const [req, setReq] = useState<Recapture>();
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    void readRecapture().then(setReq);
+    const onChange = (changes: Record<string, unknown>, area: string) => {
+      if (area === 'session' && 'recapture' in changes) void readRecapture().then(setReq);
+    };
+    browser.storage.onChanged.addListener(onChange);
+    return () => browser.storage.onChanged.removeListener(onChange);
+  }, []);
+  if (!req)
+    return message ? (
+      <p class="tm-notice" role="status">
+        {message}
+      </p>
+    ) : null;
+  const capture = async () => {
+    // Permission first, inside the click: capturing a tab needs website access.
+    const granted = await browser.permissions.request({ origins: ['<all_urls>'] });
+    if (!granted) {
+      setMessage(s.permissionDenied);
+      return;
+    }
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id === undefined) return;
+    const reply = await request({
+      type: 'recapture',
+      tabId: tab.id,
+      guideId: req.guideId,
+      stepId: req.stepId,
+    });
+    if (reply.error) {
+      setMessage(reply.error === 'busy' ? s.busy : s.recaptureFailed);
+      return;
+    }
+    await writeRecapture(undefined);
+    setMessage(s.recaptureDone);
+  };
+  return (
+    <section class="tm-notice tm-stack" aria-live="polite">
+      <p>{s.recaptureFor(req.stepNumber, req.title)}</p>
+      <Button variant="primary" onClick={() => void capture()}>
+        {s.recaptureGo}
+      </Button>
+      <Button variant="ghost" onClick={() => void writeRecapture(undefined)}>
+        {s.recaptureCancel}
+      </Button>
+      {message ? (
+        <p class="tm-error" role="alert">
+          {message}
+        </p>
+      ) : null}
+    </section>
   );
 }

@@ -71,7 +71,13 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('hello') }),
   z.object({ type: z.literal('frame-register'), token: z.string().uuid() }),
   z.object({ type: z.literal('viewport'), viewport: Viewport }),
-  z.object({ type: z.literal('shot'), shotId: ShotId, uiHidden: z.boolean().optional() }),
+  z.object({
+    type: z.literal('shot'),
+    shotId: ShotId,
+    uiHidden: z.boolean().optional(),
+    /** When the input happened (epoch ms). */
+    at: z.number().optional(),
+  }),
   z.object({ type: z.literal('event'), shotId: ShotId.optional(), event: ContentEventSchema }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
 ]);
@@ -87,6 +93,13 @@ export const PageMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('get-state') }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
+  /** Replace a step's screenshot with a fresh capture of the tab. */
+  z.object({
+    type: z.literal('recapture'),
+    tabId: z.number().int(),
+    guideId: z.string().min(1),
+    stepId: z.string().min(1),
+  }),
 ]);
 export type PageMessage = z.infer<typeof PageMessageSchema>;
 
@@ -135,3 +148,13 @@ export const CaptureMoreSchema = z.object({
 });
 export type CaptureMore = z.infer<typeof CaptureMoreSchema>;
 export const CAPTURE_MORE_KEY = 'captureMore';
+
+/** Pending "re-capture this step" request handed from the editor to the side panel. */
+export const RecaptureSchema = z.object({
+  guideId: z.string(),
+  stepId: z.string(),
+  title: z.string(),
+  stepNumber: z.number().int().positive(),
+});
+export type Recapture = z.infer<typeof RecaptureSchema>;
+export const RECAPTURE_KEY = 'recapture';

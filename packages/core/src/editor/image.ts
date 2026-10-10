@@ -1,5 +1,5 @@
 import type { Guide, Rect, Step } from '../schema.js';
-import { autoCrop } from '../geometry.js';
+import { roundRect } from '../geometry.js';
 import { updateStep } from './ops.js';
 
 /** Remember the captured screenshot before the first edit, so it can be restored later. */
@@ -51,14 +51,18 @@ export function withMagnify(step: Step, level: number): Step {
       w: 2,
       h: 2,
     };
-    const { crop, zoom } = autoCrop(box, shot.width, shot.height, level);
-    if (zoom > 1) {
-      screenshot.crop = crop;
-      screenshot.zoom = zoom;
-    } else {
-      delete screenshot.crop;
-      delete screenshot.zoom;
-    }
+    // An explicit magnify always zooms by `level`, centred on the highlight and kept inside the image.
+    const w = shot.width / level;
+    const h = shot.height / level;
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    screenshot.crop = roundRect({
+      x: Math.min(Math.max(cx - w / 2, 0), shot.width - w),
+      y: Math.min(Math.max(cy - h / 2, 0), shot.height - h),
+      w,
+      h,
+    });
+    screenshot.zoom = Math.round((shot.width / screenshot.crop.w) * 100) / 100;
   }
   return { ...step, human: { ...step.human, screenshot } };
 }

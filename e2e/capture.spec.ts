@@ -197,6 +197,50 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   };
   expect(useBtn.target.bbox.x).toBeGreaterThan(20);
 
+  // The sign-in click loads a new page at once: its screenshot must still show the sign-in form,
+  // so the pixel under its highlight is the blue "Sign in" button.
+  const signIn = byTitle('Click **Sign in**');
+  const centre = await serviceWorker.evaluate(
+    async ({ id, file, box }) => {
+      const store = __trailmark.store as unknown as {
+        getImage(g: string, n: string): Promise<Uint8Array>;
+      };
+      const bytes = await store.getImage(id, file.replace(/^img\//, ''));
+      const bmp = await createImageBitmap(new Blob([bytes]));
+      const canvas = new OffscreenCanvas(bmp.width, bmp.height);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(bmp, 0, 0);
+      // Just inside the box corner: the button background, away from its white label.
+      return Array.from(ctx.getImageData(box.x + 10, box.y + 10, 1, 1).data);
+    },
+    { id: guideId!, file: signIn.human.screenshot!.file, box: signIn.human.actionBox! },
+  );
+  expect(centre[2]! - centre[0]!, 'sign-in screenshot should show the blue button').toBeGreaterThan(
+    60,
+  );
+
+  // The capture toolbar (dark, bottom-right) never appears in a screenshot.
+  const corners = await serviceWorker.evaluate(
+    async ({ id, files }) => {
+      const store = __trailmark.store as unknown as {
+        getImage(g: string, n: string): Promise<Uint8Array>;
+      };
+      const out: number[] = [];
+      for (const f of files) {
+        const bmp = await createImageBitmap(new Blob([await store.getImage(id, f.slice(4))]));
+        const canvas = new OffscreenCanvas(bmp.width, bmp.height);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(bmp, 0, 0);
+        const [r = 0, g = 0, b = 0] = ctx.getImageData(bmp.width - 60, bmp.height - 30, 1, 1).data;
+        out.push(Math.round((r + g + b) / 3));
+      }
+      return out;
+    },
+    { id: guideId!, files: [...new Set(steps.map((s) => s.human.screenshot!.file))] },
+  );
+  for (const brightness of corners)
+    expect(brightness, 'toolbar visible in a screenshot').toBeGreaterThan(100);
+
   // Keep one screenshot with its Action Box drawn on it, for a human to eyeball in the report.
   const review = byTitle('Review invoice');
   const { png, brightness } = await serviceWorker.evaluate(

@@ -25,6 +25,8 @@ export interface ShotOptions {
   windowId?: number;
   /** The page already hid Trailmark's controls and painted, so no round trip is needed. */
   uiHidden?: boolean;
+  /** When the input happened (epoch ms, from the page). */
+  inputAt?: number;
 }
 
 export interface RecorderDeps {
@@ -85,6 +87,8 @@ export class Recorder {
   /** Events that arrived before their screenshot request, waiting for it (shot id → wake-up). */
   private readonly waiting = new Map<string, () => void>();
   private readonly viewports = new Map<number, Viewport>();
+  /** Last time each tab committed a top-level navigation (a new page). */
+  private readonly navigatedAt = new Map<number, number>();
   private readonly tabs = new Set<number>();
   private readonly limiter: ShotLimiter;
   private queue: Promise<unknown> = Promise.resolve();
@@ -259,6 +263,11 @@ export class Recorder {
     void this.persist();
   }
 
+  /** A tab committed a new top-level page. */
+  noteNavigation(tabId: number, at = Date.now()): void {
+    this.navigatedAt.set(tabId, at);
+  }
+
   setViewport(tabId: number, viewport: Viewport): void {
     this.viewports.set(tabId, viewport);
   }
@@ -356,7 +365,12 @@ export class Recorder {
   private async takeShot(tabId: number, opts: ShotOptions = {}): Promise<PendingShot> {
     if (!this.limiter.tryAcquire()) return { kind: 'skipped' };
     try {
+      const asked = opts.inputAt ?? Date.now();
       const dataUrl = await this.deps.captureVisibleTab(tabId, opts);
+      // Capturing can take a few hundred ms on a busy machine. If the page was replaced by a new
+      // one meanwhile (e.g. a sign-in click), the picture shows the wrong page: reuse the
+      // previous screenshot instead, which shows this page moments earlier.
+      if ((this.navigatedAt.get(tabId) ?? 0) >= asked) return { kind: 'skipped' };
       const vp = this.viewports.get(tabId);
       return { kind: 'captured', dataUrl, viewportWidth: vp?.width ?? 0, dpr: vp?.dpr ?? 1 };
     } catch {

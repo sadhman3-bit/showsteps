@@ -120,30 +120,29 @@ test('library: search, rename, folders, tags, filters, duplicate, trash, export 
   expect(errors).toEqual([]);
 });
 
-test('guide view shows numbered steps with screenshots and offers capture more', async ({
+test('reader view shows numbered steps with screenshots; the editor offers capture more', async ({
   context,
   serviceWorker,
   extensionId,
 }) => {
   const { id } = await recordShortGuide(context, serviceWorker);
   const view = await context.newPage();
-  await view.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}`);
+  await view.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}/view`);
   await expect(view.getByRole('heading', { level: 1, name: 'Sign in · Ledgerline' })).toBeVisible();
   const steps = view.locator('.tm-step');
   await expect(steps).toHaveCount(4);
   await expect(steps.nth(1)).toContainText('Type alex into Username');
   const img = steps.nth(3).getByRole('img', { name: /Screenshot for step 4: Click Sign in/ });
   await expect(img).toBeVisible();
-  expect(await img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+  await expect(img.locator('image').first()).toHaveAttribute('href', /^blob:/);
   await expect(steps.nth(3).locator('.tm-shot__box')).toBeVisible();
   await expect(steps.nth(2)).toContainText('Enter your password');
   await view.screenshot({ path: test.info().outputPath('guide-view.png'), fullPage: true });
 
+  // Edit → capture more after step 1 (the focused block) hands over to the side panel.
+  await view.getByRole('button', { name: 'Edit' }).click();
+  await view.getByRole('textbox', { name: 'Step 1 title' }).click();
   await view.getByRole('button', { name: 'Capture more steps' }).click();
-  const dialog = view.getByRole('dialog', { name: 'Capture more steps' });
-  await expect(dialog.getByRole('combobox')).toContainText('Step 2: Type alex into Username');
-  await dialog.getByRole('combobox').selectOption({ label: 'Step 1: Go to localhost:5173' });
-  await dialog.getByRole('button', { name: 'Continue in the side panel' }).click();
   const pending = await serviceWorker.evaluate(
     async () => (await chrome.storage.session.get('captureMore')).captureMore,
   );

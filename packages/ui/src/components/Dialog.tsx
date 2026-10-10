@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useId, useRef } from 'preact/hooks';
 import { strings } from '../strings.js';
 import { Button } from '../Button.js';
 
@@ -14,6 +14,8 @@ export interface DialogProps {
 /** Modal built on <dialog>: focus trapping, Esc to close and the backdrop come from the browser. */
 export function Dialog({ title, children, onClose, actions }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  // Unique per dialog: dialogs can be nested (a confirmation inside version history).
+  const titleId = `tm-dialog-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   useEffect(() => {
     const el = ref.current;
     if (el && !el.open) el.showModal();
@@ -23,13 +25,13 @@ export function Dialog({ title, children, onClose, actions }: DialogProps) {
     <dialog
       ref={ref}
       class="tm-dialog"
-      aria-labelledby="tm-dialog-title"
+      aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
         onClose();
       }}
     >
-      <h2 id="tm-dialog-title">{title}</h2>
+      <h2 id={titleId}>{title}</h2>
       <div class="tm-dialog__body">{children}</div>
       <div class="tm-dialog__actions">
         {actions ?? <Button onClick={onClose}>{strings.library.close}</Button>}

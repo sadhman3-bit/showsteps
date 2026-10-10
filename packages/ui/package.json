@@ -24,8 +24,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "preact": "^11.0.1",
-    "@trailmark/core": "workspace:*"
+    "@trailmark/core": "workspace:*",
+    "dompurify": "^3.4.16",
+    "preact": "^11.0.1"
   },
   "devDependencies": {
     "preact-render-to-string": "^6.8.0"

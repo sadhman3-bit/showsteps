@@ -147,6 +147,25 @@ describe('Recorder', () => {
     });
   });
 
+  it('discards a capture that finished after the page was replaced, reusing the previous one', async () => {
+    const { guideId } = await startNew(ctx.recorder);
+    await ctx.send({ kind: 'key', key: 'Escape' });
+    ctx.tick();
+    // The input happened at t=1000; the tab committed a new page at t=1001, before capture ended.
+    ctx.recorder.noteNavigation(TAB, 1001);
+    await ctx.recorder.shot(TAB, 'shot-after-navigation', { inputAt: 1000 });
+    await ctx.recorder.event(
+      { tabId: TAB, frameId: 0, tabUrl: URL_ },
+      { kind: 'click', button: 'left', target: target('Sign in', 'button'), element: 'b' },
+      'shot-after-navigation',
+    );
+    const steps = await stepsOf(ctx.store, guideId!);
+    expect(steps[2]!.human.screenshot).toMatchObject({
+      file: steps[1]!.human.screenshot!.file,
+      reusedFromStepId: steps[1]!.id,
+    });
+  });
+
   it('never stores sensitive values', async () => {
     const { guideId } = await startNew(ctx.recorder);
     await ctx.send({ kind: 'type', target: target('Password'), element: 'p', sensitive: true });

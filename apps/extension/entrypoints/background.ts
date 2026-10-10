@@ -12,6 +12,7 @@ import {
   type PageMessage,
 } from '../lib/messages';
 import { Recorder, type EventSender, type PersistedRecorder, type Viewport } from '../lib/recorder';
+import { recaptureStep } from '../lib/recapture';
 import { encodeScreenshot } from '../lib/shots';
 
 const SCRIPT_ID = 'trailmark-capture';
@@ -60,6 +61,8 @@ export default defineBackground(() => {
       const window = windowId ?? (await browser.tabs.get(tabId)).windowId;
       // Keep Trailmark's own controls out of the picture. Input in the top frame has already
       // hidden them; anything else (iframes, navigations) asks the top frame first.
+      // Input in the top frame hid them synchronously, before asking; the message round trip
+      // gives that change time to reach the screen. Anything else (iframes, navigations) asks.
       if (!uiHidden) {
         await browser.tabs
           .sendMessage(tabId, { type: 'overlays', visible: false }, { frameId: 0 })
@@ -189,6 +192,7 @@ export default defineBackground(() => {
         await recorder.shot(tabId, msg.shotId, {
           ...(sender.tab?.windowId !== undefined ? { windowId: sender.tab.windowId } : {}),
           uiHidden: frameId === 0 && msg.uiHidden === true,
+          ...(msg.at ? { inputAt: msg.at } : {}),
         });
         return { ok: true };
       case 'event':
@@ -226,6 +230,27 @@ export default defineBackground(() => {
         return { state: recorder.current };
       case 'control':
         return { state: await recorder.control(msg.action) };
+      case 'recapture': {
+        if (recorder.isActive) return { state: recorder.current, error: 'busy' };
+        const tab = await browser.tabs.get(msg.tabId).catch(() => undefined);
+        if (!tab?.url || !/^(https?|file):/.test(tab.url)) {
+          return { state: recorder.current, error: 'cannot-record-here' };
+        }
+        try {
+          await recaptureStep(
+            store,
+            msg.guideId,
+            msg.stepId,
+            () => browser.tabs.captureVisibleTab(tab.windowId, { format: 'png' }),
+            encodeScreenshot,
+            (await viewportOf(msg.tabId))?.dpr ?? 1,
+          );
+          broadcast({ type: 'library-changed' });
+          return { state: recorder.current };
+        } catch {
+          return { state: recorder.current, error: 'recapture-failed' };
+        }
+      }
     }
   }
 
@@ -256,6 +281,7 @@ export default defineBackground(() => {
 
   browser.webNavigation.onCommitted.addListener((d) => {
     if (d.frameId !== 0 || !recorder.isActive) return;
+    recorder.noteNavigation(d.tabId, d.timeStamp);
     const direct =
       DIRECT_TRANSITIONS.has(d.transitionType) ||
       d.transitionQualifiers.includes('forward_back') ||

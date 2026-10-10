@@ -168,13 +168,14 @@ export class PageRecorder {
    */
   private record(event: ContentEvent, withShot: boolean): void {
     const shotId = withShot ? crypto.randomUUID() : undefined;
-    // Hide our toolbar now, so it is already gone when the background takes the picture.
     if (shotId) {
-      // Hide our toolbar, then ask for the picture as soon as that has been painted.
+      // Hide our toolbar, then ask for the picture once that has been painted. The input time
+      // lets the background discard a picture that arrives after the page was replaced.
+      const at = Date.now();
       const controller = this.controller;
       if (controller)
-        void controller.hideFor().then(() => send({ type: 'shot', shotId, uiHidden: true }));
-      else void send({ type: 'shot', shotId });
+        void controller.hideFor().then(() => send({ type: 'shot', shotId, uiHidden: true, at }));
+      else void send({ type: 'shot', shotId, at });
     }
     void send({ type: 'event', ...(shotId ? { shotId } : {}), event });
   }

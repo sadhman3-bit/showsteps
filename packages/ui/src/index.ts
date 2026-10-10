@@ -22,3 +22,11 @@ export {
 } from './library/filter.js';
 export { GuideView, type GuideViewProps } from './guide/GuideView.js';
 export { Screenshot } from './guide/Screenshot.js';
+export { GuideReader, type GuideReaderProps } from './guide/GuideReader.js';
+export { GuideEditor, type GuideEditorProps } from './editor/GuideEditor.js';
+export { ImageEditor, type ImageEditorProps } from './editor/ImageEditor.js';
+export { RichTextField, parseRichText } from './editor/RichTextField.js';
+export { encodeImage, clipboardImage } from './editor/imageio.js';
+export { AnnotationShape } from './components/Annotations.js';
+export { brandStyle, BRAND_FONTS, textOn } from './brand.js';
+export { ImageLayers, blurRadius } from './guide/Screenshot.js';

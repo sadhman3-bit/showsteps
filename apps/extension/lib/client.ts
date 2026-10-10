@@ -7,9 +7,12 @@ import {
   CaptureMoreSchema,
   CaptureStateSchema,
   IDLE_STATE,
+  RECAPTURE_KEY,
+  RecaptureSchema,
   type CaptureMore,
   type CaptureState,
   type PageMessage,
+  type Recapture,
 } from './messages';
 
 let store: IndexedDbStore | undefined;
@@ -72,5 +75,24 @@ export function writeCaptureMore(value: CaptureMore | undefined): Promise<void> 
 export function libraryUrl(guideId?: string): string {
   return browser.runtime.getURL(
     `/library.html${guideId ? `#/guide/${encodeURIComponent(guideId)}` : ''}`,
+  );
+}
+
+export async function readRecapture(): Promise<Recapture | undefined> {
+  const r = await browser.storage.session.get(RECAPTURE_KEY);
+  const parsed = RecaptureSchema.safeParse(r[RECAPTURE_KEY]);
+  return parsed.success ? parsed.data : undefined;
+}
+
+export function writeRecapture(value: Recapture | undefined): Promise<void> {
+  return value
+    ? browser.storage.session.set({ [RECAPTURE_KEY]: value })
+    : browser.storage.session.remove(RECAPTURE_KEY);
+}
+
+/** Deep link to a step in the reader view. */
+export function stepUrl(guideId: string, stepId: string): string {
+  return browser.runtime.getURL(
+    `/library.html#/guide/${encodeURIComponent(guideId)}/step/${encodeURIComponent(stepId)}`,
   );
 }
