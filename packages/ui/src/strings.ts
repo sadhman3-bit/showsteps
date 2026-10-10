@@ -331,6 +331,7 @@ export const strings = {
       secret: 'Passwords and other secrets are never stored, so type this yourself.',
       upload: 'Choose the file yourself.',
       desktop: 'This step is in a desktop app.',
+      'desktop-app': 'The Trailmark desktop app highlights this step on your screen.',
       'no-target': 'This step has no element to point at.',
       manual: 'This is a step for you to do.',
       cannot: 'Trailmark cannot do this one on this page.',
@@ -422,6 +423,18 @@ export const strings = {
     aiHint:
       'Uses the AI built into Chrome, on this computer only, to improve step text, summarise and translate guides.',
     aiUnavailable: 'This browser has no built-in AI, so these tools are hidden.',
+    desktopApp: 'Use the Trailmark desktop app',
+    desktopAppHint:
+      'Adds steps in Windows apps to your captures and keeps guides in the desktop library. Needs the desktop app installed and running.',
+    desktopConnected: 'Connected to the desktop app.',
+    desktopOffline: 'The desktop app is not running.',
+    moveTitle: 'Move your guides to the desktop app?',
+    moveBody: (n: number) =>
+      `There ${n === 1 ? 'is 1 guide' : `are ${n} guides`} in this browser. Move ${n === 1 ? 'it' : 'them'} into the desktop app's library so both apps share ${n === 1 ? 'it' : 'them'}? The browser keeps a copy.`,
+    move: 'Move guides',
+    keep: 'Keep using browser storage',
+    moving: (done: number, total: number) => `Moving ${done} of ${total}…`,
+    moved: (n: number) => (n === 1 ? 'Moved 1 guide.' : `Moved ${n} guides.`),
     save: 'Save',
   },
   ai: {
@@ -456,6 +469,36 @@ export const strings = {
       hi: 'Hindi',
       vi: 'Vietnamese',
     } as Record<string, string>,
+  },
+  desktop: {
+    record: 'Record a process',
+    recordHint: (keys: string) => `Records clicks and typing in any Windows app. Shortcut: ${keys}`,
+    finish: 'Finish',
+    recording: (n: number) => `Recording · ${n === 1 ? '1 step' : `${n} steps`}`,
+    shared: 'Browser steps are being added by the extension.',
+    connected: 'Connected to the Trailmark browser extension',
+    notConnected: 'Browser extension not connected',
+    myLibrary: 'My library',
+    teamLibrary: 'Team library',
+    libraryFolder: 'Library folder',
+    sharedFolder: 'Team library folder (synced with OneDrive or SharePoint)',
+    sharedNone: 'None',
+    choose: 'Choose…',
+    clear: 'Remove',
+    webStep: 'Do this step in your browser, then click “I did this”.',
+    notFoundDesktop:
+      'This could not be found on screen. Open the app, or do the step yourself and click “I did this”.',
+    allDone: 'All steps done.',
+    controllerLabel: 'Trailmark capture controls',
+  },
+  readOnly: {
+    badge: 'Read-only',
+    notice: 'This guide is read-only in the team library. Edit a copy in your own library instead.',
+    copy: 'Edit a personal copy',
+    copied: (title: string) => `Copied “${title}” to your library.`,
+    mark: 'Read-only for others',
+    markHint:
+      'Others who open this guide from the team library can view it and make their own copy.',
   },
   time: {
     justNow: 'just now',

@@ -10,10 +10,13 @@ import {
   anyAi,
   detectAi,
   strings,
+  Button,
+  Dialog,
   type RunSpeed,
 } from '@trailmark/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
+  getLocalStore,
   getStore,
   stepUrl,
   startGuide,
@@ -21,6 +24,7 @@ import {
   writeCaptureMore,
   writeRecapture,
 } from '../../lib/client';
+import { BridgeClient, bridgeStore, copyLibrary } from '../../lib/bridge';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type Settings } from '../../lib/guideMessages';
 import { installSamples } from '../../lib/samples';
 import { readSettings, writeSettings } from '../../lib/settings';
@@ -108,19 +112,96 @@ export function LibraryApp() {
     });
   };
 
+  // ---------- Desktop app (bridge) ----------
+
+  const [desktopConnected, setDesktopConnected] = useState(false);
+  const [moving, setMoving] = useState<{ total: number; done: number } | null>(null);
+  const [askMove, setAskMove] = useState(0);
+  const checkDesktop = async (current: Settings) => {
+    const r = (await browser.runtime
+      .sendMessage({ type: 'desktop-get' })
+      .catch(() => undefined)) as { connected?: boolean } | undefined;
+    const connected = !!r?.connected;
+    setDesktopConnected(connected);
+    if (connected && !current.desktopAsked) {
+      const local = await getLocalStore().listGuides();
+      if (local.length) setAskMove(local.length);
+      else await saveSettings({ ...current, desktopLibrary: true, desktopAsked: true });
+    }
+  };
+  const saveSettings = async (value: Settings) => {
+    await writeSettings(value);
+    setSettings(value);
+    await browser.runtime.sendMessage({ type: 'settings-changed' }).catch(() => undefined);
+  };
+  useEffect(() => {
+    void readSettings().then((s) => (s.desktopApp ? checkDesktop(s) : undefined));
+  }, []);
+
+  const moveToDesktop = async () => {
+    setAskMove(0);
+    const target = bridgeStore(new BridgeClient('page'));
+    setMoving({ total: 0, done: 0 });
+    try {
+      const n = await copyLibrary(getLocalStore(), target, (done, total) =>
+        setMoving({ done, total }),
+      );
+      await saveSettings({ ...settings, desktopLibrary: true, desktopAsked: true });
+      setNotice(strings.settings.moved(n));
+    } catch {
+      setNotice(strings.errors.generic);
+    } finally {
+      setMoving(null);
+    }
+  };
+
   const settingsDialog = showSettings ? (
     <SettingsDialog
       value={settings}
       aiAvailable={aiAvailable}
+      desktop={{ connected: desktopConnected }}
       onClose={() => setShowSettings(false)}
       onSave={(value) => {
         setShowSettings(false);
-        void writeSettings(value).then(() => {
-          setSettings(value);
-          void browser.runtime.sendMessage({ type: 'settings-changed' }).catch(() => undefined);
+        const connect = !!value.desktopApp && !settings.desktopApp;
+        // Inside the click: the native messaging permission prompt needs the user gesture.
+        const allowed = connect
+          ? browser.permissions.request({ permissions: ['nativeMessaging'] }).catch(() => false)
+          : Promise.resolve(true);
+        void allowed.then(async (ok) => {
+          const next = { ...value, desktopApp: !!value.desktopApp && ok };
+          if (!next.desktopApp) Object.assign(next, { desktopLibrary: false });
+          await saveSettings(next);
+          if (next.desktopApp) await checkDesktop(next);
         });
       }}
     />
+  ) : askMove ? (
+    <Dialog
+      title={strings.settings.moveTitle}
+      onClose={() => setAskMove(0)}
+      actions={
+        <>
+          <Button
+            onClick={() => {
+              setAskMove(0);
+              void saveSettings({ ...settings, desktopAsked: true, desktopLibrary: false });
+            }}
+          >
+            {strings.settings.keep}
+          </Button>
+          <Button variant="primary" onClick={() => void moveToDesktop()}>
+            {strings.settings.move}
+          </Button>
+        </>
+      }
+    >
+      <p>{strings.settings.moveBody(askMove)}</p>
+    </Dialog>
+  ) : moving ? (
+    <Dialog title={strings.settings.moveTitle} onClose={() => undefined} actions={<span />}>
+      <p role="status">{strings.settings.moving(moving.done, moving.total)}</p>
+    </Dialog>
   ) : null;
   const noticeBar = notice ? (
     <p class="tm-toast" role="alert">

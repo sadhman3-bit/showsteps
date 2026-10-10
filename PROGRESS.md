@@ -85,6 +85,21 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 **Acceptance:** `e2e/guidance.spec.ts`: Guide Me completes the 17-step demo flow with every step done on the highlighted target (two pages, a cross-origin iframe, a same-origin iframe, shadow DOM, a modal dialog). Run for me completes it, waits for the password and stops at the confirm step until approved. `e2e/pages.spec.ts` covers notes, pins, Discover, the Guidance switch, comments, reactions, Insights and the AI tools. 25 e2e tests in total; 197 unit tests.
 
+## M6 in progress (resume here)
+
+Done so far (not yet passing acceptance):
+
+- [x] No .NET SDK needed: `apps/desktop/native/*.cs` compile with Windows' built-in csc.exe (`pnpm --filter @trailmark/desktop build:native`): uia-helper.exe (UI Automation, pre-click screenshots via a low-level mouse hook, typing reported without characters, input with a foreground guard) and trailmark-host.exe (native messaging relay to the pipe `trailmark-<user>`).
+- [x] Electron app (`apps/desktop`): library/editor/reader/insights reused from ui, IPC store, tray, Ctrl+Alt+R, capture controller window, LibrarySink recorder, bridge server, desktop Guide Me overlay (G8), settings with library and team folders (L3), read-only guides (L6), native host registration in HKCU.
+- [x] Extension: fixed ID (`extension-key.json`), optional nativeMessaging, BridgeClient/BridgeStore, move-to-desktop prompt, shared capture (desktop steps go to the extension recorder), desktop steps in Guide Me delegated to the desktop overlay.
+- [x] Unit tests for desktop events and the library sink (apps/desktop/test).
+
+Next:
+
+- [ ] Get `e2e/desktop.spec.ts` passing (`pnpm e2e:desktop`; it drives the real mouse and keyboard). Foreground activation of Notepad was unreliable; input is now refused unless Notepad is in front. Expected steps: "Type Invoice 1043 approved into Text Editor" (click + type merge), "Click Format", "Press Esc" — update the test's expectations.
+- [ ] Mixed web + Notepad e2e through the bridge (record, edit, export, Guide Me).
+- [ ] E11 Secure Blur for web steps; electron-builder NSIS per-user packaging with native host registration and uninstall cleanup; lint, docs (DECISIONS, MANUAL_TESTS, PARITY), docs/DEVELOPING.md, commit `M6: …`.
+
 ## Waiting on the owner
 
 - **.NET SDK** (needed from M6 for `uia-helper`). Not blocking M1–M5.

@@ -1,8 +1,11 @@
 // Helpers for extension pages (side panel, library) to talk to the background.
-import { IndexedDbStore } from '@trailmark/core';
+import { IndexedDbStore, type GuideStore } from '@trailmark/core';
+import { BridgeClient, bridgeStore, switchableStore } from './bridge';
+import { readSettings } from './settings';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   GUIDANCE_IDLE,
+  SETTINGS_KEY,
   GuideBroadcastSchema,
   GuidanceStateSchema,
   type GuideBroadcast,
@@ -24,11 +27,45 @@ import {
   type Recapture,
 } from './messages';
 
-let store: IndexedDbStore | undefined;
+let store: GuideStore | undefined;
+let local: IndexedDbStore | undefined;
+let desktop: GuideStore | undefined;
+let useDesktop: Promise<boolean> | undefined;
 
-/** The extension's guide library (shared IndexedDB origin with the background). */
-export function getStore(): IndexedDbStore {
-  store ??= new IndexedDbStore(indexedDB);
+function desktopLibraryOn(): Promise<boolean> {
+  useDesktop ??= readSettings().then((s) => s.desktopApp && s.desktopLibrary);
+  return useDesktop;
+}
+
+/** This browser's own library (IndexedDB, shared with the service worker). */
+export function getLocalStore(): IndexedDbStore {
+  local ??= new IndexedDbStore(indexedDB);
+  return local;
+}
+
+/**
+ * The guide library pages work with: browser storage, or the desktop app's library (through
+ * the bridge) once the person chose to keep guides there.
+ */
+export function getStore(): GuideStore {
+  if (!store) {
+    browser.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && SETTINGS_KEY in changes) useDesktop = undefined;
+    });
+    let kind: GuideStore['kind'] = 'indexeddb';
+    store = switchableStore(
+      async () => {
+        if (await desktopLibraryOn()) {
+          kind = 'folder';
+          desktop ??= bridgeStore(new BridgeClient('page'));
+          return desktop;
+        }
+        kind = 'indexeddb';
+        return getLocalStore();
+      },
+      () => kind,
+    );
+  }
   return store;
 }
 

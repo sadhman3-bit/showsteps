@@ -24,6 +24,17 @@
   --tm-warning: #92400e;
   --tm-alert: #b91c1c;
 
+  /* Dark controls shown over other apps (capture toolbar, Guide Me overlay), in both themes. */
+  --tm-chrome-bg: #1b1a18;
+  --tm-chrome-fg: #f2eee8;
+  --tm-chrome-muted: #b5ada1;
+  --tm-chrome-line: #3d3933;
+  --tm-chrome-hover: #2a2723;
+  --tm-chrome-accent: #4fbfb2;
+  --tm-chrome-on-accent: #0b1513;
+  --tm-chrome-rec: #f87171;
+  --tm-chrome-ring: #fb923c;
+
   --tm-radius: 8px;
   --tm-radius-sm: 4px;
   --tm-space-1: 4px;

@@ -1,4 +1,5 @@
-import { IndexedDbStore, marksForUrl, pageKey } from '@trailmark/core';
+import { IndexedDbStore, marksForUrl, pageKey, type CaptureEvent } from '@trailmark/core';
+import { BridgeClient, bridgeStore, switchableStore } from '../lib/bridge';
 import { FrameRegistry } from '../lib/frames';
 import { Guidance, type PersistedGuidance } from '../lib/guidance';
 import {
@@ -21,7 +22,13 @@ import {
   type ContentMessage,
   type PageMessage,
 } from '../lib/messages';
-import { Recorder, type EventSender, type PersistedRecorder, type Viewport } from '../lib/recorder';
+import {
+  Recorder,
+  type DesktopShot,
+  type EventSender,
+  type PersistedRecorder,
+  type Viewport,
+} from '../lib/recorder';
 import { recaptureStep } from '../lib/recapture';
 import { installSamples } from '../lib/samples';
 import { encodeScreenshot } from '../lib/shots';
@@ -42,7 +49,49 @@ const DIRECT_TRANSITIONS = new Set([
 ]);
 
 export default defineBackground(() => {
-  const store = new IndexedDbStore(indexedDB);
+  const local = new IndexedDbStore(indexedDB);
+
+  // ---------- Desktop app bridge ----------
+
+  let desktopLibrary = false;
+  const bridge = new BridgeClient(
+    'background',
+    (event, data) => void onDesktopEvent(event, data),
+    (connected) => {
+      broadcast({ type: 'desktop-state', connected });
+      if (connected) bridge.sendEvent('capture-state', recorder.current);
+      else desktopDisconnected();
+    },
+  );
+  const desktop = bridgeStore(bridge);
+  /** Guides live in the desktop library once the person chose that and the app is reachable. */
+  const store = switchableStore(
+    async () => (desktopLibrary && (await bridge.connect()) ? desktop : local),
+    () => (desktopLibrary && bridge.connected ? 'folder' : 'indexeddb'),
+  );
+  let retry: ReturnType<typeof setTimeout> | undefined;
+
+  /** Connect when the setting is on (and keep trying every 15 s while the app is closed). */
+  async function syncDesktop(): Promise<boolean> {
+    clearTimeout(retry);
+    const settings = await readSettings();
+    desktopLibrary = settings.desktopApp && settings.desktopLibrary;
+    const allowed = await browser.permissions
+      .contains({ permissions: ['nativeMessaging'] })
+      .catch(() => false);
+    if (!settings.desktopApp || !allowed) {
+      bridge.disconnect();
+      return false;
+    }
+    const ok = await bridge.connect();
+    if (!ok) retry = setTimeout(() => void syncDesktop(), 15_000);
+    return ok;
+  }
+
+  function desktopDisconnected(): void {
+    clearTimeout(retry);
+    retry = setTimeout(() => void syncDesktop(), 15_000);
+  }
 
   const frames = new FrameRegistry({
     async parentFrameId(tabId, frameId) {
@@ -93,7 +142,10 @@ export default defineBackground(() => {
       browser.tabs.sendMessage(tabId, { type: 'state', state }).catch(() => undefined);
       if (state.status === 'idle') void unregisterScripts();
     },
-    broadcastState: (state) => broadcast({ type: 'state', state }),
+    broadcastState: (state) => {
+      broadcast({ type: 'state', state });
+      bridge.sendEvent('capture-state', state);
+    },
     libraryChanged: () => broadcast({ type: 'library-changed' }),
     async persist(data) {
       if (data) await browser.storage.session.set({ [PERSIST_KEY]: data });
@@ -149,6 +201,11 @@ export default defineBackground(() => {
     },
     sleep,
     now: () => new Date().toISOString(),
+    desktop: {
+      available: () => bridge.connected,
+      show: (step, number, total) => bridge.sendEvent('desktop-step', { step, number, total }),
+      clear: () => bridge.sendEvent('desktop-step-clear'),
+    },
   });
   const guidanceReady = browser.storage.session
     .get(GUIDANCE_KEY)
@@ -446,7 +503,10 @@ export default defineBackground(() => {
         return { ok: true };
       case 'settings-changed':
         await notifyTabs({ type: 'marks-changed' });
+        void syncDesktop().then(() => broadcast({ type: 'library-changed' }));
         return { ok: true };
+      case 'desktop-get':
+        return { connected: await syncDesktop() };
     }
   }
 
@@ -505,6 +565,54 @@ export default defineBackground(() => {
       }
     }
   }
+
+  // ---------- Desktop app events ----------
+
+  async function activeWebTab(): Promise<Browser.tabs.Tab | undefined> {
+    const [tab] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
+    return tab?.url && /^(https?|file):/.test(tab.url) ? tab : undefined;
+  }
+
+  async function onDesktopEvent(event: string, data: unknown): Promise<void> {
+    await Promise.all([ready, guidanceReady]);
+    const d = (data ?? {}) as Record<string, unknown>;
+    switch (event) {
+      case 'capture-request': {
+        const action = String(d.action ?? '');
+        if (action === 'start' && !recorder.isActive) {
+          const tab = await activeWebTab();
+          if (tab?.id !== undefined)
+            await startCapture({ type: 'start', tabId: tab.id }).catch(() => undefined);
+          else bridge.sendEvent('capture-state', recorder.current);
+        } else if (action === 'finish' || action === 'cancel' || action === 'delete-last') {
+          await recorder.control(action);
+        }
+        break;
+      }
+      case 'desktop-event':
+        await recorder.desktopEvent(d.event as CaptureEvent, d.shot as DesktopShot | undefined);
+        break;
+      case 'guide-start': {
+        const tab = await activeWebTab();
+        await startGuidance({
+          type: 'guide-start',
+          guideId: String(d.guideId ?? ''),
+          mode: 'guide',
+          ...(tab?.id !== undefined ? { tabId: tab.id } : {}),
+          ...(tab?.windowId !== undefined ? { windowId: tab.windowId } : {}),
+        }).catch(() => undefined);
+        break;
+      }
+      case 'desktop-step-done':
+        await guidance.desktopDone(String(d.stepId ?? ''));
+        break;
+      case 'library-changed':
+        broadcast({ type: 'library-changed' });
+        break;
+    }
+  }
+
+  void syncDesktop();
 
   // ---------- Navigation and tabs ----------
 

@@ -1,0 +1,214 @@
+/* Desktop-only layout. Colours come from tokens.css. */
+
+.tm-desktop {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.tm-desktopbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-3);
+  align-items: center;
+  padding: var(--tm-space-2) var(--tm-space-4);
+  border-bottom: 1px solid var(--tm-border);
+  background: var(--tm-surface);
+}
+
+.tm-desktopbar__spacer {
+  flex: 1;
+}
+
+.tm-desktopbar__hint {
+  font-size: 0.8125rem;
+}
+
+.tm-desktopbar__rec {
+  display: inline-flex;
+  gap: var(--tm-space-2);
+  align-items: center;
+  font-weight: 600;
+}
+
+.tm-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tm-alert);
+}
+
+.tm-bridge {
+  font-size: 0.8125rem;
+  color: var(--tm-text-muted);
+}
+
+.tm-bridge::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--tm-border);
+}
+
+.tm-bridge.is-on::before {
+  background: var(--tm-tip);
+}
+
+.tm-desktop__notice,
+.tm-readonly {
+  margin: var(--tm-space-3) var(--tm-space-4) 0;
+}
+
+.tm-readonly {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-2);
+  align-items: center;
+}
+
+.tm-path {
+  overflow-wrap: anywhere;
+  font-size: 0.8125rem;
+}
+
+.tm-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-2);
+}
+
+/* ---------- Capture controller window ---------- */
+
+body[data-page='controller'],
+body[data-page='overlay'] {
+  background: transparent;
+  overflow: hidden;
+}
+
+.tm-ctl {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  height: 48px;
+  margin: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--tm-chrome-line);
+  border-radius: 12px;
+  background: var(--tm-chrome-bg);
+  color: var(--tm-chrome-fg);
+  font:
+    13px/1.2 'Segoe UI Variable',
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  user-select: none;
+}
+
+.tm-ctl__grip {
+  padding: 4px 2px;
+  color: var(--tm-chrome-muted);
+  cursor: grab;
+  -webkit-app-region: drag;
+}
+
+.tm-ctl__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tm-chrome-rec);
+}
+
+.tm-ctl.is-paused .tm-ctl__dot {
+  background: var(--tm-chrome-muted);
+}
+
+.tm-ctl__status {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.tm-ctl__status span {
+  color: var(--tm-chrome-muted);
+}
+
+.tm-ctl button,
+.tm-ovl__card button {
+  padding: 5px 9px;
+  border: 1px solid var(--tm-chrome-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tm-chrome-fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tm-ctl button:hover,
+.tm-ovl__card button:hover {
+  background: var(--tm-chrome-hover);
+}
+
+.tm-ctl button:focus-visible,
+.tm-ovl__card button:focus-visible {
+  outline: 2px solid var(--tm-chrome-ring);
+  outline-offset: 2px;
+}
+
+.tm-ctl button.primary,
+.tm-ovl__card button.primary {
+  border-color: var(--tm-chrome-accent);
+  background: var(--tm-chrome-accent);
+  color: var(--tm-chrome-on-accent);
+  font-weight: 600;
+}
+
+/* ---------- Desktop Guide Me overlay ---------- */
+
+.tm-ovl__ring {
+  position: fixed;
+  border: 3px solid var(--tm-chrome-ring);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tm-chrome-ring) 30%, transparent),
+    0 0 0 100vmax rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}
+
+.tm-ovl__card {
+  position: fixed;
+  width: 340px;
+  padding: 12px 14px;
+  border: 1px solid var(--tm-chrome-line);
+  border-radius: 12px;
+  background: var(--tm-chrome-bg);
+  color: var(--tm-chrome-fg);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.4);
+  font:
+    14px/1.4 'Segoe UI Variable',
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+}
+
+.tm-ovl__card p {
+  margin: 0 0 6px;
+}
+
+.tm-ovl__count,
+.tm-ovl__note {
+  color: var(--tm-chrome-muted);
+  font-size: 12px;
+}
+
+.tm-ovl__title {
+  font-size: 15px;
+}
+
+.tm-ovl__row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}

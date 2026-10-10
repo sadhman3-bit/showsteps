@@ -291,6 +291,8 @@ export const GuideSchema = z
       })
       .optional(),
     settings: z.object({ defaultInputMode: InputModeSchema }),
+    /** In a shared library: others view it and edit a personal copy (L6). */
+    readOnly: z.boolean().optional(),
   })
   .superRefine((g, ctx) => {
     const seen = new Set<string>();

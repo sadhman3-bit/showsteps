@@ -2,6 +2,7 @@ import {
   CaptureSession,
   attachScreenshot,
   createGuide,
+  isRemoteProcess,
   nowIso,
   type AppContext,
   type CaptureEvent,
@@ -13,6 +14,15 @@ import {
 import type { FrameRegistry } from './frames';
 import { IDLE_STATE, type CaptureState, type ContentEvent, type ControlAction } from './messages';
 import { ShotLimiter, type EncodedShot, type PendingShot } from './shots';
+
+/** A desktop app screenshot sent over the bridge. */
+export interface DesktopShot {
+  full: Uint8Array;
+  thumb: Uint8Array;
+  width: number;
+  height: number;
+  scale: number;
+}
 
 export interface Viewport {
   width: number;
@@ -284,6 +294,40 @@ export class Recorder {
     return shot.then(() => undefined);
   }
 
+  /**
+   * A step recorded by the desktop app during this capture (shared session): the desktop app
+   * sends events and pictures, and this recorder stays the guide's only writer.
+   */
+  desktopEvent(ev: CaptureEvent, shot: DesktopShot | undefined): Promise<void> {
+    return this.serial(async () => {
+      if (this.state.status !== 'recording' || !this.session || !this.guide) return;
+      const result = this.session.apply(ev);
+      for (const removed of result.removed) await this.deleteStepImages([removed]);
+      const step = result.step;
+      if (step.app.kind === 'desktop' && isRemoteProcess(step.app.processName))
+        step.agent.visualOnly = true;
+      if (result.wantsShot && shot) {
+        const name = `${step.id}.png`;
+        await this.deps.store.putImage(this.guide.id, name, shot.full);
+        await this.deps.store.putImage(this.guide.id, `${step.id}.thumb.png`, shot.thumb);
+        const info: ShotInfo = {
+          file: `img/${name}`,
+          width: shot.width,
+          height: shot.height,
+          dpr: shot.scale,
+          scale: 1, // desktop targets are already in picture pixels
+        };
+        attachScreenshot(step, info, this.deps.maxZoom);
+        this.lastShot = { ...info, stepId: step.id };
+      } else if (result.wantsShot) {
+        await this.attachShot(step, undefined);
+      }
+      this.state.stepCount = this.session.count;
+      await this.save();
+      this.publish();
+    });
+  }
+
   event(sender: EventSender, ev: ContentEvent, shotId?: string): Promise<void> {
     return this.serial(async () => {
       if (this.state.status !== 'recording') return;
@@ -451,8 +495,18 @@ export class Recorder {
     const origins = new Set(
       guide.apps.filter((a) => a.kind === 'web').map((a) => (a.kind === 'web' ? a.origin : '')),
     );
+    const processes = new Set(
+      guide.apps.flatMap((a) => (a.kind === 'desktop' ? [a.processName.toLowerCase()] : [])),
+    );
     for (const s of this.session.steps) {
-      if (s.app.kind !== 'web') continue;
+      if (s.app.kind === 'desktop') {
+        const name = s.app.processName;
+        if (name && !processes.has(name.toLowerCase())) {
+          processes.add(name.toLowerCase());
+          guide.apps = [...guide.apps, { kind: 'desktop', processName: name }];
+        }
+        continue;
+      }
       const origin = originOf(s.app.url);
       if (origin && !origins.has(origin)) {
         origins.add(origin);

@@ -69,12 +69,21 @@ export const SettingsSchema = z.object({
   guidanceEnabled: z.boolean(),
   /** Optional on-device AI (off by default). */
   aiEnabled: z.boolean(),
+  /** Connect to the Trailmark desktop app (native messaging). */
+  desktopApp: z.boolean(),
+  /** Keep guides in the desktop app's library instead of browser storage. */
+  desktopLibrary: z.boolean(),
+  /** The move-to-desktop question was answered. */
+  desktopAsked: z.boolean(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 export const DEFAULT_SETTINGS: Settings = {
   userName: 'Me',
   guidanceEnabled: true,
   aiEnabled: false,
+  desktopApp: false,
+  desktopLibrary: false,
+  desktopAsked: false,
 };
 export const SETTINGS_KEY = 'settings';
 export const MARKS_KEY = 'marks';
@@ -104,6 +113,8 @@ export const GuidePageMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('pick-start'), tabId: z.number().int() }),
   z.object({ type: z.literal('pick-cancel'), tabId: z.number().int() }),
   z.object({ type: z.literal('settings-changed') }),
+  /** Desktop app connection status (and reconnect if the setting changed). */
+  z.object({ type: z.literal('desktop-get') }),
 ]);
 export type GuidePageMessage = z.infer<typeof GuidePageMessageSchema>;
 
@@ -174,5 +185,6 @@ export const GuideBroadcastSchema = z.discriminatedUnion('type', [
     cancelled: z.boolean().optional(),
   }),
   z.object({ type: z.literal('marks-changed') }),
+  z.object({ type: z.literal('desktop-state'), connected: z.boolean() }),
 ]);
 export type GuideBroadcast = z.infer<typeof GuideBroadcastSchema>;

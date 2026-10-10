@@ -56,6 +56,8 @@ export interface GuideEditorProps {
   aiEnabled?: boolean;
   /** Open another guide (a translated copy). */
   onOpenGuide?: (guideId: string) => void;
+  /** In a team library: offer "Read-only for others" (L6). */
+  readOnlyToggle?: boolean;
   /** Bumped when the guide may have changed elsewhere (e.g. re-captured); reloads if idle. */
   refreshKey?: number;
 }
@@ -91,6 +93,7 @@ export function GuideEditor({
   onPrint,
   aiEnabled,
   onOpenGuide,
+  readOnlyToggle,
   refreshKey,
 }: GuideEditorProps) {
   const history = useRef<History<Guide> | null>(null);
@@ -458,6 +461,22 @@ export function GuideEditor({
         ) : null}
         <Button onClick={() => setModal('versions')}>{e.versions}</Button>
         <Button onClick={() => setModal('share')}>{strings.share.button}</Button>
+        {readOnlyToggle ? (
+          <label class="tm-check" title={strings.readOnly.markHint}>
+            <input
+              type="checkbox"
+              checked={!!guide.readOnly}
+              onChange={(ev) => {
+                const on = ev.currentTarget.checked;
+                apply((g) => {
+                  const { readOnly: _r, ...rest } = g;
+                  return on ? { ...rest, readOnly: true } : rest;
+                });
+              }}
+            />{' '}
+            {strings.readOnly.mark}
+          </label>
+        ) : null}
         {aiEnabled ? (
           <AiTools
             store={store}

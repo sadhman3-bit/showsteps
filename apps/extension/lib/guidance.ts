@@ -43,6 +43,12 @@ export interface GuidanceDeps {
   persist(data: PersistedGuidance | undefined): Promise<void>;
   sleep(ms: number): Promise<void>;
   now(): string;
+  /** The desktop app, when connected: it highlights desktop steps on screen (G8). */
+  desktop?: {
+    available(): boolean;
+    show(step: Step, number: number, total: number): void;
+    clear(): void;
+  };
 }
 
 export interface PersistedGuidance {
@@ -215,6 +221,7 @@ export class Guidance {
   // ---------- Steps ----------
 
   private async clear(): Promise<void> {
+    this.deps.desktop?.clear();
     const tabId = this.state.tabId;
     if (tabId !== undefined)
       await this.deps.send(tabId, { type: 'guide-clear' }).catch(() => undefined);
@@ -287,6 +294,13 @@ export class Guidance {
         return;
       }
       this.set({ phase: 'navigate' });
+      return;
+    }
+
+    // Desktop steps: the desktop app highlights them and reports when they are done.
+    if (plan.kind === 'manual' && plan.reason === 'desktop' && this.deps.desktop?.available()) {
+      this.set({ phase: 'manual', reason: 'desktop-app' });
+      this.deps.desktop.show(step, index + 1, total);
       return;
     }
 
@@ -459,6 +473,13 @@ export class Guidance {
   setSpeed(speed: Speed, stepThrough: boolean): GuidanceState {
     this.set({ speed, stepThrough });
     return this.state;
+  }
+
+  /** The desktop app reports a desktop step done. */
+  async desktopDone(stepId: string): Promise<void> {
+    if (!this.isActive || this.step?.id !== stepId) return;
+    this.state = { ...this.state, index: this.state.index + 1 };
+    await this.show();
   }
 
   /** The person did the highlighted step (Guide Me, or a manual step in Run for me). */

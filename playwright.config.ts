@@ -14,7 +14,11 @@ export default defineConfig({
     baseURL: `http://localhost:${DEMO_PORT}`,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /desktop.*.spec.ts/ },
+    // Windows only: drives the real mouse and keyboard, so it runs on its own (pnpm e2e:desktop).
+    { name: 'desktop', testMatch: /desktop.*.spec.ts/ },
+  ],
   webServer: {
     command: 'node fixtures/demo-app/server.mjs',
     url: `http://localhost:${DEMO_PORT}/login.html`,

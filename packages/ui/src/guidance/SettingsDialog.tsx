@@ -9,18 +9,23 @@ export interface UserSettings {
   userName: string;
   guidanceEnabled: boolean;
   aiEnabled: boolean;
+  /** Extension only: connect to the desktop app. */
+  desktopApp?: boolean;
 }
 
 /** Settings shared by the extension and the desktop app (grows with later milestones). */
-export function SettingsDialog({
+export function SettingsDialog<T extends UserSettings>({
   value,
   aiAvailable,
+  desktop,
   onSave,
   onClose,
 }: {
-  value: UserSettings;
+  value: T;
   aiAvailable: boolean;
-  onSave: (value: UserSettings) => void;
+  /** Offer the desktop app connection, with its current status. */
+  desktop?: { connected: boolean };
+  onSave: (value: T) => void;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(value);
@@ -60,6 +65,24 @@ export function SettingsDialog({
           />{' '}
           {s.guidance}
         </label>
+        {desktop ? (
+          <label class="tm-check">
+            <input
+              type="checkbox"
+              checked={!!draft.desktopApp}
+              onChange={(e) => setDraft({ ...draft, desktopApp: e.currentTarget.checked })}
+            />{' '}
+            {s.desktopApp}
+            <small class="tm-muted tm-block-text">
+              {s.desktopAppHint}{' '}
+              {value.desktopApp
+                ? desktop.connected
+                  ? s.desktopConnected
+                  : s.desktopOffline
+                : null}
+            </small>
+          </label>
+        ) : null}
         {aiAvailable ? (
           <label class="tm-check">
             <input

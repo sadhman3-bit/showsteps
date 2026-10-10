@@ -179,3 +179,28 @@ export {
   translatableTexts,
   translatedCopy,
 } from './ai.js';
+
+// Extension ↔ desktop bridge protocol
+export {
+  BRIDGE_HOST,
+  BRIDGE_VERSION,
+  BRIDGE_STORE_METHODS,
+  CHUNK_CHARS,
+  PartCollector,
+  decodeMessage,
+  encodeMessage,
+  fromBase64,
+  splitMessage,
+  type BridgeEvent,
+  type BridgePart,
+  type BridgeReply,
+  type BridgeRequest,
+  type BridgeStoreMethod,
+} from './bridge.js';
+export { toBase64 } from './export/model.js';
+export {
+  REMOTE_PROCESSES,
+  BROWSER_PROCESSES,
+  isRemoteProcess,
+  isBrowserProcess,
+} from './desktop.js';
