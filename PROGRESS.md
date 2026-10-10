@@ -13,7 +13,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
 - [x] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
 - [x] **M8** U8 OCR, E11 for desktop and image steps
-- [ ] **M9** U7, U9, hardening, performance, docs, release
+- [x] **M9** U7, U9, hardening, performance, docs, release
 
 ## M0 detail (done 2026-10-09)
 
@@ -137,6 +137,28 @@ Fixes found while testing:
 - a visual-only step gets the text around its action.
 
 `pnpm e2e`: 29 tests; `pnpm e2e:desktop`: 4 tests; unit tests: 225.
+
+## M9 detail (done 2026-10-11)
+
+- [x] U7 self-check: Agent view → Check every step (dry run in a new tab, ring only, per-step report)
+- [x] U9 guide health: Re-capture this step from the side panel; the step is replaced in place and guidance carries on
+- [x] Settings: colours, Live Blur default, zoom level, picture quality, shortcuts link, Delete all Trailmark data (extension); colours (desktop)
+- [x] Performance: pictures encoded as soon as they are taken; a 68-step guide stays smooth (`e2e/performance.spec.ts`)
+- [x] Hardening:
+  - the toolbar hide is counted per picture;
+  - word and page-state reads happen after the picture request;
+  - IndexedDB lets go when the database is deleted elsewhere;
+  - desktop settings are validated from the renderer.
+- [x] README user guide; `pnpm release` writes the extension zip, the installer and checksums to `dist/`; version 1.0.0
+
+**Acceptance:**
+
+- the self-check report works on the sample guide;
+- 50+ step guides stay smooth: a 68-step guide opens in about 1.4 s, with no long tasks;
+- README has install steps for the extension (Load unpacked) and the desktop installer;
+- the release files are in `dist/`.
+
+`pnpm e2e`: 32 tests; `pnpm e2e:desktop`: 4 tests; unit tests: 227. PARITY.md and the upgrade list are fully ticked.
 
 ## Waiting on the owner
 

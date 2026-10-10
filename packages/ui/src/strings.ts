@@ -298,6 +298,9 @@ export const strings = {
     hint: 'Choose a printer, or “Save as PDF”, in the print dialog.',
   },
   guidance: {
+    recapture: 'Re-capture this step',
+    recaptureHint:
+      'Do this step yourself now: Trailmark records it again in place of the old one and carries on.',
     ownValue: 'Type the value for this case.',
     suggestedValue: (v: string) => `Suggested value: ${v}`,
     guideMe: 'Guide Me',
@@ -441,6 +444,29 @@ export const strings = {
     keep: 'Keep using browser storage',
     moving: (done: number, total: number) => `Moving ${done} of ${total}…`,
     moved: (n: number) => (n === 1 ? 'Moved 1 guide.' : `Moved ${n} guides.`),
+    theme: 'Colours',
+    themes: { system: 'Same as Windows', light: 'Light', dark: 'Dark' },
+    captureHeading: 'Capture',
+    liveBlurDefault: 'Start captures with Live Blur on',
+    magnify: 'Zoom in on each step’s action',
+    magnifyLevels: {
+      1: 'No zoom (whole screen)',
+      1.5: 'A little',
+      2: 'Medium',
+      3: 'Close',
+    } as Record<string, string>,
+    quality: 'Picture quality',
+    qualities: { high: 'High (crisp text)', standard: 'Standard (smaller files)' },
+    shortcuts: 'Change keyboard shortcuts…',
+    dataHeading: 'Your data',
+    deleteAll: 'Delete all Trailmark data…',
+    deleteAllTitle: 'Delete all Trailmark data?',
+    deleteAllBody:
+      'This deletes every guide, picture, note, pin, comment and setting Trailmark keeps in this browser. It cannot be undone. Export guides you want to keep first.',
+    deleteAllConfirm: 'Delete everything',
+    deleteAllDesktop:
+      'This resets the desktop app’s settings. Your guide folders are not touched: delete them in File Explorer if you want them gone.',
+    deleted: 'All Trailmark data was deleted.',
     inputMode: 'Typed values in new guides',
     inputModeHint:
       'Ask every run suits values that change, such as invoice numbers. You can change it for each step.',
@@ -479,6 +505,25 @@ export const strings = {
     confirmShort: 'Confirm first',
     timeout: 'Wait up to (seconds)',
     defaultMode: 'Typed values in this guide',
+    selfCheck: 'Check every step',
+    selfCheckHint:
+      'Opens the guide’s pages in a new tab and looks for each element without clicking or typing anything.',
+    checking: 'Checking each step in a new tab…',
+    checkFailed: 'The check could not run. Allow website access and try again.',
+    checkSummary: (found: number, ambiguous: number, missing: number, skipped: number) =>
+      `${found} found · ${ambiguous} unclear · ${missing} not found · ${skipped} not checked`,
+    checkStatus: {
+      found: 'Found',
+      ambiguous: 'Found, but similar elements exist',
+      missing: 'Not found',
+      skipped: 'Not checked',
+    } as Record<string, string>,
+    checkReason: {
+      desktop: 'in a desktop app',
+      manual: 'done by hand',
+      'no-target': 'no element details',
+    } as Record<string, string>,
+    checkHow: (strategy: string) => `by ${strategy}`,
     desktopTarget: (control: string, name: string) => `${control} “${name}”`,
     expectation: {
       url: (m: string) => `Address matches ${m}`,

@@ -770,3 +770,20 @@ kbd {
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+.tm-agent__check {
+  margin: 12px 0;
+}
+.tm-agent__result {
+  margin: 0 0 8px;
+}
+.tm-agent__result.is-found {
+  color: var(--tm-tip);
+}
+.tm-agent__result.is-ambiguous,
+.tm-agent__result.is-skipped {
+  color: var(--tm-warning);
+}
+.tm-agent__result.is-missing {
+  color: var(--tm-alert);
+}

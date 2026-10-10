@@ -1,7 +1,7 @@
 {
   "name": "@trailmark/desktop",
   "productName": "Trailmark",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "description": "Trailmark for Windows: record desktop and web steps, edit, export and guide.",

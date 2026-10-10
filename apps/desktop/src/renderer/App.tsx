@@ -7,6 +7,7 @@ import {
   Icon,
   InputModeSelect,
   Insights,
+  applyTheme,
   Library,
   PrintView,
   anyAi,
@@ -67,6 +68,7 @@ export function App() {
     [settings?.active, settings?.libraryPath, settings?.sharedPath],
   );
   const inTeam = settings?.active === 'shared';
+  useEffect(() => applyTheme(settings?.theme), [settings?.theme]);
 
   useEffect(() => {
     void api()
@@ -312,6 +314,7 @@ function DesktopSettings({
                 guidanceEnabled: draft.guidanceEnabled,
                 aiEnabled: draft.aiEnabled,
                 defaultInputMode: draft.defaultInputMode,
+                theme: draft.theme,
                 libraryPath: draft.libraryPath,
                 sharedPath: draft.sharedPath,
                 ...(draft.sharedPath ? {} : { active: 'personal' as const }),
@@ -350,6 +353,22 @@ function DesktopSettings({
             ) : null}
           </div>
         </div>
+        <label class="tm-field">
+          {s.theme}
+          <select
+            class="tm-input"
+            value={draft.theme}
+            onChange={(e) =>
+              setDraft({ ...draft, theme: e.currentTarget.value as DesktopSettingsView['theme'] })
+            }
+          >
+            {(['system', 'light', 'dark'] as const).map((t) => (
+              <option key={t} value={t}>
+                {s.themes[t]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label class="tm-field">
           {s.inputMode}
           <InputModeSelect

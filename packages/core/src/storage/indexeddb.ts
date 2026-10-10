@@ -75,7 +75,15 @@ export class IndexedDbStore implements GuideStore {
         );
         db.createObjectStore('folders', { keyPath: 'id' });
       };
-      open.onsuccess = () => resolve(open.result);
+      open.onsuccess = () => {
+        const db = open.result;
+        // Another page is deleting or upgrading the database: let go, reopen on next use.
+        db.onversionchange = () => {
+          db.close();
+          this.dbPromise = undefined;
+        };
+        resolve(db);
+      };
       open.onerror = () =>
         reject(open.error ?? new StorageError('Could not open Trailmark storage'));
       open.onblocked = () =>

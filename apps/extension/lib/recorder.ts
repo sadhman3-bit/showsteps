@@ -61,6 +61,8 @@ export interface RecorderDeps {
   limiter?: ShotLimiter;
   /** Shown as "last edited by" in shared libraries. */
   user?: string;
+  /** A re-captured step (U9) replaced `stepId`; the capture has ended. */
+  replaced?: (guideId: string, stepId: string, added: number) => void;
   maxZoom?: number;
 }
 
@@ -70,6 +72,8 @@ export interface PersistedRecorder {
   guideId: string;
   isNew: boolean;
   insertAt?: number;
+  /** Re-capturing this step (U9): the new step replaces it when the capture finishes. */
+  replaceStepId?: string;
   addedStepIds: string[];
   lastShot?: ShotInfo & { stepId: string };
   viewports: [number, Viewport][];
@@ -90,6 +94,8 @@ const PENDING_SHOT_TTL_MS = 30_000;
 const SHOT_ARRIVAL_WAIT_MS = 500;
 /** A new page this soon after a step's action is that action's result (U6). */
 const PAGE_CHANGE_WINDOW_MS = 3000;
+/** U9: a re-captured step is final once nothing else happened for this long. */
+const REPLACE_SETTLE_MS = 1500;
 
 /**
  * The background's capture engine: turns content-script events into saved steps with
@@ -110,6 +116,11 @@ export class Recorder {
     string,
     { file: string; width: number; height: number; scale: number }
   >();
+  /** Auto-crop zoom for this capture's pictures. */
+  private maxZoom: number | undefined;
+  /** Re-capturing this step (U9). */
+  private replacing: string | undefined;
+  private replaceTimer: ReturnType<typeof setTimeout> | undefined;
   /** Steps waiting for the page to say what their action changed (observe id → step id). */
   private readonly observing = new Map<string, string>();
   private lastActed: { tabId: number; stepId: string; at: number } | undefined;
@@ -157,6 +168,15 @@ export class Recorder {
     viewport?: Viewport;
     /** For a new guide: how typed values are used (U4). */
     defaultInputMode?: InputMode;
+    /** Live Blur on from the start (Settings). */
+    liveBlur?: boolean;
+    /** Auto-crop zoom for new pictures (Settings; 1 = none). */
+    maxZoom?: number;
+    /**
+     * U9: re-capture this step in place. New steps go where it is; when the capture ends (by
+     * itself, shortly after the first step), they replace it. Cancel keeps it.
+     */
+    replaceStepId?: string;
   }): Promise<CaptureState> {
     return this.serial(async () => {
       if (this.isActive) return this.current;
@@ -175,7 +195,11 @@ export class Recorder {
       }
       this.guide = guide;
       this.base = guide.blocks;
-      const insertAt = opts.guideId ? opts.insertAt : undefined;
+      const replaceAt = opts.replaceStepId
+        ? guide.blocks.findIndex((b) => b.id === opts.replaceStepId)
+        : -1;
+      this.replacing = replaceAt >= 0 ? opts.replaceStepId : undefined;
+      const insertAt = replaceAt >= 0 ? replaceAt : opts.guideId ? opts.insertAt : undefined;
       this.session = new CaptureSession(insertAt, guide.settings.defaultInputMode);
       this.lastShot = undefined;
       this.pending.clear();
@@ -187,8 +211,9 @@ export class Recorder {
         guideId: guide.id,
         title: guide.title,
         stepCount: 0,
-        liveBlur: false,
+        liveBlur: opts.liveBlur ?? false,
       };
+      this.maxZoom = opts.maxZoom ?? this.deps.maxZoom;
 
       if (this.isNew) {
         // First step: where the process starts.
@@ -244,6 +269,22 @@ export class Recorder {
 
   private async finish(): Promise<void> {
     const guideId = this.guide?.id;
+    const replaced = this.replacing;
+    const added = this.session?.count ?? 0;
+    clearTimeout(this.replaceTimer);
+    if (replaced && this.guide && this.session?.count) {
+      // The new steps take the old step's place (they were inserted just before it).
+      const old = this.base.find((b) => b.id === replaced);
+      this.base = this.base.filter((b) => b.id !== replaced);
+      if (old?.kind === 'step') {
+        const file = old.human.screenshot?.file;
+        // Keep a picture that another step still shows (a reused screenshot).
+        const shared = this.base.some(
+          (b) => b.kind === 'step' && file && b.human.screenshot?.file === file,
+        );
+        if (!shared) await this.deleteStepImages([old]);
+      }
+    }
     if (this.guide && this.session) {
       if (this.isNew && this.session.count === 0) {
         await this.deps.store.purgeGuide(this.guide.id);
@@ -258,9 +299,11 @@ export class Recorder {
     for (const tabId of tabs) this.deps.sendState(tabId, this.current);
     this.deps.broadcastState(this.current);
     this.deps.libraryChanged();
+    if (replaced && guideId && added) this.deps.replaced?.(guideId, replaced, added);
   }
 
   private async cancel(): Promise<void> {
+    clearTimeout(this.replaceTimer);
     if (this.guide && this.session) {
       if (this.isNew) {
         await this.deps.store.purgeGuide(this.guide.id);
@@ -285,6 +328,7 @@ export class Recorder {
     this.base = [];
     this.lastShot = undefined;
     this.pending.clear();
+    this.replacing = undefined;
     this.wordsByShot.clear();
     this.awaitingWords.clear();
     this.observing.clear();
@@ -345,7 +389,7 @@ export class Recorder {
           dpr: shot.scale,
           scale: 1, // desktop targets are already in picture pixels
         };
-        attachScreenshot(step, info, this.deps.maxZoom);
+        attachScreenshot(step, info, this.maxZoom);
         this.lastShot = { ...info, stepId: step.id };
       } else if (result.wantsShot) {
         await this.attachShot(step, undefined);
@@ -366,6 +410,7 @@ export class Recorder {
       if (shotId) this.wordsByShot.delete(shotId);
       const shot = taken?.kind === 'captured' && words ? { ...taken, words } : taken;
       const step = await this.applyContentEvent(sender, ev, shot);
+      if (this.replacing && step) this.finishReplaceSoon();
       // Word positions still on their way (a busy machine): saved when they arrive.
       const picture = step?.human.screenshot;
       if (shotId && !words && taken?.kind === 'captured' && picture && !picture.reusedFromStepId)
@@ -386,6 +431,15 @@ export class Recorder {
       await this.save();
       this.publish();
     });
+  }
+
+  /**
+   * Re-capturing ends by itself once the new step has settled (typing commits, a click merges
+   * with what follows): this long after the last event.
+   */
+  private finishReplaceSoon(): void {
+    clearTimeout(this.replaceTimer);
+    this.replaceTimer = setTimeout(() => void this.control('finish'), REPLACE_SETTLE_MS);
   }
 
   /** The words on screen when a picture was asked for (top frame). */
@@ -524,11 +578,15 @@ export class Recorder {
       // previous screenshot instead, which shows this page moments earlier.
       if ((this.navigatedAt.get(tabId) ?? 0) >= asked) return { kind: 'skipped' };
       const vp = this.viewports.get(tabId);
+      // Encode now, while the step's event is still on its way, not when it is applied.
+      const encoded = this.deps.encode(dataUrl);
+      encoded.catch(() => undefined); // a discarded picture's failure is nobody's concern
       return {
         kind: 'captured',
         dataUrl,
         viewportWidth: vp?.width ?? 0,
         dpr: vp?.dpr ?? 1,
+        encoded,
       };
     } catch {
       // e.g. the tab is not visible or not capturable; fall back to reuse.
@@ -573,7 +631,7 @@ export class Recorder {
   private async attachShot(step: Step, shot: PendingShot | undefined): Promise<void> {
     if (!this.guide) return;
     if (shot?.kind === 'captured') {
-      const encoded = await this.deps.encode(shot.dataUrl);
+      const encoded = await (shot.encoded ?? this.deps.encode(shot.dataUrl));
       const name = `${step.id}.${encoded.ext}`;
       await this.deps.store.putImage(this.guide.id, name, encoded.full);
       await this.deps.store.putImage(
@@ -589,7 +647,7 @@ export class Recorder {
         dpr: shot.dpr,
         scale,
       };
-      attachScreenshot(step, info, this.deps.maxZoom);
+      attachScreenshot(step, info, this.maxZoom);
       this.lastShot = { ...info, stepId: step.id };
       if (shot.words) {
         const words = scalePageText(shot.words, scale, encoded.width, encoded.height);
@@ -597,7 +655,7 @@ export class Recorder {
       }
     } else if (!step.human.screenshot && this.lastShot) {
       const { stepId, ...info } = this.lastShot;
-      attachScreenshot(step, { ...info, reusedFromStepId: stepId }, this.deps.maxZoom);
+      attachScreenshot(step, { ...info, reusedFromStepId: stepId }, this.maxZoom);
     }
   }
 
@@ -652,6 +710,7 @@ export class Recorder {
       frames: this.deps.frames.toJSON(),
     };
     if (this.session.insertAt !== undefined) data.insertAt = this.session.insertAt;
+    if (this.replacing) data.replaceStepId = this.replacing;
     if (this.lastShot) data.lastShot = this.lastShot;
     return this.deps.persist(data);
   }
@@ -676,6 +735,8 @@ export class Recorder {
       this.base = guide.blocks.filter((b) => !added.has(b.id));
       this.session = CaptureSession.restore(steps, data.insertAt, guide.settings.defaultInputMode);
       this.isNew = data.isNew;
+      this.replacing = data.replaceStepId;
+      if (this.replacing && steps.length) this.finishReplaceSoon();
       this.lastShot = data.lastShot;
       this.state = { ...data.state, stepCount: steps.length };
       for (const [tab, vp] of data.viewports) this.viewports.set(tab, vp);

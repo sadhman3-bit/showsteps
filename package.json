@@ -1,7 +1,7 @@
 {
   "name": "trailmark",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Local-first how-to guide recorder",
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,8 @@
     "setup:browsers": "node scripts/playwright.mjs install chromium",
     "snapshot:demo": "node scripts/snapshot-demo.mjs",
     "make:icons": "node scripts/make-icons.mjs",
-    "make:samples": "node scripts/make-samples.mjs"
+    "make:samples": "node scripts/make-samples.mjs",
+    "release": "pnpm build && pnpm --filter @trailmark/desktop dist && node scripts/release.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

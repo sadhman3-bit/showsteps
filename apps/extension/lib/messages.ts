@@ -107,8 +107,12 @@ export const PageMessageSchema = z.discriminatedUnion('type', [
     tabId: z.number().int(),
     guideId: z.string().optional(),
     insertAt: z.number().int().nonnegative().optional(),
+    /** U9: record this step again; the new step replaces it. */
+    replaceStepId: z.string().min(1).optional(),
   }),
   z.object({ type: z.literal('get-state') }),
+  /** Settings: stop everything and clear Trailmark's storage in this browser. */
+  z.object({ type: z.literal('delete-all') }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
   /** Replace a step's screenshot with a fresh capture of the tab. */
   z.object({

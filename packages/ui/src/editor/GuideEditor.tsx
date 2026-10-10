@@ -37,7 +37,7 @@ import { mimeFor, usePreference } from '../hooks.js';
 import { readAround } from '../ocr/ocr.js';
 import { strings } from '../strings.js';
 import { ShareDialog } from '../export/ShareDialog.js';
-import { AgentView } from './AgentView.js';
+import { AgentView, type StepCheckView } from './AgentView.js';
 import { AiTools } from './AiTools.js';
 import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs.js';
 import { ImageEditor } from './ImageEditor.js';
@@ -57,6 +57,8 @@ export interface GuideEditorProps {
   onBack: () => void;
   onCaptureMore?: (guide: Guide, insertAt: number) => void;
   onRecapture?: (guide: Guide, stepId: string) => void;
+  /** U7: dry-run the guide and report each step (the extension only). */
+  onSelfCheck?: (guideId: string) => Promise<StepCheckView[] | undefined>;
   stepLink?: (guideId: string, stepId: string) => string;
   /** Open the print view; enables Print in the Share dialog. */
   onPrint?: () => void;
@@ -96,6 +98,7 @@ export function GuideEditor({
   guideId,
   onBack,
   onCaptureMore,
+  onSelfCheck,
   onRecapture,
   stepLink,
   onPrint,
@@ -565,7 +568,12 @@ export function GuideEditor({
       </header>
 
       {mode === 'agent' ? (
-        <AgentView guide={guide} apply={apply} onEndTyping={endTyping} />
+        <AgentView
+          guide={guide}
+          apply={apply}
+          onEndTyping={endTyping}
+          {...(onSelfCheck ? { onSelfCheck: () => onSelfCheck(guide.id) } : {})}
+        />
       ) : mode === 'preview' ? (
         <div class="tm-page">
           <GuideReader

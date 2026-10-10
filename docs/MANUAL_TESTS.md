@@ -329,3 +329,44 @@ Turn off Wi-Fi and repeat MT-M8-1 in both the extension and the desktop app.
 Record a click in a Remote Desktop (mstsc) window with the desktop app, then open the guide in the editor and look at the **Agent** tab.
 
 **Expected:** the step shows the "visual only" warning. Shortly after the guide opens, its target shows the words near the click, and the Agent Pack lists them as "near the text …".
+
+---
+
+## M9
+
+### MT-M9-1 Check every step
+
+Sign in to the demo app, then open the sample "Create a supplier invoice in Ledgerline" in the editor, choose **Agent**, and click **Check every step**.
+
+**Expected:** a new tab opens and shows each element ringed in turn; nothing is clicked or typed. The Agent view then shows "Found by aria" and similar on each step, and "Not found" on **Submit invoice** (it is inside a dialog that only opens after **Review invoice**). No invoice was submitted.
+
+### MT-M9-2 Re-capture a step that changed
+
+In a real web app you use, record a short guide. Then change something the guide clicks, for example rename a button, or use an app update that did. Start **Guide Me**.
+
+**Expected:** at that step the side panel says it could not be found and offers **Re-capture this step**. Click it, do the step on the page and wait a moment. The guide carries on to the next step, and the editor shows the new step in place of the old one, with the rest unchanged.
+
+### MT-M9-3 Settings
+
+In **Settings**:
+
+- choose **Dark** colours;
+- turn on **Start captures with Live Blur on**;
+- set zoom to **No zoom**;
+- set quality to **Standard**.
+
+Record two steps.
+
+**Expected:** the library and side panel turn dark straight away. The capture toolbar starts with Live Blur pressed. The new steps show the whole screen, not a zoomed area. **Change keyboard shortcuts…** opens Chrome's shortcuts page.
+
+### MT-M9-4 Delete all data
+
+Export a guide you want to keep, then click **Settings → Delete all Trailmark data… → Delete everything**.
+
+**Expected:** the library reloads empty (the sample guides can be added again), and settings, notes and pins are back to their defaults.
+
+### MT-M9-5 Install from the release files
+
+Run `pnpm release`. On a clean Windows user account, follow the README's **Install** section using only the files in `dist/`.
+
+**Expected:** the extension loads with Load unpacked, the desktop app installs without admin rights, and turning on **Use the Trailmark desktop app** connects the two (the desktop app shows "Connected to the Trailmark browser extension").

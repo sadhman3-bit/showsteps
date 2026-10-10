@@ -77,6 +77,14 @@ export const SettingsSchema = z.object({
   desktopAsked: z.boolean(),
   /** How typed values in new guides are used (U4): fixed, ask every run, ask with a default. */
   defaultInputMode: InputModeSchema,
+  /** Colours of Trailmark's pages. */
+  theme: z.enum(['system', 'light', 'dark']),
+  /** Live Blur is on when a capture starts. */
+  liveBlurDefault: z.boolean(),
+  /** How far a step's picture zooms in on the action (1 = whole screen, no auto-crop). */
+  magnify: z.union([z.literal(1), z.literal(1.5), z.literal(2), z.literal(3)]),
+  /** Picture quality: high keeps fine text crisp; standard makes smaller files. */
+  screenshotQuality: z.enum(['high', 'standard']),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 export const DEFAULT_SETTINGS: Settings = {
@@ -87,6 +95,10 @@ export const DEFAULT_SETTINGS: Settings = {
   desktopLibrary: false,
   desktopAsked: false,
   defaultInputMode: 'fixed',
+  theme: 'system',
+  liveBlurDefault: false,
+  magnify: 2,
+  screenshotQuality: 'high',
 };
 export const SETTINGS_KEY = 'settings';
 export const MARKS_KEY = 'marks';
@@ -108,6 +120,10 @@ export const GuidePageMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('guide-control'), action: GuideControlSchema }),
   z.object({ type: z.literal('guide-goto'), index: z.number().int().nonnegative() }),
+  /** U9: the current step could not be found; record it again in place. */
+  z.object({ type: z.literal('guide-recapture') }),
+  /** U7: dry-run a guide in a new tab and report each step's element. */
+  z.object({ type: z.literal('guide-selfcheck'), guideId: z.string().min(1) }),
   z.object({ type: z.literal('guide-speed'), speed: SpeedSchema, stepThrough: z.boolean() }),
   z.object({ type: z.literal('guide-get') }),
   z.object({ type: z.literal('mark-save'), mark: PageMarkSchema }),
@@ -167,6 +183,12 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
     frameUrl: z.string().max(4096),
   }),
   z.object({ type: z.literal('guide-check'), step: StepSchema }),
+  /** U7 self-check: find the step's element and highlight it, without acting. */
+  z.object({
+    type: z.literal('guide-probe'),
+    step: StepSchema,
+    timeoutMs: z.number().int().positive(),
+  }),
   z.object({ type: z.literal('marks-changed') }),
   z.object({ type: z.literal('pick'), on: z.boolean() }),
 ]);
@@ -174,6 +196,26 @@ export type GuideToContent = z.infer<typeof GuideToContentSchema>;
 
 export const ShowReplySchema = z.object({ found: z.boolean() });
 export const RunReplySchema = z.object({ result: z.enum(['acted', 'not-found', 'cannot']) });
+/** How the self-check fared on one step (U7). */
+export const ProbeReplySchema = z.object({
+  status: z.enum(['found', 'ambiguous', 'missing']),
+  strategy: z.string().optional(),
+  confidence: z.number().optional(),
+});
+export type ProbeReply = z.infer<typeof ProbeReplySchema>;
+
+/** The self-check's report (U7), one entry per step. */
+export const SelfCheckReportSchema = z.array(
+  z.object({
+    stepId: z.string(),
+    number: z.number().int(),
+    status: z.enum(['found', 'ambiguous', 'missing', 'skipped']),
+    strategy: z.string().optional(),
+    confidence: z.number().optional(),
+    reason: z.enum(['desktop', 'manual', 'no-target']).optional(),
+  }),
+);
+
 export const CheckReplySchema = z.object({ failed: z.array(z.string()) });
 
 /** Broadcasts to extension pages. */

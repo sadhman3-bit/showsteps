@@ -16,6 +16,8 @@ export const DesktopSettingsSchema = z.object({
   active: z.enum(['personal', 'shared']),
   /** How typed values in new guides are used (U4). */
   defaultInputMode: InputModeSchema,
+  /** Colours of the app's windows. */
+  theme: z.enum(['system', 'light', 'dark']),
 });
 export type DesktopSettings = z.infer<typeof DesktopSettingsSchema>;
 
@@ -28,6 +30,7 @@ export function defaultSettings(documents: string): DesktopSettings {
     sharedPath: '',
     active: 'personal',
     defaultInputMode: 'fixed',
+    theme: 'system',
   };
 }
 

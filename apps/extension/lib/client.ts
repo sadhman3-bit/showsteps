@@ -2,12 +2,14 @@
 import { IndexedDbStore, type GuideStore } from '@trailmark/core';
 import { BridgeClient, bridgeStore, switchableStore } from './bridge';
 import { readSettings } from './settings';
+import type { StepCheckView } from '@trailmark/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   GUIDANCE_IDLE,
   SETTINGS_KEY,
   GuideBroadcastSchema,
   GuidanceStateSchema,
+  SelfCheckReportSchema,
   type GuideBroadcast,
   type GuidePageMessage,
   type GuidanceState,
@@ -35,6 +37,23 @@ let useDesktop: Promise<boolean> | undefined;
 function desktopLibraryOn(): Promise<boolean> {
   useDesktop ??= readSettings().then((s) => s.desktopApp && s.desktopLibrary);
   return useDesktop;
+}
+
+/**
+ * Settings → Delete all Trailmark data: stop captures and guides, clear settings, notes and
+ * pins, and delete the guide database in this browser.
+ */
+export async function deleteAllData(): Promise<void> {
+  const msg: PageMessage = { type: 'delete-all' };
+  await browser.runtime.sendMessage(msg).catch(() => undefined);
+  await local?.close();
+  local = undefined;
+  store = undefined;
+  await new Promise<void>((resolve) => {
+    const request = indexedDB.deleteDatabase('trailmark');
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+  });
 }
 
 /** This browser's own library (IndexedDB, shared with the service worker). */
@@ -207,6 +226,16 @@ export function useActiveTab(): { id?: number; url?: string; windowId?: number }
     };
   }, []);
   return tab;
+}
+
+/** U7: dry-run a guide in a new tab (website access is requested first; it needs the click). */
+export async function selfCheckGuide(guideId: string): Promise<StepCheckView[] | undefined> {
+  const granted = await browser.permissions.request({ origins: ['<all_urls>'] });
+  if (!granted) return undefined;
+  const msg: GuidePageMessage = { type: 'guide-selfcheck', guideId };
+  const raw = (await browser.runtime.sendMessage(msg)) as { checks?: unknown } | undefined;
+  const parsed = SelfCheckReportSchema.safeParse(raw?.checks);
+  return parsed.success ? parsed.data : undefined;
 }
 
 /**

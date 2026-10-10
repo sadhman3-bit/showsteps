@@ -192,3 +192,31 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **OCR runs only in pages that need it:** the editor and Secure Blur. The engine loads on first use, and pictures narrower than 2000 px are enlarged 2× first, because small screen text reads far better that way. Boxes are scaled back to picture pixels.
 - **Text for visual-only steps (U8):** when a guide opens in the editor, each visual-only step with a screenshot and an Action Box, but no `ocrText`, gets the text around its action. It is read from an 840 × 360 px region around the box, keeping the lines that touch the box first, then the nearest ones within 160 px, up to 200 characters. Each step is tried once per editor session, in the background, and the text is saved as one edit. The procedure, the Agent Pack ("near the text …") and the Agent view carry it.
 - **Secure Blur on desktop and image steps (E11):** a picture without saved word positions is read with OCR when Secure Blur runs, with progress shown as "Reading the text in screenshot N of M". The result is saved as that picture's `.words.json`, so the next run needs no OCR. The finds and the review screen are the same as for web steps. Only a picture that cannot be read is listed as not checked.
+
+## M9
+
+- **Self-check (U7):** **Check every step** in the Agent view opens the guide's first page in a new tab. For each web step it goes straight to the step's recorded page when the tab is elsewhere, looks for the element for up to 3 s, and rings it; it never clicks or types. Each step is reported as:
+  - **found**, with how (role and name, label, CSS…);
+  - **found, but similar elements exist** (ambiguous);
+  - **not found**;
+  - **not checked** (desktop steps, steps done by hand, steps with no element details).
+
+  Elements that only appear after an earlier action, such as a dialog's buttons, are reported as not found, because a dry run cannot open them. The tab stays open on the last page. The check needs website access and runs only in the extension.
+
+- **Guide health (U9):** when Guide Me or Run for me cannot find a step's element, the side panel offers **Re-capture this step**. Guidance stops and a capture starts in that tab, set to replace the step. When the person does the step:
+  - the new step takes the old one's place;
+  - the old step's pictures are deleted, unless another step still shows them;
+  - the capture ends by itself 1.5 s after the last event;
+  - guidance carries on from the step after.
+
+  Cancelling the capture leaves the guide as it was.
+
+- **Settings (section 8):**
+  - Extension: colours (system, light or dark), Live Blur on at start, zoom on each step's action (none, a little, medium, close; medium = 2× as before), picture quality (high = WebP 0.92, standard = 0.8), a link to Chrome's shortcut page, and **Delete all Trailmark data**. Deleting stops any capture or guide, clears extension storage and deletes the guide database; other open Trailmark pages let go of the database on their own.
+  - Desktop app: colours, plus the existing library folders and default input mode. It has no delete-all, because its guides are ordinary folders the person manages in File Explorer.
+  - Language: English only for now, so there is no language setting. Every string is in `strings.ts` and `export/labels.ts`, ready for translation.
+  - Branding is set per guide, and the export options are in the Share dialog, so neither has a global default.
+- **Performance:** pictures are encoded as soon as Chrome returns them, alongside the event's processing rather than after it. Word positions and page-state snapshots are read after the screenshot request has gone out, so they never delay the picture.
+  - A 68-step guide with pictures: the editor opens in about 1.4 s, there are no long tasks while scrolling, and the Agent view and reader each render in about 0.4 s (`e2e/performance.spec.ts` enforces limits).
+- **Capture toolbar:** each screenshot's hide is matched by one release once that picture is taken. The toolbar comes back only when no picture is pending; a 5 s timer is a safety net.
+- **Release:** `pnpm release` builds everything and writes three files to `dist/`: `trailmark-extension-<version>.zip` (the release build, checked to request no website access at install), `Trailmark-Setup-<version>.exe` and `SHA256SUMS.txt`. Version 1.0.0. Not published to the Chrome Web Store.

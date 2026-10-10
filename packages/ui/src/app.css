@@ -864,3 +864,16 @@
 .tm-row > .tm-input {
   flex: 1 1 12rem;
 }
+
+.tm-fieldset {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+}
+.tm-fieldset legend {
+  padding: 0 4px;
+  font-weight: 600;
+}

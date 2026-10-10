@@ -30,6 +30,8 @@ export type PendingShot =
       dpr: number;
       /** Words on screen at that moment, in CSS pixels of the viewport (Secure Blur). */
       words?: PageText;
+      /** Encoding, started as soon as the picture was taken (it takes a second or two). */
+      encoded?: Promise<EncodedShot>;
     }
   | { kind: 'skipped' };
 

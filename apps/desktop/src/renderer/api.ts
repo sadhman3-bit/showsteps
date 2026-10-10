@@ -38,6 +38,7 @@ export interface DesktopSettingsView {
   active: 'personal' | 'shared';
   sharedAvailable: boolean;
   defaultInputMode: InputMode;
+  theme: 'system' | 'light' | 'dark';
 }
 
 export interface CaptureView {

@@ -40,12 +40,41 @@ export function expectationText(e: Expectation): string {
 
 type Apply = (edit: (latest: Guide) => Guide, how?: 'push' | 'type') => void;
 
+/** One step's result from the self-check (U7), from the host. */
+export interface StepCheckView {
+  stepId: string;
+  status: 'found' | 'ambiguous' | 'missing' | 'skipped';
+  strategy?: string;
+  reason?: string;
+}
+
 /**
  * U1: per step, what an agent reads (how to find the element, the value, the expected result,
  * what happens on failure, whether a person confirms first) and what needs attention.
  */
-export function AgentView(props: { guide: Guide; apply: Apply; onEndTyping: () => void }) {
+export function AgentView(props: {
+  guide: Guide;
+  apply: Apply;
+  onEndTyping: () => void;
+  /** U7: dry-run the guide (the extension); hidden when the host cannot. */
+  onSelfCheck?: () => Promise<StepCheckView[] | undefined>;
+}) {
   const { guide } = props;
+  const [checks, setChecks] = useState<Map<string, StepCheckView>>();
+  const [checking, setChecking] = useState<'idle' | 'running' | 'failed'>('idle');
+  const runCheck = async () => {
+    if (!props.onSelfCheck) return;
+    setChecking('running');
+    const result = await props.onSelfCheck().catch(() => undefined);
+    if (!result) {
+      setChecking('failed');
+      return;
+    }
+    setChecks(new Map(result.map((c) => [c.stepId, c])));
+    setChecking('idle');
+  };
+  const count = (status: StepCheckView['status']) =>
+    [...(checks?.values() ?? [])].filter((c) => c.status === status).length;
   const warnings = agentWarnings(guide);
   const numbers = stepNumbers(guide);
   const editStep = (id: string, change: (s: Step) => Step, how: 'push' | 'type' = 'push') =>
@@ -63,6 +92,31 @@ export function AgentView(props: { guide: Guide; apply: Apply; onEndTyping: () =
           }
         />
       </label>
+      {props.onSelfCheck ? (
+        <section class="tm-agent__check" aria-label={a.selfCheck}>
+          <Button
+            onClick={() => void runCheck()}
+            disabled={checking === 'running'}
+            title={a.selfCheckHint}
+          >
+            {a.selfCheck}
+          </Button>{' '}
+          <span class="tm-muted" role="status">
+            {checking === 'running'
+              ? a.checking
+              : checking === 'failed'
+                ? a.checkFailed
+                : checks
+                  ? a.checkSummary(
+                      count('found'),
+                      count('ambiguous'),
+                      count('missing'),
+                      count('skipped'),
+                    )
+                  : a.selfCheckHint}
+          </span>
+        </section>
+      ) : null}
       <section class="tm-agent__warnings" aria-label={a.warningsTitle(warnings.length)}>
         {warnings.length ? (
           <>
@@ -87,6 +141,7 @@ export function AgentView(props: { guide: Guide; apply: Apply; onEndTyping: () =
               step={b}
               number={numbers.get(b.id) ?? 0}
               warnings={warnings.filter((w) => w.stepId === b.id).map((w) => w.kind)}
+              {...(checks?.get(b.id) ? { check: checks.get(b.id) } : {})}
               edit={(change, how) => editStep(b.id, change, how)}
               onEndTyping={props.onEndTyping}
             />
@@ -101,6 +156,7 @@ function AgentStep(props: {
   step: Step;
   number: number;
   warnings: string[];
+  check?: StepCheckView | undefined;
   edit: (change: (s: Step) => Step, how?: 'push' | 'type') => void;
   onEndTyping: () => void;
 }) {
@@ -123,6 +179,15 @@ function AgentStep(props: {
         <span class="tm-step__num">{n}</span> {title}
         {s.agent.confirm ? <span class="tm-badge">{a.confirmShort}</span> : null}
       </h3>
+      {props.check ? (
+        <p class={`tm-agent__result is-${props.check.status}`}>
+          <strong>{a.checkStatus[props.check.status]}</strong>
+          {props.check.strategy ? ` ${a.checkHow(props.check.strategy)}` : ''}
+          {props.check.reason
+            ? ` (${a.checkReason[props.check.reason] ?? props.check.reason})`
+            : ''}
+        </p>
+      ) : null}
       {props.warnings.map((w) => (
         <p key={w} class="tm-agent__warning" role="note">
           {a.warnings[w]?.(n)}

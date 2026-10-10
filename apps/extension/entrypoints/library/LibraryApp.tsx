@@ -6,8 +6,10 @@ import {
   Insights,
   Library,
   PrintView,
+  ConfirmDialog,
   SettingsDialog,
   anyAi,
+  applyTheme,
   detectAi,
   strings,
   Button,
@@ -18,6 +20,8 @@ import { useEffect, useState } from 'preact/hooks';
 import {
   getLocalStore,
   getStore,
+  deleteAllData,
+  selfCheckGuide,
   stepUrl,
   startGuide,
   useBackground,
@@ -75,6 +79,8 @@ export function LibraryApp() {
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  useEffect(() => applyTheme(settings.theme), [settings.theme]);
   const [aiAvailable, setAiAvailable] = useState(false);
   const [notice, setNotice] = useState('');
   useEffect(() => {
@@ -160,6 +166,25 @@ export function LibraryApp() {
       value={settings}
       aiAvailable={aiAvailable}
       desktop={{ connected: desktopConnected }}
+      extra={
+        <div class="tm-stack-form">
+          <Button
+            variant="ghost"
+            onClick={() => void browser.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+          >
+            {strings.settings.shortcuts}
+          </Button>
+          <strong>{strings.settings.dataHeading}</strong>
+          <Button
+            onClick={() => {
+              setShowSettings(false);
+              setConfirmDelete(true);
+            }}
+          >
+            {strings.settings.deleteAll}
+          </Button>
+        </div>
+      }
       onClose={() => setShowSettings(false)}
       onSave={(value) => {
         setShowSettings(false);
@@ -173,6 +198,20 @@ export function LibraryApp() {
           if (!next.desktopApp) Object.assign(next, { desktopLibrary: false });
           await saveSettings(next);
           if (next.desktopApp) await checkDesktop(next);
+        });
+      }}
+    />
+  ) : confirmDelete ? (
+    <ConfirmDialog
+      title={strings.settings.deleteAllTitle}
+      message={strings.settings.deleteAllBody}
+      confirm={strings.settings.deleteAllConfirm}
+      onClose={() => setConfirmDelete(false)}
+      onConfirm={() => {
+        setConfirmDelete(false);
+        void deleteAllData().then(() => {
+          go('#/');
+          location.reload();
         });
       }}
     />
@@ -218,6 +257,7 @@ export function LibraryApp() {
         refreshKey={libraryVersion}
         stepLink={stepUrl}
         onPrint={() => go(printRoute(route.id))}
+        onSelfCheck={selfCheckGuide}
         aiEnabled={settings.aiEnabled}
         onOpenGuide={(id) => go(`#/guide/${encodeURIComponent(id)}`)}
         onBack={() => go('#/')}

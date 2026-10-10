@@ -16,6 +16,7 @@ import {
   type GuideContentMessage,
   type GuideControl,
   type GuideToContent,
+  type ProbeReply,
   type Speed,
 } from '../guideMessages';
 
@@ -280,6 +281,25 @@ export class GuidePage {
       signal: this.finder.signal,
     });
     return found?.element ?? null;
+  }
+
+  /** U7: find a step's element and ring it, never acting on it. */
+  private async probe(step: Step, timeoutMs: number): Promise<ProbeReply> {
+    this.clearStep();
+    if (!step.target) return { status: 'missing' };
+    const found = await waitForTarget(document, step.target, { timeoutMs, isVisible });
+    if (!found) return { status: 'missing' };
+    this.reveal(found.element);
+    this.target = found.element;
+    this.ring = el('div', { class: 'ring', part: 'ring' });
+    this.ensureRoot().append(this.ring);
+    this.position();
+    this.startLoop();
+    return {
+      status: found.ambiguous ? 'ambiguous' : 'found',
+      strategy: found.strategy,
+      confidence: Math.round(found.confidence * 100) / 100,
+    };
   }
 
   private reveal(target: Element): void {
@@ -676,6 +696,9 @@ export class GuidePage {
         this.clearStep();
         sendResponse({ ok: true });
         return undefined;
+      case 'guide-probe':
+        void this.probe(msg.step, msg.timeoutMs).then(sendResponse);
+        return true;
       case 'guide-check':
         sendResponse({
           failed: failedExpectations(document, location.href, msg.step.agent.expect, {

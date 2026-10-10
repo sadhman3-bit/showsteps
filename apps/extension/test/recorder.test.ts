@@ -245,6 +245,35 @@ describe('Recorder', () => {
     ]);
   });
 
+  it('re-captures a step in place: the new step replaces it, cancel keeps it (U9)', async () => {
+    const { guideId } = await startNew(ctx.recorder);
+    await ctx.send({ kind: 'key', key: 'Enter' });
+    await ctx.send({ kind: 'key', key: 'Tab' });
+    await ctx.recorder.control('finish');
+    const [, enter] = await stepsOf(ctx.store, guideId!);
+
+    // Cancel: nothing changes.
+    await ctx.recorder.start({ tabId: TAB, url: URL_, guideId, replaceStepId: enter!.id });
+    await ctx.recorder.control('cancel');
+    expect(titles(await stepsOf(ctx.store, guideId!))).toEqual([
+      'Go to **localhost:5173**',
+      'Press **Enter**',
+      'Press **Tab**',
+    ]);
+
+    // Do the step again: it takes the old step's place, and the capture ends by itself.
+    await ctx.recorder.start({ tabId: TAB, url: URL_, guideId, replaceStepId: enter!.id });
+    await ctx.send({ kind: 'key', key: 'Escape' });
+    expect(ctx.recorder.isActive).toBe(true);
+    await expect.poll(() => ctx.recorder.isActive, { timeout: 4000 }).toBe(false);
+    expect(titles(await stepsOf(ctx.store, guideId!))).toEqual([
+      'Go to **localhost:5173**',
+      'Press **Escape**',
+      'Press **Tab**',
+    ]);
+    expect((await ctx.store.listImages(guideId!)).some((n) => n.startsWith(enter!.id))).toBe(false);
+  });
+
   it('resumes after a service-worker restart', async () => {
     const { guideId } = await startNew(ctx.recorder);
     await ctx.send({ kind: 'key', key: 'Enter' });

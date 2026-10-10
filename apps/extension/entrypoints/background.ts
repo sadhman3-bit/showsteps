@@ -1,7 +1,14 @@
-import { IndexedDbStore, marksForUrl, pageKey, type CaptureEvent } from '@trailmark/core';
+import {
+  IndexedDbStore,
+  guideSteps,
+  marksForUrl,
+  pageKey,
+  type CaptureEvent,
+} from '@trailmark/core';
 import { BridgeClient, bridgeStore, switchableStore } from '../lib/bridge';
 import { FrameRegistry } from '../lib/frames';
 import { Guidance, type PersistedGuidance } from '../lib/guidance';
+import { selfCheck, type SelfCheckDeps } from '../lib/selfcheck';
 import {
   GuideContentMessageSchema,
   GuidePageMessageSchema,
@@ -117,6 +124,8 @@ export default defineBackground(() => {
     browser.runtime.sendMessage(msg).catch(() => undefined); // no extension page open
   };
 
+  /** WebP quality for pictures (Settings), set when a capture starts. */
+  let shotQuality = 0.92;
   const recorder = new Recorder({
     store,
     frames,
@@ -141,7 +150,7 @@ export default defineBackground(() => {
             .catch(() => undefined);
       }
     },
-    encode: (dataUrl) => encodeScreenshot(dataUrl),
+    encode: (dataUrl) => encodeScreenshot(dataUrl, shotQuality),
     sendState(tabId, state) {
       browser.tabs.sendMessage(tabId, { type: 'state', state }).catch(() => undefined);
       if (state.status === 'idle') void unregisterScripts();
@@ -151,6 +160,7 @@ export default defineBackground(() => {
       bridge.sendEvent('capture-state', state);
     },
     libraryChanged: () => broadcast({ type: 'library-changed' }),
+    replaced: (guideId, _stepId, added) => void resumeAfterRecapture(guideId, added),
     async persist(data) {
       if (data) await browser.storage.session.set({ [PERSIST_KEY]: data });
       else await browser.storage.session.remove(PERSIST_KEY);
@@ -166,9 +176,8 @@ export default defineBackground(() => {
     .catch(() => undefined);
 
   const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-  const guidance = new Guidance({
-    store,
-    userName: async () => (await readSettings()).userName,
+  /** Tabs, pages and frames: shared by Guide Me, Run for me and the self-check. */
+  const pageDeps: SelfCheckDeps = {
     tabUrl: async (tabId) => (await browser.tabs.get(tabId).catch(() => undefined))?.url,
     async openTab(url, windowId) {
       const tab = await browser.tabs.create({
@@ -198,12 +207,17 @@ export default defineBackground(() => {
       frameId === undefined
         ? browser.tabs.sendMessage(tabId, msg)
         : browser.tabs.sendMessage(tabId, msg, { frameId }),
+    sleep,
+  };
+  const guidance = new Guidance({
+    ...pageDeps,
+    store,
+    userName: async () => (await readSettings()).userName,
     broadcast: (state) => broadcast({ type: 'guidance', state }),
     async persist(data) {
       if (data) await browser.storage.session.set({ [GUIDANCE_KEY]: data });
       else await browser.storage.session.remove(GUIDANCE_KEY);
     },
-    sleep,
     now: () => new Date().toISOString(),
     desktop: {
       available: () => bridge.connected,
@@ -328,14 +342,19 @@ export default defineBackground(() => {
     const allowed = await browser.permissions.contains({ origins: [tab.url] });
     if (!allowed) throw new Error('permission-needed');
     const viewport = await viewportOf(msg.tabId);
+    const settings = await readSettings();
+    shotQuality = settings.screenshotQuality === 'standard' ? 0.8 : 0.92;
     const state = await recorder.start({
       tabId: msg.tabId,
       url: tab.url,
       ...(tab.title ? { title: tab.title } : {}),
       ...(msg.guideId ? { guideId: msg.guideId } : {}),
       ...(msg.insertAt !== undefined ? { insertAt: msg.insertAt } : {}),
+      ...(msg.replaceStepId ? { replaceStepId: msg.replaceStepId } : {}),
       ...(viewport ? { viewport } : {}),
-      defaultInputMode: (await readSettings()).defaultInputMode,
+      defaultInputMode: settings.defaultInputMode,
+      liveBlur: settings.liveBlurDefault,
+      maxZoom: settings.magnify,
     });
     await registerScripts();
     await injectInto(msg.tabId);
@@ -404,6 +423,14 @@ export default defineBackground(() => {
 
   async function handlePage(msg: PageMessage): Promise<unknown> {
     switch (msg.type) {
+      case 'delete-all':
+        // Stop what is running, then let go of storage; the page deletes the database.
+        if (recorder.isActive) await recorder.control('cancel');
+        if (guidance.isActive) await guidance.control('stop');
+        await local.close();
+        await browser.storage.local.clear();
+        await browser.storage.session.clear();
+        return { ok: true };
       case 'start':
         try {
           return { state: await startCapture(msg) };
@@ -470,6 +497,46 @@ export default defineBackground(() => {
 
   // ---------- Guidance, notes and pins ----------
 
+  // ---------- Guide health (U9) ----------
+
+  /** Where to carry on once a step has been re-captured. */
+  let resume: { guideId: string; mode: 'guide' | 'run'; index: number; tabId: number } | undefined;
+
+  /** Guide Me or Run for me could not find the current step: record it again in place. */
+  async function recaptureCurrentStep(): Promise<boolean> {
+    const st = guidance.current;
+    if (st.status !== 'active' || !st.guideId || st.tabId === undefined) return false;
+    const guide = await store.getGuide(st.guideId);
+    const step = guide ? guideSteps(guide)[st.index] : undefined;
+    if (!guide || !step) return false;
+    resume = { guideId: guide.id, mode: st.mode, index: st.index, tabId: st.tabId };
+    await guidance.control('stop');
+    await browser.tabs.update(st.tabId, { active: true });
+    await startCapture({
+      type: 'start',
+      tabId: st.tabId,
+      guideId: guide.id,
+      replaceStepId: step.id,
+    });
+    return true;
+  }
+
+  /** The re-captured step is in the guide: carry on from the step after it. */
+  async function resumeAfterRecapture(guideId: string, added: number): Promise<void> {
+    const r = resume;
+    resume = undefined;
+    if (!r || r.guideId !== guideId) return;
+    const guide = await store.getGuide(guideId);
+    const total = guide ? guideSteps(guide).length : 0;
+    await startGuidance({
+      type: 'guide-start',
+      guideId,
+      mode: r.mode,
+      tabId: r.tabId,
+      from: Math.min(r.index + Math.max(1, added), Math.max(0, total - 1)),
+    }).catch(() => undefined);
+  }
+
   async function startGuidance(msg: Extract<GuidePageMessage, { type: 'guide-start' }>) {
     const state = await guidance.start(msg);
     if (state.tabId !== undefined) await injectGuide(state.tabId);
@@ -491,6 +558,21 @@ export default defineBackground(() => {
         return { guidance: await guidance.control(msg.action) };
       case 'guide-goto':
         return { guidance: await guidance.goto(msg.index) };
+      case 'guide-recapture':
+        return { ok: await recaptureCurrentStep() };
+      case 'guide-selfcheck': {
+        const guide = await store.getGuide(msg.guideId);
+        if (!guide) return { error: 'not-found' };
+        // The dry run's pages need the guidance script even where no guide ran before.
+        const checks = await selfCheck(guide, {
+          ...pageDeps,
+          async waitLoaded(tabId, timeoutMs) {
+            await pageDeps.waitLoaded(tabId, timeoutMs);
+            await injectGuide(tabId);
+          },
+        });
+        return { checks };
+      }
       case 'guide-speed':
         return { guidance: guidance.setSpeed(msg.speed, msg.stepThrough) };
       case 'guide-get':

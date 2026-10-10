@@ -1,4 +1,5 @@
 import type { InputMode } from '@trailmark/core';
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
@@ -15,6 +16,18 @@ export interface UserSettings {
   desktopApp?: boolean;
   /** How typed values in new guides are used (U4). */
   defaultInputMode?: InputMode;
+  theme?: Theme;
+  liveBlurDefault?: boolean;
+  magnify?: 1 | 1.5 | 2 | 3;
+  screenshotQuality?: 'high' | 'standard';
+}
+
+export type Theme = 'system' | 'light' | 'dark';
+
+/** Show Trailmark's pages in light, dark or the system's colours. */
+export function applyTheme(theme: Theme | undefined): void {
+  if (!theme || theme === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
 }
 
 /** Settings shared by the extension and the desktop app (grows with later milestones). */
@@ -22,6 +35,7 @@ export function SettingsDialog<T extends UserSettings>({
   value,
   aiAvailable,
   desktop,
+  extra,
   onSave,
   onClose,
 }: {
@@ -29,6 +43,8 @@ export function SettingsDialog<T extends UserSettings>({
   aiAvailable: boolean;
   /** Offer the desktop app connection, with its current status. */
   desktop?: { connected: boolean };
+  /** Host-specific controls at the end (shortcuts, delete all data). */
+  extra?: ComponentChildren;
   onSave: (value: T) => void;
   onClose: () => void;
 }) {
@@ -69,6 +85,73 @@ export function SettingsDialog<T extends UserSettings>({
           />{' '}
           {s.guidance}
         </label>
+        {draft.theme ? (
+          <label class="tm-field">
+            {s.theme}
+            <select
+              class="tm-input"
+              value={draft.theme}
+              onChange={(e) => setDraft({ ...draft, theme: e.currentTarget.value as Theme })}
+            >
+              {(['system', 'light', 'dark'] as const).map((t) => (
+                <option key={t} value={t}>
+                  {s.themes[t]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {draft.magnify !== undefined ? (
+          <fieldset class="tm-fieldset">
+            <legend>{s.captureHeading}</legend>
+            <label class="tm-check">
+              <input
+                type="checkbox"
+                checked={!!draft.liveBlurDefault}
+                onChange={(e) => setDraft({ ...draft, liveBlurDefault: e.currentTarget.checked })}
+              />{' '}
+              {s.liveBlurDefault}
+            </label>
+            <label class="tm-field">
+              {s.magnify}
+              <select
+                class="tm-input"
+                value={String(draft.magnify)}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    magnify: Number(e.currentTarget.value) as 1 | 1.5 | 2 | 3,
+                  })
+                }
+              >
+                {[1, 1.5, 2, 3].map((z) => (
+                  <option key={z} value={String(z)}>
+                    {s.magnifyLevels[String(z)]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label class="tm-field">
+              {s.quality}
+              <select
+                class="tm-input"
+                value={draft.screenshotQuality ?? 'high'}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    screenshotQuality: e.currentTarget.value as 'high' | 'standard',
+                  })
+                }
+              >
+                {(['high', 'standard'] as const).map((q) => (
+                  <option key={q} value={q}>
+                    {s.qualities[q]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </fieldset>
+        ) : null}
         {draft.defaultInputMode ? (
           <label class="tm-field">
             {s.inputMode}
@@ -110,6 +193,7 @@ export function SettingsDialog<T extends UserSettings>({
         ) : (
           <p class="tm-muted">{s.aiUnavailable}</p>
         )}
+        {extra}
       </form>
     </Dialog>
   );

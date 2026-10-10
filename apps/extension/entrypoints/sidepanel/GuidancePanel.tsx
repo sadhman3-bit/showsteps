@@ -41,6 +41,10 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
   };
 
   const buttons: [string, GuideControl, ('primary' | 'default' | 'ghost')?][] = [];
+  // U9: the element is gone (the app changed): record this step again, keeping the rest.
+  const lost =
+    !done &&
+    (state.phase === 'not-found' || (state.phase === 'failed' && state.reason === 'not-found'));
   if (!done) {
     switch (state.phase) {
       case 'confirm':
@@ -59,7 +63,7 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
         break;
       case 'failed':
       case 'not-found':
-        buttons.push([g.retry, 'retry', 'primary'], [g.didIt, 'next'], [g.skip, 'skip']);
+        buttons.push([g.retry, 'retry'], [g.didIt, 'next'], [g.skip, 'skip']);
         break;
       default:
         buttons.push([g.didIt, 'next', 'primary'], [g.skip, 'skip']);
@@ -97,6 +101,15 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
             {state.phase === 'navigate' ? (
               <Button variant="primary" onClick={openPage}>
                 {g.openPage}
+              </Button>
+            ) : null}
+            {lost ? (
+              <Button
+                variant="primary"
+                title={g.recaptureHint}
+                onClick={() => void guideRequest({ type: 'guide-recapture' })}
+              >
+                {g.recapture}
               </Button>
             ) : null}
             {buttons.map(([label, action, variant]) => (
