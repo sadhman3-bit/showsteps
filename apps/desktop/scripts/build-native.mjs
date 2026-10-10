@@ -43,7 +43,12 @@ execFileSync(
 );
 execFileSync(
   csc,
-  [...common, `/out:${join(out, 'trailmark-host.exe')}`, `/reference:${join(fw, 'System.Core.dll')}`, join(here, 'native', 'TrailmarkHost.cs')],
+  [
+    ...common,
+    `/out:${join(out, 'trailmark-host.exe')}`,
+    `/reference:${join(fw, 'System.Core.dll')}`,
+    join(here, 'native', 'TrailmarkHost.cs'),
+  ],
   { stdio: 'inherit' },
 );
 console.log(`build-native: wrote ${out}`);

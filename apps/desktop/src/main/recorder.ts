@@ -57,6 +57,7 @@ export interface RecorderDeps {
 
 const DOUBLE_CLICK_MS = 500;
 const SNAPSHOT_DELAY_MS = 250;
+const WATCH_TYPING_MS = 400;
 
 /**
  * Records Windows apps through uia-helper's hooks. Clicks become steps with the picture taken
@@ -227,15 +228,30 @@ export class DesktopRecorder {
       if (!el || this.skip(el)) return;
       this.typing = { el, snapshot: el };
     }
+    this.watchTyping(SNAPSHOT_DELAY_MS);
+  }
+
+  /**
+   * While typing is pending, look at what has focus now and then: the same control refreshes
+   * the value; another app means the person moved on (a backup for the foreground event, which
+   * Windows does not always send).
+   */
+  private watchTyping(delay: number): void {
     clearTimeout(this.snapshotTimer);
     this.snapshotTimer = setTimeout(() => {
       void this.serial(async () => {
-        if (!this.typing) return;
+        const typing = this.typing;
+        if (!typing?.el) return;
         const now = await this.deps.helper.focused();
-        if (now && this.typing.el && elementKey(now) === elementKey(this.typing.el))
-          this.typing.snapshot = now;
+        if (this.typing !== typing) return;
+        if (now && elementKey(now) === elementKey(typing.el)) typing.snapshot = now;
+        else if (now && now.pid !== typing.el.pid) {
+          await this.commitTyping();
+          return;
+        }
+        this.watchTyping(WATCH_TYPING_MS);
       });
-    }, SNAPSHOT_DELAY_MS);
+    }, delay);
   }
 
   private async commitTyping(): Promise<void> {

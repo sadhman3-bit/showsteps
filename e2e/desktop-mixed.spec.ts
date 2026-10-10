@@ -35,6 +35,16 @@ async function connect(sw: Worker): Promise<void> {
 // A real browser window, so the test can switch between it and Notepad.
 test.use({ headed: true });
 
+/** Step titles of the guide being recorded (it is saved as it grows). */
+const titles = (sw: Worker, id: string) =>
+  sw.evaluate(
+    async (g) =>
+      (await __trailmark.store.getGuide(g)).blocks
+        .filter((b) => b.kind === 'step')
+        .map((b) => b.human.title.spans.map((x) => x.text).join('')),
+    id,
+  );
+
 const stepCount = (sw: Worker) => sw.evaluate(() => __trailmark.recorder.current.stepCount);
 
 test('one capture across a web page and Notepad, then Guide Me across both (C10, G8)', async ({
@@ -67,9 +77,12 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
   ]);
   // Back to the browser: switching apps ends the typing in Notepad.
   expect(await desktop.activate('chrome', PAGE_TITLE)).toBe(true);
-  await expect.poll(() => stepCount(sw)).toBe(3);
+  await expect
+    .poll(() => titles(sw, guideId))
+    .toContain('Type Invoice 1043 approved into Text Editor');
   await page.getByRole('button', { name: 'Sign in' }).click({ delay: 120 });
-  await expect.poll(() => stepCount(sw)).toBe(4);
+  // The step lands once its screenshot is encoded and saved.
+  await expect.poll(() => titles(sw, guideId), { timeout: 20_000 }).toContain('Click Sign in');
   await sw.evaluate(() => __trailmark.recorder.control('finish'));
   await expect.poll(async () => (await desktop.capture()).status).toBe('idle');
 
@@ -117,6 +130,12 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
       __trailmark.startGuidance({ type: 'guide-start', guideId: g, mode: 'guide', tabId: t }),
     [guideId, tabId] as const,
   );
+  // Step 1 (Go to) is done already; wait until the guide shows step 2 in the page.
+  await expect
+    .poll(() =>
+      sw.evaluate(() => [__trailmark.guidance.current.index, __trailmark.guidance.current.phase]),
+    )
+    .toEqual([1, 'showing']);
   await page.getByLabel('Username').fill('alex');
   await page.getByLabel('Username').press('Tab');
   await expect.poll(() => sw.evaluate(() => __trailmark.guidance.current.index)).toBe(2);

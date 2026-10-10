@@ -1,7 +1,6 @@
 import { FolderStore, type CaptureEvent } from '@trailmark/core';
 import { nodeFileSystem } from '@trailmark/core/node';
 import { EventEmitter } from 'node:events';
-import { EventEmitter } from 'node:events';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -163,5 +162,35 @@ describe('desktop recorder', () => {
     expect(events).toMatchObject([{ kind: 'type', value: 'Invoice 1043' }]);
     await recorder.finish();
     expect(events).toHaveLength(1);
+  });
+
+  it('commits typing when focus moves to another app without a foreground event', async () => {
+    let focus: UiaElement | undefined = { ...editor, value: 'Hello' };
+    const helper = fakeHelper(() => focus);
+    const events: CaptureEvent[] = [];
+    const recorder = new DesktopRecorder({
+      helper,
+      readShot: () => Promise.reject(new Error('no shots')),
+      ownPids: () => [],
+      shotDir: tmpdir(),
+      onState: () => undefined,
+    });
+    await recorder.start(
+      {
+        stepCount: 0,
+        event: async (ev) => void events.push(ev),
+        deleteLast: async () => undefined,
+        finish: async () => 'g1',
+        cancel: async () => undefined,
+      },
+      true,
+    );
+    helper.emit('event', { event: 'typing' });
+    await new Promise((r) => setTimeout(r, 300));
+    expect(events).toHaveLength(0);
+    focus = { ...editor, pid: 77, processName: 'chrome', name: 'Address bar' };
+    await expect.poll(() => events.length, { timeout: 2000 }).toBe(1);
+    expect(events[0]).toMatchObject({ kind: 'type', value: 'Hello' });
+    await recorder.finish();
   });
 });
