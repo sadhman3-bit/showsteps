@@ -1,4 +1,6 @@
 import type { Worker } from '@playwright/test';
+import { strFromU8, unzipSync } from 'fflate';
+import { readFileSync } from 'node:fs';
 import { expect, openNotepad, test } from './desktop-fixtures';
 import { startCaptureOn } from './helpers';
 
@@ -69,7 +71,7 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
   await page.getByLabel('Username').press('Tab');
   await expect.poll(() => stepCount(sw)).toBe(2);
 
-  const { editor } = await openNotepad(desktop);
+  const { editor, title } = await openNotepad(desktop);
   await desktop.click(editor);
   await desktop.input([
     { type: 'text', text: 'Invoice 1043 approved' },
@@ -101,6 +103,7 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
   // Edit: the desktop step and its picture show in the extension's editor.
   const extensionId = new URL(sw.url()).host;
   const editorPage = await context.newPage();
+  await editorPage.bringToFront();
   await editorPage.goto(`chrome-extension://${extensionId}/library.html#/guide/${guideId}`);
   await expect(editorPage.getByRole('textbox', { name: 'Step 3 title' })).toHaveText(
     'Type Invoice 1043 approved into Text Editor',
@@ -116,6 +119,19 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
       return img.naturalWidth;
     });
   expect(width).toBeGreaterThan(400);
+  // Export: the Markdown zip holds all four steps with a picture each, Notepad's included.
+  await editorPage.getByRole('button', { name: 'Share' }).click();
+  const download = editorPage.waitForEvent('download');
+  await editorPage
+    .getByRole('dialog')
+    .getByRole('button', { name: /^Markdown\b/ })
+    .click();
+  const zipPath = test.info().outputPath('mixed.zip');
+  await (await download).saveAs(zipPath);
+  const files = unzipSync(readFileSync(zipPath));
+  const md = strFromU8(files['guide.md']!);
+  expect(md).toContain('Type **Invoice 1043 approved** into **Text Editor**');
+  expect(Object.keys(files).filter((n) => /^img\/step-\d+\.png$/.test(n))).toHaveLength(4);
   await editorPage.close();
 
   // Guide Me: the web step in the page, the Notepad step in the desktop overlay (G8).
@@ -149,7 +165,7 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
     ?.screenshot({ path: test.info().outputPath('overlay.png') });
 
   // Do the Notepad step for real: the overlay sees it and the guide moves on.
-  expect(await desktop.activate('notepad')).toBe(true);
+  expect(await desktop.activate('notepad', title)).toBe(true);
   await desktop.click(editor);
   await desktop.input([
     { type: 'text', text: ' ok' },

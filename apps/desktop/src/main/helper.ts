@@ -171,11 +171,22 @@ export class UiaHelper extends EventEmitter<{ event: [HelperEvent]; exit: [] }> 
     return this.call('hook', { on, ...opts });
   }
 
-  /** Synthetic input. With `requireForeground`, it is refused unless that app is in front. */
-  input(actions: InputAction[], requireForeground?: string): Promise<unknown> {
+  /**
+   * Synthetic input. With `requireForeground` (and `requireTitle`), it is refused unless that
+   * app (and a window whose title contains that text) is in front.
+   */
+  input(
+    actions: InputAction[],
+    requireForeground?: string,
+    requireTitle?: string,
+  ): Promise<unknown> {
     return this.call(
       'input',
-      { actions, ...(requireForeground ? { requireForeground } : {}) },
+      {
+        actions,
+        ...(requireForeground ? { requireForeground } : {}),
+        ...(requireTitle ? { requireTitle } : {}),
+      },
       60_000,
     );
   }

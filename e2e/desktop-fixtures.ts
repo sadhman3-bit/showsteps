@@ -1,6 +1,16 @@
 import { _electron, type ElectronApplication } from '@playwright/test';
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +40,11 @@ export type InputAction =
 
 interface Hook {
   helper: {
-    input(actions: InputAction[], requireForeground?: string): Promise<unknown>;
+    input(
+      actions: InputAction[],
+      requireForeground?: string,
+      requireTitle?: string,
+    ): Promise<unknown>;
     find(q: Record<string, string>): Promise<UiaElementLite[]>;
     call(cmd: string, args?: Record<string, unknown>): Promise<unknown>;
   };
@@ -51,8 +65,19 @@ interface Hook {
 // Evaluated inside the app (serialised), so each call names the global itself.
 type Global = { __trailmarkDesktop: Hook };
 
+/** The window a test may send input to: an app and (always, in tests) a unique window title. */
+export interface InputTarget {
+  app: string;
+  title: string;
+}
+
 /** The built desktop app, launched with its own library, data and downloads folders. */
 export class Desktop {
+  /** Where `input` and `click` go by default (set by `openNotepad`). */
+  target: InputTarget | undefined;
+  /** Notepad processes this test started (the only ones it may close). */
+  readonly started: ChildProcess[] = [];
+
   private constructor(
     readonly app: ElectronApplication,
     readonly dir: string,
@@ -90,13 +115,15 @@ export class Desktop {
   }
 
   /**
-   * Real mouse and keyboard input, refused by the helper unless `app` is in front (and, for
-   * clicks, under the pointer), so a test can never type into someone else's window.
+   * Real mouse and keyboard input, refused by the helper unless the target window (the test's
+   * own, by its unique title) is in front, and for clicks under the pointer. A test can never
+   * type into someone else's window.
    */
-  input(actions: InputAction[], app = 'notepad'): Promise<unknown> {
+  input(actions: InputAction[], target = this.target): Promise<unknown> {
+    if (!target) throw new Error('No input target: open the app under test first');
     return this.app.evaluate(
-      (_e, [a, p]) => (globalThis as unknown as Global).__trailmarkDesktop.helper.input(a, p),
-      [actions, app] as const,
+      (_e, [a, p, t]) => (globalThis as unknown as Global).__trailmarkDesktop.helper.input(a, p, t),
+      [actions, target.app, target.title] as const,
     );
   }
 
@@ -213,7 +240,9 @@ export class Desktop {
    * Click a screen rectangle with the real mouse, at the point nearest its centre that `app`
    * owns (always-on-top windows such as picture-in-picture videos can cover part of it).
    */
-  async click(element: { rect: Rect }, app = 'notepad'): Promise<unknown> {
+  async click(element: { rect: Rect }, target = this.target): Promise<unknown> {
+    if (!target) throw new Error('No input target: open the app under test first');
+    const { app } = target;
     const { rect } = element;
     const points: [number, number][] = [];
     for (const fy of [0.5, 0.3, 0.7, 0.15, 0.85])
@@ -224,7 +253,10 @@ export class Desktop {
       const owner = (await this.processAt(x, y)).toLowerCase();
       seen.add(owner);
       if (owner !== app) continue;
-      return this.input([{ type: 'move', x, y }, { type: 'wait', ms: 80 }, { type: 'click' }], app);
+      return this.input(
+        [{ type: 'move', x, y }, { type: 'wait', ms: 80 }, { type: 'click' }],
+        target,
+      );
     }
     throw new Error(`No visible part of ${app} to click (covered by ${[...seen].join(', ')})`);
   }
@@ -237,41 +269,87 @@ export class Desktop {
 
 const run = promisify(execFile);
 
-export async function closeNotepad(): Promise<void> {
-  await run('taskkill', ['/IM', 'notepad.exe', '/F']).catch(() => undefined);
+/** Close only the Notepad windows this test opened; anyone else's stay untouched. */
+export async function closeNotepads(desktop: Desktop): Promise<void> {
+  for (const proc of desktop.started.splice(0))
+    if (proc.pid) await run('taskkill', ['/PID', String(proc.pid), '/F']).catch(() => undefined);
 }
 
-/** Start Notepad, bring it to the front and return its text area. */
+/**
+ * Open Notepad on a new, uniquely named file, bring that window to the front and return its
+ * text area. Input then goes only to that window (see `Desktop.input`).
+ */
 export async function openNotepad(
   desktop: Desktop,
-): Promise<{ proc: ChildProcess; editor: UiaElementLite }> {
-  await closeNotepad();
+): Promise<{ editor: UiaElementLite; title: string }> {
   await desktop.minimise();
-  const proc = spawn('notepad.exe');
+  const title = `trailmark-e2e-${randomUUID().slice(0, 8)}`;
+  const file = join(desktop.dir, `${title}.txt`);
+  writeFileSync(file, '');
+  const proc = spawn('notepad.exe', [file]);
+  desktop.started.push(proc);
   for (let i = 0; i < 40; i++) {
-    const [editor] = await desktop.find({ processName: 'notepad', controlType: 'Document' });
+    const [editor] = await desktop.find({
+      processName: 'notepad',
+      windowTitle: title,
+      controlType: 'Document',
+    });
     if (editor) {
-      if ((await desktop.activate('notepad')) !== true) {
-        await closeNotepad();
+      if ((await desktop.activate('notepad', title)) !== true) {
+        await closeNotepads(desktop);
         throw new Error('Could not bring Notepad to the front; no input was sent');
       }
-      return { proc, editor };
+      desktop.target = { app: 'notepad', title };
+      return { editor, title };
     }
     await new Promise((r) => setTimeout(r, 250));
   }
   throw new Error('Notepad did not open');
 }
 
+const LOCK = join(tmpdir(), 'trailmark-desktop-e2e.lock');
+
+/**
+ * Desktop tests use the real screen, mouse and keyboard, and the app allows one instance: they
+ * must never run at the same time, whatever the worker count. A lock file serialises them.
+ */
+async function takeLock(): Promise<() => void> {
+  for (let waited = 0; ; waited += 500) {
+    try {
+      const fd = openSync(LOCK, 'wx');
+      return () => {
+        closeSync(fd);
+        rmSync(LOCK, { force: true });
+      };
+    } catch {
+      // Left behind by a run that crashed: older than any test.
+      if (Date.now() - statSync(LOCK, { throwIfNoEntry: false })!.mtimeMs > 10 * 60_000)
+        rmSync(LOCK, { force: true });
+      if (waited > 10 * 60_000) throw new Error(`Another desktop test holds ${LOCK}`);
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+}
+
 /** Playwright fixtures for desktop tests (Windows only). */
 export const test = base.extend<{ desktop: Desktop }>({
-  // eslint-disable-next-line no-empty-pattern
-  desktop: async ({}, use, info) => {
-    info.skip(process.platform !== 'win32', 'Windows only');
-    const d = await Desktop.launch();
-    await use(d);
-    await d.close();
-    await closeNotepad();
-  },
+  desktop: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use, info) => {
+      info.skip(process.platform !== 'win32', 'Windows only');
+      const release = await takeLock();
+      try {
+        const d = await Desktop.launch();
+        await use(d);
+        await closeNotepads(d);
+        await d.close();
+      } finally {
+        release();
+      }
+    },
+    // Waiting for another desktop test to finish counts against this fixture, not the test.
+    { timeout: 15 * 60_000 },
+  ],
 });
 
 export const expect = test.expect;

@@ -217,3 +217,45 @@ Set **Settings → Your name**. Open a guide's reader, comment on a step and rea
 This needs Chrome where `chrome://on-device-internals` shows the model as available (Chrome 138 or later on a supported PC). Turn on **Settings → Use on-device AI**, open a guide in the editor and try **AI → Improve step text**, **Write a summary** and **Translate…**.
 
 **Expected:** suggestions appear for review before anything changes, and the translation is saved as a separate copy. In a browser without these APIs, the AI option is not offered.
+
+---
+
+## M6
+
+Build the installer with `pnpm --filter @trailmark/desktop dist` (output in `apps/desktop/release`), or run the app from source with `pnpm --filter @trailmark/desktop start` after `pnpm build`.
+
+### MT-M6-1 Install and uninstall for one user
+
+Run `Trailmark-Setup-<version>.exe` without admin rights and keep the default folder.
+
+**Expected:** no UAC prompt. Trailmark is in the Start menu and on the desktop. `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.trailmark.host` points at `%APPDATA%\Trailmark\com.trailmark.host.json`. Uninstall from Settings → Apps: that key (and the Chromium and Edge ones) and the manifest are gone, and `Documents\Trailmark\Library` is still there.
+
+### MT-M6-2 Record Excel
+
+Open Excel, then press **Ctrl+Alt+R**. Click a cell, type a number, press Enter, click **Home → Bold**, then press **Ctrl+Alt+R** again.
+
+**Expected:** a guide opens with steps such as "Type 42 into A1" and "Click Bold", each with a picture of Excel only (no other windows) and the highlight on the cell or button. The small capture toolbar is in no picture.
+
+### MT-M6-3 One guide across Chrome and a desktop app
+
+Install the extension and the desktop app. In the extension's **Settings**, turn on **Work with the desktop app**. Start a capture on the demo app, fill in a field, switch to Notepad and type a line, switch back and click **Sign in**, then finish.
+
+**Expected:** the desktop app shows it is recording with the browser. One guide has the web steps and "Type … into Text Editor" in the order they happened, each with its own picture.
+
+### MT-M6-4 Guide Me across both
+
+Open that guide in the reader and click **Guide Me**.
+
+**Expected:** web steps are highlighted in the page. At the Notepad step the side panel says to do it in the desktop app, an orange ring surrounds Notepad's text area and a dark card sits below it. Typing there and pressing Tab moves the guide back to the browser. **I did this** on the card also moves on.
+
+### MT-M6-5 Team library and read-only
+
+In the desktop app's **Settings**, choose a OneDrive folder as the team library on two PCs (or two Windows users). On one, open a guide in **Team library** and tick **Read-only for others**.
+
+**Expected:** on the other PC the guide shows "Edited by <name>", opens in the reader with **Edit a personal copy**, and the copy opens in the editor in **My library**.
+
+### MT-M6-6 Secure Blur
+
+Sign in to the demo app and record a click on the dashboard's **Supplier contact** heading. In the editor click **Secure Blur**.
+
+**Expected:** eight items are listed and outlined on the picture: email, phone, card, BSB, account, TFN, ABN and IBAN, each masked to its last characters. Untick one and click **Blur 7 items**: the picture has seven blurred regions, and running Secure Blur again lists only the one left.

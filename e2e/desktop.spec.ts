@@ -24,7 +24,7 @@ test('desktop capture (C8): Notepad clicks and typing become steps with pre-clic
   desktop,
 }) => {
   test.setTimeout(120_000);
-  const { editor } = await openNotepad(desktop);
+  const { editor, title } = await openNotepad(desktop);
   await desktop.startCapture();
   await expect.poll(async () => (await desktop.capture()).status).toBe('recording');
 
@@ -36,6 +36,7 @@ test('desktop capture (C8): Notepad clicks and typing become steps with pre-clic
   ]);
   const [format] = await desktop.find({
     processName: 'notepad',
+    windowTitle: title,
     controlType: 'MenuItem',
     name: 'Format',
   });

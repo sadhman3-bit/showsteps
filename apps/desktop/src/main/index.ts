@@ -19,20 +19,33 @@ import { join } from 'node:path';
 import { BridgeServer } from './bridge';
 import { DesktopGuide, type OverlayView } from './guide';
 import { UiaHelper } from './helper';
-import { registerNativeHost } from './nativeHost';
+import { registerNativeHost, unregisterNativeHost } from './nativeHost';
 import {
   DesktopRecorder,
   LibrarySink,
   type DesktopCaptureState,
   type DesktopShot,
 } from './recorder';
-import { defaultSettings, loadSettings, saveSettings, type DesktopSettings } from './settings';
+import {
+  DesktopSettingsSchema,
+  defaultSettings,
+  loadSettings,
+  saveSettings,
+  type DesktopSettings,
+} from './settings';
 import { ExtensionSink } from './sinks';
 
 const SHORTCUT = 'Control+Alt+R';
 const E2E = process.env.TRAILMARK_E2E === '1';
 
-if (!app.requestSingleInstanceLock()) app.quit();
+/** Installer hooks: register or remove the browser bridge for this user, then exit. */
+const hostSetup = process.argv.includes('--register-native-host')
+  ? 'register'
+  : process.argv.includes('--unregister-native-host')
+    ? 'unregister'
+    : undefined;
+
+if (!hostSetup && !app.requestSingleInstanceLock()) app.quit();
 
 // ---------- Paths ----------
 
@@ -360,7 +373,10 @@ function registerIpc(): void {
   });
   ipcMain.handle('settings:get', () => ({ ...settings, sharedAvailable: !!shared }));
   ipcMain.handle('settings:set', async (_e, value: unknown) => {
-    const next = { ...settings, ...(value as Partial<DesktopSettings>) };
+    const next = DesktopSettingsSchema.parse({
+      ...settings,
+      ...DesktopSettingsSchema.partial().parse(value),
+    });
     await saveSettings(settingsFile(), next);
     settings = next;
     openStores();
@@ -402,6 +418,13 @@ function registerIpc(): void {
 // ---------- Start ----------
 
 void app.whenReady().then(async () => {
+  if (hostSetup) {
+    if (hostSetup === 'register')
+      await registerNativeHost(app.getPath('userData'), hostExe).catch(() => undefined);
+    else await unregisterNativeHost(app.getPath('userData')).catch(() => undefined);
+    app.exit(0);
+    return;
+  }
   settings = await loadSettings(settingsFile(), {
     ...defaultSettings(app.getPath('documents')),
     ...(process.env.TRAILMARK_LIBRARY ? { libraryPath: process.env.TRAILMARK_LIBRARY } : {}),

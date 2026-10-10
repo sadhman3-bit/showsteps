@@ -30,7 +30,17 @@ export const test = base.extend<{
       channel: 'chromium',
       headless: !headed,
       viewport: { width: 1280, height: 800 },
-      args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`],
+      args: [
+        `--disable-extensions-except=${EXTENSION_PATH}`,
+        `--load-extension=${EXTENSION_PATH}`,
+        // A headed window covered by another app must keep rendering (desktop tests).
+        ...(headed
+          ? [
+              '--disable-backgrounding-occluded-windows',
+              '--disable-features=CalculateNativeWinOcclusion',
+            ]
+          : []),
+      ],
     });
     await use(context);
     await context.close();

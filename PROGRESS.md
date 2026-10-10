@@ -10,7 +10,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M3** Editor E1–E10 and image editor
 - [x] **M4** Exports X1–X8, viewer
 - [x] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
-- [ ] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
+- [x] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
 - [ ] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
 - [ ] **M8** U8 OCR, E11 for desktop and image steps
 - [ ] **M9** U7, U9, hardening, performance, docs, release
@@ -85,25 +85,28 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 **Acceptance:** `e2e/guidance.spec.ts`: Guide Me completes the 17-step demo flow with every step done on the highlighted target (two pages, a cross-origin iframe, a same-origin iframe, shadow DOM, a modal dialog). Run for me completes it, waits for the password and stops at the confirm step until approved. `e2e/pages.spec.ts` covers notes, pins, Discover, the Guidance switch, comments, reactions, Insights and the AI tools. 25 e2e tests in total; 197 unit tests.
 
-## M6 in progress (resume here)
+## M6 detail (done 2026-10-11)
 
-Done so far (not yet passing acceptance):
+- [x] Windows helpers without a .NET SDK (built-in csc.exe): uia-helper.exe (UI Automation, pre-click window screenshots, typing reported without characters, foreground events, guarded input) and trailmark-host.exe (native messaging relay to the pipe `trailmark-<user>`)
+- [x] Electron desktop app: library, editor, reader and insights from `ui`; tray, Ctrl+Alt+R, capture toolbar, desktop recorder, Guide Me overlay (G8), My library and Team library folders (L3), read-only guides and personal copies (L6), settings
+- [x] Bridge: fixed extension ID, optional nativeMessaging, one shared capture (the extension recorder is the only writer), mixed guides in Guide Me, guides kept in the desktop library from the browser
+- [x] Secure Blur for web steps (E11): word positions saved with each screenshot, detection with check digits in core, review screen in the editor
+- [x] Installer: electron-builder NSIS per user (`pnpm --filter @trailmark/desktop dist`), registers the native host on install and removes it on uninstall
+- [x] Fixes found while testing: typing in a desktop app is committed when another app comes to the front; screenshots show only the clicked window
 
-- [x] No .NET SDK needed: `apps/desktop/native/*.cs` compile with Windows' built-in csc.exe (`pnpm --filter @trailmark/desktop build:native`): uia-helper.exe (UI Automation, pre-click screenshots via a low-level mouse hook, typing reported without characters, input with a foreground guard) and trailmark-host.exe (native messaging relay to the pipe `trailmark-<user>`).
-- [x] Electron app (`apps/desktop`): library/editor/reader/insights reused from ui, IPC store, tray, Ctrl+Alt+R, capture controller window, LibrarySink recorder, bridge server, desktop Guide Me overlay (G8), settings with library and team folders (L3), read-only guides (L6), native host registration in HKCU.
-- [x] Extension: fixed ID (`extension-key.json`), optional nativeMessaging, BridgeClient/BridgeStore, move-to-desktop prompt, shared capture (desktop steps go to the extension recorder), desktop steps in Guide Me delegated to the desktop overlay.
-- [x] Unit tests for desktop events and the library sink (apps/desktop/test).
+**Acceptance:** `pnpm e2e:desktop` (3 tests, real mouse and keyboard, only into a Notepad window the test opened):
 
-Next:
+- `desktop-mixed.spec.ts` records one guide across the demo app and Notepad through the bridge, edits it, exports it to Markdown and plays it back with Guide Me (web ring and desktop overlay);
+- `desktop.spec.ts` covers desktop-only capture;
+- `desktop-library.spec.ts` covers the team library and read-only guides.
 
-- [ ] Get `e2e/desktop.spec.ts` passing (`pnpm e2e:desktop`; it drives the real mouse and keyboard). Foreground activation of Notepad was unreliable; input is now refused unless Notepad is in front. Expected steps: "Type Invoice 1043 approved into Text Editor" (click + type merge), "Click Format", "Press Esc" — update the test's expectations.
-- [ ] Mixed web + Notepad e2e through the bridge (record, edit, export, Guide Me).
-- [ ] E11 Secure Blur for web steps; electron-builder NSIS per-user packaging with native host registration and uninstall cleanup; lint, docs (DECISIONS, MANUAL_TESTS, PARITY), docs/DEVELOPING.md, commit `M6: …`.
+Stable across 3 repeated runs. The installer builds, and the install/uninstall hooks were checked against the registry. `pnpm e2e`: 26 tests. Unit tests: 207. PARITY.md is fully ticked except U1–U10 and E11 for desktop and image steps (M8).
 
 ## Waiting on the owner
 
-- **.NET SDK** (needed from M6 for `uia-helper`). Not blocking M1–M5.
+- Nothing.
 
 ## Deferred
 
-- Desktop app package (`apps/desktop`) is created in M6, not as an empty scaffold now. Reason: no stub code in shipped paths; .NET SDK not yet installed.
+- Extension capture: screenshot encoding takes 1.5–2.5 s per step on a busy machine before the step appears (the step still lands in order). Look at faster encoding in M9's performance pass.
+- Secure Blur reads words only from the top frame of a web page; text inside iframes is left to OCR (M8).

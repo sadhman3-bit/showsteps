@@ -1,6 +1,6 @@
 import { BRIDGE_HOST } from '@trailmark/core';
 import { execFile } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import extensionKey from '../../../extension/extension-key.json';
@@ -44,4 +44,14 @@ export async function registerNativeHost(dataDir: string, hostExe: string): Prom
     ).catch(() => undefined);
   }
   return manifest;
+}
+
+/** Remove the registration (the uninstaller runs this; it also deletes the keys itself). */
+export async function unregisterNativeHost(dataDir: string): Promise<void> {
+  for (const key of BROWSER_KEYS) {
+    await run('reg', ['delete', `HKCU\\${key}\\${BRIDGE_HOST}`, '/f'], {
+      windowsHide: true,
+    }).catch(() => undefined);
+  }
+  await rm(join(dataDir, `${BRIDGE_HOST}.json`), { force: true });
 }

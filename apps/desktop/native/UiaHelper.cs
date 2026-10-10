@@ -162,7 +162,7 @@ namespace Trailmark
                 case "screenshot":
                     return Screenshot(Int(req, "x"), Int(req, "y"), Str(req, "path"));
                 case "input":
-                    SendActions(req["actions"] as ArrayList, Str(req, "requireForeground"));
+                    SendActions(req["actions"] as ArrayList, Str(req, "requireForeground"), Str(req, "requireTitle"));
                     return true;
                 case "foreground":
                     return ForegroundInfo();
@@ -288,7 +288,7 @@ namespace Trailmark
                 AutomationElement.AutomationElementInformation wc;
                 try { wc = w.Current; } catch { continue; }
                 if (processName != null && !string.Equals(ProcessName(wc.ProcessId), processName, StringComparison.OrdinalIgnoreCase)) continue;
-                if (processName == null && windowTitle != null && (wc.Name ?? "").IndexOf(windowTitle, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                if (windowTitle != null && (wc.Name ?? "").IndexOf(windowTitle, StringComparison.OrdinalIgnoreCase) < 0) continue;
                 var conds = new List<Condition>();
                 if (!string.IsNullOrEmpty(automationId)) conds.Add(new PropertyCondition(AutomationElement.AutomationIdProperty, automationId));
                 if (!string.IsNullOrEmpty(name)) conds.Add(new PropertyCondition(AutomationElement.NameProperty, name));
@@ -352,15 +352,18 @@ namespace Trailmark
          * Synthetic input (tests and desktop playback). With requireForeground set, every action
          * first checks that this app is in front, so input never lands in someone else's window.
          */
-        static void SendActions(ArrayList actions, string requireForeground)
+        static void SendActions(ArrayList actions, string requireForeground, string requireTitle)
         {
             foreach (IDictionary a in actions)
             {
                 if (requireForeground != null && Str(a, "type") != "wait")
                 {
-                    var fg = (string)ForegroundInfo()["processName"];
+                    var front = ForegroundInfo();
+                    var fg = (string)front["processName"];
                     if (!string.Equals(fg, requireForeground, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidOperationException("input refused: " + fg + " is in front, not " + requireForeground);
+                    if (requireTitle != null && ((string)front["windowTitle"]).IndexOf(requireTitle, StringComparison.OrdinalIgnoreCase) < 0)
+                        throw new InvalidOperationException("input refused: another " + fg + " window is in front");
                 }
                 var type = Str(a, "type");
                 if (requireForeground != null && (type == "click" || type == "down"))

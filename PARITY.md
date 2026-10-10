@@ -13,9 +13,9 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 - [x] C5 Live Blur: while capturing, click elements to mark them blurred. Their regions are blurred in that and later screenshots while they stay on screen. _Tests: e2e/controller.spec.ts._
 - [x] C6 Multi-tab: capture follows the active tab across tabs and windows in one session. _Tests: e2e/controller.spec.ts; MT-M2-7._
 - [x] C7 Capture more: resume capture into an existing guide at a chosen position. _Tests: e2e/controller.spec.ts, e2e/library.spec.ts, extension test/recorder.test.ts._
-- [ ] C8 Desktop capture on Windows with the same step model (section 7).
+- [x] C8 Desktop capture on Windows with the same step model (section 7). _Tests: e2e/desktop.spec.ts (Notepad: click and typing merged, menu click, key, pre-click window screenshots, opens in the desktop editor), desktop test/recorder.test.ts; MT-M6-2 (Excel)._
 - [x] C9 Secrets: password and payment fields never recorded (section 1). _Tests: e2e/capture.spec.ts, core test/capture.test.ts, core test/schema.test.ts._
-- [ ] C10 Cross-app guides: one guide can hold web steps and desktop steps (needs M6 bridge).
+- [x] C10 Cross-app guides: one guide can hold web steps and desktop steps (needs M6 bridge). _Tests: e2e/desktop-mixed.spec.ts (one capture across the demo app and Notepad through the native bridge; edit; Markdown export); MT-M6-3._
 
 ### Editor
 
@@ -29,16 +29,16 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 - [x] E8 Branding: logo, accent colour and font, applied to viewer and exports. _Tests: e2e/editor.spec.ts (accent, font); MT-M3-4 (logo)._
 - [x] E9 Autosave and version history: keep the last 50 versions per guide, view and restore any. _Tests: e2e/editor.spec.ts (autosave, view and restore a version), core test/storage.test.ts (50 versions)._
 - [x] E10 Two sample guides ship with the app, built from the demo app. _Tests: e2e/library.spec.ts (sample guides)._
-- [ ] E11 Secure Blur equivalent: one click finds and blurs sensitive data in all screenshots. Web steps use DOM text positions saved at capture; desktop and image steps use OCR (M8). Detect emails, phone numbers, card numbers (Luhn check), Australian BSB and account numbers, TFN, ABN, IBAN, and optionally dollar amounts and personal names from a user list. Always show a review screen before applying.
+- [ ] E11 Secure Blur equivalent: one click finds and blurs sensitive data in all screenshots. Web steps use DOM text positions saved at capture; desktop and image steps use OCR (M8). Detect emails, phone numbers, card numbers (Luhn check), Australian BSB and account numbers, TFN, ABN, IBAN, and optionally dollar amounts and personal names from a user list. Always show a review screen before applying. _Web steps done in M6: core test/secure.test.ts (every planted value, check digits, masking), e2e/secure-blur.spec.ts (dashboard: all eight found, review, blur, re-run); MT-M6-6. Desktop and image steps: M8._
 
 ### Library (local workspace)
 
 - [x] L1 Library home: grid and list views, nested folders, move, rename, Trash with restore and permanent delete, full-text search across titles and step text, sort, tags, filter by app or site. _Tests: e2e/library.spec.ts, ui test/filter.test.ts._
 - [x] L2 Duplicate a guide; import and export a guide as a `.trailmark` file (zip of the guide folder). _Tests: e2e/library.spec.ts, core test/capture.test.ts._
-- [ ] L3 Team library, local equivalent: point Trailmark at a synced shared folder (SharedFolderAdapter). Others with Trailmark and the same folder see the guides. Show who last edited.
+- [x] L3 Team library, local equivalent: point Trailmark at a synced shared folder (SharedFolderAdapter). Others with Trailmark and the same folder see the guides. Show who last edited. _Tests: e2e/desktop-library.spec.ts (a colleague's guides with "Edited by"), core test/storage.test.ts (folder store); MT-M6-5._
 - [x] L4 Comments and emoji reactions on steps and on the end of a guide, local equivalent: stored in per-user sidecars so a synced folder never conflicts. _Tests: e2e/pages.spec.ts (comment, reaction, per-user sidecar), core test/guidance.test.ts (merge, toggle); MT-M5-4._
 - [x] L5 Analytics, local equivalent: views, Guide Me runs, completions and step drop-off per guide, from per-user sidecars, shown on a small dashboard. Nothing leaves the machine. _Tests: e2e/pages.spec.ts (views and Guide Me runs on Insights, funnel), e2e/guidance.spec.ts (completed run recorded), core test/guidance.test.ts; MT-M5-4._
-- [ ] L6 Roles, local equivalent: a guide can be marked read-only in a shared folder; editing it makes a personal copy.
+- [x] L6 Roles, local equivalent: a guide can be marked read-only in a shared folder; editing it makes a personal copy. _Tests: e2e/desktop-library.spec.ts (reader with "Edit a personal copy", copy without the flag, marking read-only); MT-M6-5._
 
 ### Share and export (all free)
 
@@ -60,7 +60,7 @@ Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is imple
 - [x] G5 Notes (Tango's "Nuggets" equivalent): sticky notes on an element or page (tip, warning or link, rich text), shown as a badge, read on hover or click, managed from a list, optionally holding a pinned guide. _Tests: e2e/pages.spec.ts (note on an element, tone, rich text, hover, list, delete), core test/guidance.test.ts; MT-M5-3._
 - [x] G6 Run for me (Tango's browser-agent equivalent): execute a guide's web steps with a visible cursor; speed control; Pause and step-through; fills variables; always stops for `confirm` steps, `manual` steps and failed expectations. No LLM needed. _Tests: e2e/guidance.spec.ts (runs the demo flow, waits for the password, stops at the confirm step), extension test/guidance.test.ts (confirm, secrets, step-through, missing target), core test/guidance.test.ts (actions, values, expectations); MT-M5-2._
 - [x] G7 On-device AI (optional, off by default): improve step titles and descriptions, write a guide summary, translate a whole guide into another language as a copy. Feature-detect each API; hide the controls when unavailable. _Tests: e2e/pages.spec.ts (hidden by default; improve, summarise and translate with stand-in APIs), core test/guidance.test.ts (prompts and copies); MT-M5-5 with real Chrome AI._
-- [ ] G8 Desktop Guide Me: a transparent, click-through, always-on-top overlay highlights the target's bounding rectangle from UI Automation and advances when the user clicks inside it.
+- [x] G8 Desktop Guide Me: a transparent, click-through, always-on-top overlay highlights the target's bounding rectangle from UI Automation and advances when the user clicks inside it. _Tests: e2e/desktop-mixed.spec.ts (overlay ring and card on Notepad's text area, moves on after typing there, hides for the next web step); MT-M6-4._
 
 ## Part B: Upgrades
 
