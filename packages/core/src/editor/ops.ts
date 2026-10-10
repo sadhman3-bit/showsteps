@@ -158,11 +158,9 @@ export function mergeWithNext(guide: Guide, id: BlockId, joiner = ', then '): Gu
   const title = normalize({
     spans: [...a.human.title.spans, { text: joiner }, ...lowerFirst(b.human.title).spans],
   });
-  const descriptions = [a.human.description, b.human.description].filter((d): d is RichText => !!d);
+  const [da, db] = [a.human.description, b.human.description];
   const description =
-    descriptions.length === 2
-      ? normalize({ spans: [...descriptions[0]!.spans, { text: ' ' }, ...descriptions[1]!.spans] })
-      : descriptions[0];
+    da && db ? normalize({ spans: [...da.spans, { text: ' ' }, ...db.spans] }) : (da ?? db);
   const merged: Step = {
     ...a,
     human: { ...a.human, title, ...(description ? { description } : {}) },
@@ -263,7 +261,9 @@ export function sectionOf(guide: Guide, headingId: BlockId): BlockId[] {
   const i = indexOf(guide, headingId);
   if (guide.blocks[i]?.kind !== 'heading') return [];
   const ids = [headingId];
-  for (let j = i + 1; j < guide.blocks.length && guide.blocks[j]!.kind !== 'heading'; j++)
-    ids.push(guide.blocks[j]!.id);
+  for (const b of guide.blocks.slice(i + 1)) {
+    if (b.kind === 'heading') break;
+    ids.push(b.id);
+  }
   return ids;
 }
