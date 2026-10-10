@@ -1,5 +1,15 @@
-import { IndexedDbStore } from '@trailmark/core';
+import { IndexedDbStore, marksForUrl, pageKey } from '@trailmark/core';
 import { FrameRegistry } from '../lib/frames';
+import { Guidance, type PersistedGuidance } from '../lib/guidance';
+import {
+  GuideContentMessageSchema,
+  GuidePageMessageSchema,
+  type GuideBroadcast,
+  type GuideContentMessage,
+  type GuidePageMessage,
+  type GuideToContent,
+} from '../lib/guideMessages';
+import { readMarks, readSettings, writeMarks } from '../lib/settings';
 import {
   ContentEventSchema,
   ContentMessageSchema,
@@ -19,6 +29,9 @@ import { encodeScreenshot } from '../lib/shots';
 const SCRIPT_ID = 'trailmark-capture';
 const SCRIPT_FILE = '/content-scripts/capture.js';
 const PERSIST_KEY = 'recorder';
+const GUIDANCE_KEY = 'guidance';
+const GUIDE_SCRIPT_ID = 'trailmark-guide';
+const GUIDE_SCRIPT_FILE = '/content-scripts/guide.js';
 /** Navigations the user made directly (not caused by a recorded click). */
 const DIRECT_TRANSITIONS = new Set([
   'typed',
@@ -51,7 +64,7 @@ export default defineBackground(() => {
     },
   });
 
-  const broadcast = (msg: Broadcast) => {
+  const broadcast = (msg: Broadcast | GuideBroadcast) => {
     browser.runtime.sendMessage(msg).catch(() => undefined); // no extension page open
   };
 
@@ -96,6 +109,54 @@ export default defineBackground(() => {
     )
     .catch(() => undefined);
 
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+  const guidance = new Guidance({
+    store,
+    userName: async () => (await readSettings()).userName,
+    tabUrl: async (tabId) => (await browser.tabs.get(tabId).catch(() => undefined))?.url,
+    async openTab(url, windowId) {
+      const tab = await browser.tabs.create({
+        url,
+        active: true,
+        ...(windowId !== undefined ? { windowId } : {}),
+      });
+      if (tab.id === undefined) throw new Error('no-tab');
+      return tab.id;
+    },
+    async navigate(tabId, url) {
+      await browser.tabs.update(tabId, { url });
+    },
+    async waitLoaded(tabId, timeoutMs) {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        const tab = await browser.tabs.get(tabId).catch(() => undefined);
+        if (!tab || tab.status === 'complete') return;
+        await sleep(100);
+      }
+    },
+    async frames(tabId) {
+      const frames = (await browser.webNavigation.getAllFrames({ tabId })) ?? [];
+      return frames.map((f) => ({ frameId: f.frameId, url: f.url }));
+    },
+    send: (tabId, msg, frameId) =>
+      frameId === undefined
+        ? browser.tabs.sendMessage(tabId, msg)
+        : browser.tabs.sendMessage(tabId, msg, { frameId }),
+    broadcast: (state) => broadcast({ type: 'guidance', state }),
+    async persist(data) {
+      if (data) await browser.storage.session.set({ [GUIDANCE_KEY]: data });
+      else await browser.storage.session.remove(GUIDANCE_KEY);
+    },
+    sleep,
+    now: () => new Date().toISOString(),
+  });
+  const guidanceReady = browser.storage.session
+    .get(GUIDANCE_KEY)
+    .then((r) =>
+      r[GUIDANCE_KEY] ? guidance.restore(r[GUIDANCE_KEY] as PersistedGuidance) : undefined,
+    )
+    .catch(() => undefined);
+
   // First install: add the sample guides so the library is not empty. (Test profiles skip
   // this so tests start from an empty library; they call installSamples through the hook.)
   browser.runtime.onInstalled.addListener(({ reason }) => {
@@ -136,6 +197,49 @@ export default defineBackground(() => {
     if (recorder.isActive) return;
     const existing = await browser.scripting.getRegisteredContentScripts({ ids: [SCRIPT_ID] });
     if (existing.length) await browser.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
+  }
+
+  /**
+   * The guidance script (notes, pins, Guide Me) runs on the sites the user has granted, so pins
+   * and notes appear when those pages load. Without website access nothing is registered.
+   */
+  async function syncGuideScript(): Promise<void> {
+    const matches = await grantedOrigins();
+    const existing = await browser.scripting.getRegisteredContentScripts({
+      ids: [GUIDE_SCRIPT_ID],
+    });
+    if (!matches.length) {
+      if (existing.length)
+        await browser.scripting.unregisterContentScripts({ ids: [GUIDE_SCRIPT_ID] });
+      return;
+    }
+    const script = {
+      id: GUIDE_SCRIPT_ID,
+      js: [GUIDE_SCRIPT_FILE],
+      matches,
+      allFrames: true,
+      runAt: 'document_idle' as const,
+    };
+    if (existing.length) await browser.scripting.updateContentScripts([script]);
+    else
+      await browser.scripting.registerContentScripts([{ ...script, persistAcrossSessions: true }]);
+  }
+  void syncGuideScript().catch(() => undefined);
+  browser.permissions.onAdded.addListener(() => void syncGuideScript().catch(() => undefined));
+  browser.permissions.onRemoved.addListener(() => void syncGuideScript().catch(() => undefined));
+
+  async function injectGuide(tabId: number): Promise<void> {
+    await browser.scripting
+      .executeScript({ target: { tabId, allFrames: true }, files: [GUIDE_SCRIPT_FILE] })
+      .catch(() => undefined);
+  }
+
+  /** Tell every open tab that notes, pins or settings changed. */
+  async function notifyTabs(msg: GuideToContent): Promise<void> {
+    for (const tab of await browser.tabs.query({})) {
+      if (tab.id !== undefined && /^(https?|file):/.test(tab.url ?? ''))
+        browser.tabs.sendMessage(tab.id, msg).catch(() => undefined);
+    }
   }
 
   /** Inject into a tab that is already open (registered scripts only cover new page loads). */
@@ -274,15 +378,133 @@ export default defineBackground(() => {
       });
       return true;
     };
+    const allReady = Promise.all([ready, guidanceReady]);
     if (fromExtensionPage) {
       const parsed = PageMessageSchema.safeParse(raw);
-      if (!parsed.success) return false;
-      return respond(ready.then(() => handlePage(parsed.data)));
+      if (parsed.success) return respond(allReady.then(() => handlePage(parsed.data)));
+      const guide = GuidePageMessageSchema.safeParse(raw);
+      if (guide.success) return respond(allReady.then(() => handleGuidePage(guide.data)));
+      return false;
     }
+    if (!sender.tab) return false;
     const parsed = ContentMessageSchema.safeParse(raw);
-    if (!parsed.success || !sender.tab) return false;
-    return respond(ready.then(() => handleContent(parsed.data, sender)));
+    if (parsed.success) return respond(allReady.then(() => handleContent(parsed.data, sender)));
+    const guide = GuideContentMessageSchema.safeParse(raw);
+    if (guide.success) return respond(allReady.then(() => handleGuideContent(guide.data, sender)));
+    return false;
   });
+
+  // ---------- Guidance, notes and pins ----------
+
+  async function startGuidance(msg: Extract<GuidePageMessage, { type: 'guide-start' }>) {
+    const state = await guidance.start(msg);
+    if (state.tabId !== undefined) await injectGuide(state.tabId);
+    return state;
+  }
+
+  async function handleGuidePage(msg: GuidePageMessage): Promise<unknown> {
+    switch (msg.type) {
+      case 'guide-start':
+        try {
+          return { guidance: await startGuidance(msg) };
+        } catch (error) {
+          return {
+            guidance: guidance.current,
+            error: error instanceof Error ? error.message : 'error',
+          };
+        }
+      case 'guide-control':
+        return { guidance: await guidance.control(msg.action) };
+      case 'guide-goto':
+        return { guidance: await guidance.goto(msg.index) };
+      case 'guide-speed':
+        return { guidance: guidance.setSpeed(msg.speed, msg.stepThrough) };
+      case 'guide-get':
+        return { guidance: guidance.current };
+      case 'mark-save': {
+        const marks = (await readMarks()).filter((m) => m.id !== msg.mark.id);
+        await writeMarks([...marks, msg.mark]);
+        broadcast({ type: 'marks-changed' });
+        await notifyTabs({ type: 'marks-changed' });
+        return { ok: true };
+      }
+      case 'mark-delete':
+        await writeMarks((await readMarks()).filter((m) => m.id !== msg.id));
+        broadcast({ type: 'marks-changed' });
+        await notifyTabs({ type: 'marks-changed' });
+        return { ok: true };
+      case 'pick-start':
+        await injectGuide(msg.tabId);
+        await browser.tabs
+          .sendMessage(msg.tabId, { type: 'pick', on: true })
+          .catch(() => undefined);
+        return { ok: true };
+      case 'pick-cancel':
+        await browser.tabs
+          .sendMessage(msg.tabId, { type: 'pick', on: false })
+          .catch(() => undefined);
+        return { ok: true };
+      case 'settings-changed':
+        await notifyTabs({ type: 'marks-changed' });
+        return { ok: true };
+    }
+  }
+
+  async function handleGuideContent(
+    msg: GuideContentMessage,
+    sender: Browser.runtime.MessageSender,
+  ): Promise<unknown> {
+    const tabId = sender.tab?.id;
+    if (tabId === undefined) return undefined;
+    switch (msg.type) {
+      case 'guide-hello': {
+        const url = sender.url ?? sender.tab?.url ?? '';
+        guidance.pageLoaded(tabId, sender.frameId ?? 0, url);
+        const settings = await readSettings();
+        return { enabled: settings.guidanceEnabled, marks: marksForUrl(await readMarks(), url) };
+      }
+      case 'guide-done':
+        await guidance.stepDone(tabId, msg.stepId);
+        return { ok: true };
+      case 'guide-control':
+        return { guidance: await guidance.control(msg.action) };
+      case 'picked': {
+        await browser.tabs.sendMessage(tabId, { type: 'pick', on: false }).catch(() => undefined);
+        const frameUrl = sender.frameId ? sender.url : undefined;
+        broadcast({
+          type: 'picked',
+          tabId,
+          page: pageKey(sender.tab?.url ?? ''),
+          ...(frameUrl ? { frameUrl } : {}),
+          ...(msg.target ? { target: msg.target } : {}),
+          ...(msg.cancelled ? { cancelled: true } : {}),
+        });
+        return { ok: true };
+      }
+      case 'open-guide': {
+        const windowId = sender.tab?.windowId;
+        if (msg.mode === 'view') {
+          await browser.tabs.create({
+            url: browser.runtime.getURL(
+              `/library.html#/guide/${encodeURIComponent(msg.guideId)}/view`,
+            ),
+            ...(windowId !== undefined ? { windowId } : {}),
+          });
+          return { ok: true };
+        }
+        if (windowId !== undefined)
+          void browser.sidePanel.open({ windowId }).catch(() => undefined);
+        await startGuidance({
+          type: 'guide-start',
+          guideId: msg.guideId,
+          mode: 'guide',
+          tabId,
+          ...(windowId !== undefined ? { windowId } : {}),
+        }).catch(() => undefined);
+        return { ok: true };
+      }
+    }
+  }
 
   // ---------- Navigation and tabs ----------
 
@@ -334,6 +556,7 @@ export default defineBackground(() => {
   }
 
   browser.tabs.onActivated.addListener(({ tabId }) => {
+    void guidanceReady.then(() => guidance.tabActivated(tabId));
     void ready.then(() => {
       if (!recorder.isActive) return;
       // Typing in the tab the user left has no "change" event yet: collect it from every frame
@@ -344,7 +567,10 @@ export default defineBackground(() => {
     });
   });
 
-  browser.tabs.onRemoved.addListener((tabId) => frames.forgetTab(tabId));
+  browser.tabs.onRemoved.addListener((tabId) => {
+    frames.forgetTab(tabId);
+    void guidanceReady.then(() => guidance.tabClosed(tabId));
+  });
 
   // ---------- Keyboard shortcut ----------
 
@@ -369,7 +595,15 @@ export default defineBackground(() => {
   if (import.meta.env.MODE === 'e2e') {
     // Test hook for Playwright, compiled out of normal builds.
     Object.assign(globalThis, {
-      __trailmark: { recorder, store, startCapture, installSamples: () => installSamples(store) },
+      __trailmark: {
+        recorder,
+        store,
+        startCapture,
+        installSamples: () => installSamples(store),
+        guidance,
+        startGuidance,
+        readMarks,
+      },
     });
   }
 });

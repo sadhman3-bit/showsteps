@@ -9,8 +9,11 @@ import {
   writeRecapture,
   request,
   useBackground,
+  useGuidance,
   writeCaptureMore,
 } from '../../lib/client';
+import { GuidancePanel } from './GuidancePanel';
+import { PagePanel } from './PagePanel';
 import type { CaptureMore, CaptureState, ControlAction, Recapture } from '../../lib/messages';
 
 const s = strings.sidePanel;
@@ -23,11 +26,10 @@ const ERRORS: Record<string, string> = {
 
 export function SidePanel() {
   const { state, libraryVersion } = useBackground();
-  return state.status === 'idle' ? (
-    <Idle state={state} libraryVersion={libraryVersion} />
-  ) : (
-    <Recording state={state} />
-  );
+  const guidance = useGuidance();
+  if (state.status !== 'idle') return <Recording state={state} />;
+  if (guidance.status !== 'idle') return <GuidancePanel state={guidance} />;
+  return <Idle state={state} libraryVersion={libraryVersion} />;
 }
 
 function openLibrary(guideId?: string) {
@@ -134,6 +136,8 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
       ) : (
         <p class="tm-muted">{s.permissionNote}</p>
       )}
+
+      <PagePanel libraryVersion={libraryVersion} />
 
       <section aria-labelledby="recent-h" class="tm-recent">
         <h2 id="recent-h">{s.recent}</h2>

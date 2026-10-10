@@ -31,6 +31,7 @@ import { Screenshot } from '../guide/Screenshot.js';
 import { usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
 import { ShareDialog } from '../export/ShareDialog.js';
+import { AiTools } from './AiTools.js';
 import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs.js';
 import { ImageEditor } from './ImageEditor.js';
 import { clipboardImage, encodeImage } from './imageio.js';
@@ -51,6 +52,10 @@ export interface GuideEditorProps {
   stepLink?: (guideId: string, stepId: string) => string;
   /** Open the print view; enables Print in the Share dialog. */
   onPrint?: () => void;
+  /** On-device AI tools (Settings); shown only when the browser has them. */
+  aiEnabled?: boolean;
+  /** Open another guide (a translated copy). */
+  onOpenGuide?: (guideId: string) => void;
   /** Bumped when the guide may have changed elsewhere (e.g. re-captured); reloads if idle. */
   refreshKey?: number;
 }
@@ -84,6 +89,8 @@ export function GuideEditor({
   onRecapture,
   stepLink,
   onPrint,
+  aiEnabled,
+  onOpenGuide,
   refreshKey,
 }: GuideEditorProps) {
   const history = useRef<History<Guide> | null>(null);
@@ -451,6 +458,14 @@ export function GuideEditor({
         ) : null}
         <Button onClick={() => setModal('versions')}>{e.versions}</Button>
         <Button onClick={() => setModal('share')}>{strings.share.button}</Button>
+        {aiEnabled ? (
+          <AiTools
+            store={store}
+            guide={guide}
+            apply={(edit) => apply(edit)}
+            {...(onOpenGuide ? { onOpenGuide } : {})}
+          />
+        ) : null}
         <Button onClick={() => setModal('branding')}>{e.branding}</Button>
         <Button
           variant="ghost"

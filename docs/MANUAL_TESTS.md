@@ -180,3 +180,40 @@ Some apps refuse pictures stored inside pasted HTML. If one does, note it here; 
 ### MT-M4-5 Folder permission after a restart
 
 Save to a folder, restart Chrome, open Share again and click **Save to folder**. **Expected:** Chrome asks once to allow editing files in that folder; after **Allow**, the files are updated.
+
+---
+
+## M5
+
+Use the normal build. Start the demo app (`pnpm demo`) and make sure the two sample guides are in the library (in an empty library, click **Add the sample guides**).
+
+### MT-M5-1 Guide Me from the library
+
+1. Open the sample "Create a supplier invoice in Ledgerline" in the reader and click **Guide Me**.
+2. Allow website access if Chrome asks.
+
+**Expected:** the demo sign-in page opens in a new tab and the side panel lists the steps. Each step's element has an orange ring and a dark card with the step text. Doing the step (typing then Tab, clicking, choosing) moves on by itself, including inside the cost-centre box (a different site in a frame), the approver picker and the review dialog. **Back**, **Skip** and **I did this** work from the card and from the side panel.
+
+### MT-M5-2 Run for me
+
+In the reader click **Run for me**, choose speed **Slow**, and click **Start**.
+
+**Expected:** a white pointer moves to each element and the steps happen. Run for me stops at **Enter your password** ("type this yourself"): type any password and press Tab, and it carries on. It stops before **Submit invoice** only if that step is marked to confirm (from M7 such steps are marked automatically); otherwise it submits. Try **Pause**, **Resume**, and "Pause after each step" with **Do next step**.
+
+### MT-M5-3 Notes and pins on a real site
+
+On a SharePoint page you use, open the side panel, click **Add a note**, click an element, write a note with some **bold** text and save. Then use **Pin a guide** on the whole page. Reload.
+
+**Expected:** a coloured dot sits on the element and a teal arrow sits at the right edge. Hovering shows the note; the pin offers **Open guide** and **Guide Me**. The side panel switch hides them.
+
+### MT-M5-4 Comments, reactions and Insights
+
+Set **Settings → Your name**. Open a guide's reader, comment on a step and react at the end. Run Guide Me for a couple of steps, then stop.
+
+**Expected:** the comment shows "(you)". **Insights** (library sidebar) shows a view and a Guide Me run, and the guide's funnel shows the run reaching steps 1 and 2.
+
+### MT-M5-5 On-device AI (Chrome with built-in AI)
+
+This needs Chrome where `chrome://on-device-internals` shows the model as available (Chrome 138 or later on a supported PC). Turn on **Settings → Use on-device AI**, open a guide in the editor and try **AI → Improve step text**, **Write a summary** and **Translate…**.
+
+**Expected:** suggestions appear for review before anything changes, and the translation is saved as a separate copy. In a browser without these APIs, the AI option is not offered.

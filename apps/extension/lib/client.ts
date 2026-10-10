@@ -1,6 +1,15 @@
 // Helpers for extension pages (side panel, library) to talk to the background.
 import { IndexedDbStore } from '@trailmark/core';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import {
+  GUIDANCE_IDLE,
+  GuideBroadcastSchema,
+  GuidanceStateSchema,
+  type GuideBroadcast,
+  type GuidePageMessage,
+  type GuidanceState,
+  type Speed,
+} from './guideMessages';
 import {
   BroadcastSchema,
   CAPTURE_MORE_KEY,
@@ -95,4 +104,89 @@ export function stepUrl(guideId: string, stepId: string): string {
   return browser.runtime.getURL(
     `/library.html#/guide/${encodeURIComponent(guideId)}/step/${encodeURIComponent(stepId)}`,
   );
+}
+
+// ---------- Guidance, notes and pins ----------
+
+export async function guideRequest(
+  msg: GuidePageMessage,
+): Promise<{ guidance: GuidanceState; error?: string }> {
+  const raw = (await browser.runtime.sendMessage(msg)) as
+    { guidance?: unknown; error?: unknown } | undefined;
+  const parsed = GuidanceStateSchema.safeParse(raw?.guidance);
+  return {
+    guidance: parsed.success ? parsed.data : { ...GUIDANCE_IDLE },
+    ...(typeof raw?.error === 'string' ? { error: raw.error } : {}),
+  };
+}
+
+/** Live Guide Me / Run for me state. */
+export function useGuidance(): GuidanceState {
+  const [state, setState] = useState<GuidanceState>({ ...GUIDANCE_IDLE });
+  useEffect(() => {
+    void guideRequest({ type: 'guide-get' }).then((r) => setState(r.guidance));
+    const listener = (raw: unknown) => {
+      const parsed = GuideBroadcastSchema.safeParse(raw);
+      if (parsed.success && parsed.data.type === 'guidance') setState(parsed.data.state);
+    };
+    browser.runtime.onMessage.addListener(listener);
+    return () => browser.runtime.onMessage.removeListener(listener);
+  }, []);
+  return state;
+}
+
+/** Listen for guidance broadcasts other than state (picks, marks changes). */
+export function useGuideBroadcast(handler: (msg: GuideBroadcast) => void): void {
+  const ref = useRef(handler);
+  ref.current = handler;
+  useEffect(() => {
+    const listener = (raw: unknown) => {
+      const parsed = GuideBroadcastSchema.safeParse(raw);
+      if (parsed.success) ref.current(parsed.data);
+    };
+    browser.runtime.onMessage.addListener(listener);
+    return () => browser.runtime.onMessage.removeListener(listener);
+  }, []);
+}
+
+/** The active tab of this window, kept current as the person switches or navigates. */
+export function useActiveTab(): { id?: number; url?: string; windowId?: number } {
+  const [tab, setTab] = useState<{ id?: number; url?: string; windowId?: number }>({});
+  useEffect(() => {
+    const refresh = () =>
+      void browser.tabs
+        .query({ active: true, currentWindow: true })
+        .then(([t]) => setTab(t ? { id: t.id, url: t.url, windowId: t.windowId } : {}))
+        .catch(() => setTab({}));
+    refresh();
+    const onUpdated = (_id: number, info: { url?: string; status?: string }) => {
+      if (info.url || info.status === 'complete') refresh();
+    };
+    browser.tabs.onActivated.addListener(refresh);
+    browser.tabs.onUpdated.addListener(onUpdated);
+    return () => {
+      browser.tabs.onActivated.removeListener(refresh);
+      browser.tabs.onUpdated.removeListener(onUpdated);
+    };
+  }, []);
+  return tab;
+}
+
+/**
+ * Start Guide Me or Run for me from a click. Website access is requested first (it needs the
+ * click), then the side panel opens in that window so the step list is beside the page.
+ */
+export async function startGuide(opts: {
+  guideId: string;
+  mode: 'guide' | 'run';
+  tabId?: number;
+  windowId?: number;
+  values?: Record<string, string>;
+  speed?: Speed;
+  stepThrough?: boolean;
+}): Promise<string | undefined> {
+  const granted = await browser.permissions.request({ origins: ['<all_urls>'] });
+  if (!granted) return 'permission-needed';
+  const reply = await guideRequest({ type: 'guide-start', ...opts });
+  return reply.error;
 }

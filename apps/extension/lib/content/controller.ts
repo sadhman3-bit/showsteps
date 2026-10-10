@@ -35,6 +35,7 @@ button.danger { border-color: var(--rec); color: var(--rec); }
 
 /** The on-page capture toolbar (top frame only). Hidden from screenshots by the background. */
 export class Controller {
+  private dialogs: MutationObserver | undefined;
   readonly host: HTMLElement;
   private readonly root: ShadowRoot;
   private readonly bar: HTMLElement;
@@ -110,11 +111,29 @@ export class Controller {
     });
   }
 
+  /**
+   * Attach to the page. A modal <dialog> makes everything outside it inert, so while one is
+   * open the toolbar moves inside the topmost one (and back out when it closes).
+   */
   mount(): void {
-    if (!this.host.isConnected) document.documentElement.append(this.host);
+    const modal = Array.from(document.querySelectorAll('dialog'))
+      .filter((d) => d.matches(':modal'))
+      .at(-1);
+    const parent = modal ?? document.documentElement;
+    if (this.host.parentElement !== parent) parent.append(this.host);
+    if (!this.dialogs) {
+      this.dialogs = new MutationObserver(() => this.mount());
+      this.dialogs.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['open'],
+      });
+    }
   }
 
   unmount(): void {
+    this.dialogs?.disconnect();
+    this.dialogs = undefined;
     this.host.remove();
   }
 

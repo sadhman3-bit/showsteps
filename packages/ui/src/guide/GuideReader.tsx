@@ -1,4 +1,5 @@
 import { stepNumbers, toPlainText, type Guide, type GuideStore, type Step } from '@trailmark/core';
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { brandStyle } from '../brand.js';
 import { RichText } from '../components/RichText.js';
@@ -17,6 +18,10 @@ export interface GuideReaderProps {
   /** Offer "copy link to this step" (the host knows the link format). */
   onCopyLink?: (stepId: string) => void;
   copiedStepId?: string;
+  /** Extra content under a block (comments and reactions). */
+  renderAfter?: (blockId: string) => ComponentChildren;
+  /** Content after the last block. */
+  footer?: ComponentChildren;
 }
 
 /** A guide exactly as readers see it, with branding applied. */
@@ -26,6 +31,8 @@ export function GuideReader({
   focusStepId,
   onCopyLink,
   copiedStepId,
+  renderAfter,
+  footer,
 }: GuideReaderProps) {
   const numbers = stepNumbers(guide);
   const logo = useImageUrl(store, guide.id, guide.branding?.logo?.replace(/^img\//, ''));
@@ -81,10 +88,12 @@ export function GuideReader({
               focused={b.id === focusStepId}
               {...(onCopyLink ? { onCopyLink: () => onCopyLink(b.id) } : {})}
               copied={copiedStepId === b.id}
+              after={renderAfter?.(b.id)}
             />
           );
         })}
       </ol>
+      {footer}
     </article>
   );
 }
@@ -97,6 +106,7 @@ function ReaderStep(props: {
   focused: boolean;
   onCopyLink?: () => void;
   copied: boolean;
+  after?: ComponentChildren;
 }) {
   const { step, num } = props;
   const title = toPlainText(step.human.title);
@@ -129,6 +139,7 @@ function ReaderStep(props: {
         step={step}
         alt={step.human.altText ?? s.screenshotAlt(num, title)}
       />
+      {props.after}
     </li>
   );
 }

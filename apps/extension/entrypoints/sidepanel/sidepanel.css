@@ -88,3 +88,126 @@
   display: flex;
   flex-direction: column;
 }
+
+.tm-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  font-size: 0.875rem;
+}
+
+.tm-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-2);
+}
+
+.tm-discover,
+.tm-mark {
+  padding: var(--tm-space-2) 0;
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tm-discover {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tm-space-2);
+}
+
+.tm-mark__actions {
+  display: flex;
+  gap: var(--tm-space-3);
+}
+
+.tm-markform .tm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+}
+
+/* ---------- Guidance ---------- */
+
+.tm-guidance__title {
+  font-weight: 600;
+}
+
+.tm-guidance__now {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-3);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  background: var(--tm-surface);
+}
+
+.tm-guidance__now p {
+  margin: 0;
+}
+
+.tm-guidance__step {
+  font-size: 1.05rem;
+}
+
+.tm-guidance__phase[data-phase='failed'],
+.tm-guidance__phase[data-phase='not-found'] {
+  color: var(--tm-alert);
+}
+
+.tm-guidance__phase[data-phase='confirm'] {
+  color: var(--tm-warning);
+  font-weight: 600;
+}
+
+.tm-guidance__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-2);
+}
+
+.tm-guidance__speed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-3);
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.tm-guidance__h {
+  margin: var(--tm-space-2) 0;
+  font-size: 1rem;
+}
+
+.tm-guidance__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-guidance__list li button {
+  display: flex;
+  gap: var(--tm-space-2);
+  width: 100%;
+  padding: var(--tm-space-2);
+  border-radius: var(--tm-radius-sm);
+  color: var(--tm-text);
+  text-align: start;
+  text-decoration: none;
+}
+
+.tm-guidance__list li[aria-current='step'] button {
+  background: var(--tm-surface);
+  outline: 2px solid var(--tm-accent);
+}
+
+.tm-guidance__list li.is-done {
+  color: var(--tm-text-muted);
+}
+
+.tm-guidance__n {
+  flex: none;
+  min-width: 1.6em;
+  color: var(--tm-text-muted);
+  text-align: end;
+}

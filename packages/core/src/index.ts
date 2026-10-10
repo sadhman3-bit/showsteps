@@ -118,3 +118,64 @@ export {
   accentOf,
   fontOf,
 } from './branding.js';
+
+// Guidance (Guide Me, Run for me, Discover, notes and pins, comments, analytics)
+export { pageKey, originOf, samePage, relevantGuides } from './guidance/pages.js';
+export {
+  PageMarkSchema,
+  PageMarksSchema,
+  marksForUrl,
+  parseMarks,
+  type PageMark,
+} from './guidance/marks.js';
+export {
+  planStep,
+  guideSteps,
+  runFields,
+  valueFor,
+  type StepPlan,
+  type RunField,
+} from './guidance/plan.js';
+export {
+  END_OF_GUIDE,
+  REACTIONS,
+  CommentsSidecarSchema,
+  emptyComments,
+  parseComments,
+  mergeThreads,
+  toggleReaction,
+  type Comment,
+  type CommentsSidecar,
+  type Thread,
+  type ThreadComment,
+} from './guidance/social.js';
+export {
+  MAX_RUNS,
+  AnalyticsSidecarSchema,
+  parseAnalytics,
+  recordView,
+  recordRun,
+  guideStats,
+  type AnalyticsSidecar,
+  type Run,
+  type GuideStats,
+} from './guidance/analytics.js';
+export {
+  performStep,
+  canPerform,
+  setValue,
+  selectOption,
+  pressKey,
+  failedExpectations,
+} from './dom/act.js';
+
+// On-device AI helpers (prompts and results only)
+export {
+  fromMarkdown,
+  IMPROVE_SYSTEM_PROMPT,
+  improvePrompt,
+  parseImproved,
+  summaryInput,
+  translatableTexts,
+  translatedCopy,
+} from './ai.js';

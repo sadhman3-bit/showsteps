@@ -26,6 +26,10 @@ export interface LibraryProps {
   refreshKey?: number;
   /** Offered when the library is empty: add the bundled sample guides. */
   onAddSamples?: () => Promise<unknown>;
+  /** Open the usage dashboard (L5). */
+  onInsights?: () => void;
+  /** Open settings. */
+  onSettings?: () => void;
 }
 
 type Modal =
@@ -38,7 +42,14 @@ type Modal =
   | { kind: 'delete-folder'; folder: Folder };
 
 /** The guide library: folders, search, filters, grid/list, Trash, import and export. */
-export function Library({ store, onOpen, refreshKey, onAddSamples }: LibraryProps) {
+export function Library({
+  store,
+  onOpen,
+  refreshKey,
+  onAddSamples,
+  onInsights,
+  onSettings,
+}: LibraryProps) {
   const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -173,6 +184,16 @@ export function Library({ store, onOpen, refreshKey, onAddSamples }: LibraryProp
         >
           <Icon name="plus" /> {s.newFolder}
         </Button>
+        {onInsights ? (
+          <Button variant="ghost" onClick={onInsights}>
+            <Icon name="stack" /> {strings.insights.title}
+          </Button>
+        ) : null}
+        {onSettings ? (
+          <Button variant="ghost" onClick={onSettings}>
+            {strings.settings.button}
+          </Button>
+        ) : null}
       </aside>
 
       <main class="tm-library__main">

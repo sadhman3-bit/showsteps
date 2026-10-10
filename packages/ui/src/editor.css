@@ -591,3 +591,40 @@ kbd {
     border-top: 1px solid var(--tm-border);
   }
 }
+
+/* AI menu */
+
+.tm-popmenu {
+  position: relative;
+}
+
+.tm-popmenu__list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: var(--tm-space-1);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  background: var(--tm-surface);
+  box-shadow: var(--tm-shadow);
+}
+
+.tm-popmenu__list button {
+  padding: var(--tm-space-2) var(--tm-space-3);
+  border: 0;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.tm-popmenu__list button:hover,
+.tm-popmenu__list button:focus-visible {
+  background: var(--tm-surface-2);
+}

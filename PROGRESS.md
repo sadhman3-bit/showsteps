@@ -9,7 +9,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] **M2** Extension capture C1–C7, C9; side panel; library L1–L2
 - [x] **M3** Editor E1–E10 and image editor
 - [x] **M4** Exports X1–X8, viewer
-- [ ] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
+- [x] **M5** Guidance G1–G7, notes, pins, discover, comments L4, analytics L5
 - [ ] **M6** Desktop app, bridge, C8/C10, G8, L3, L6, E11 (web steps)
 - [ ] **M7** U1–U6, U10 (agent view, Agent Pack, embedded procedures)
 - [ ] **M8** U8 OCR, E11 for desktop and image steps
@@ -73,6 +73,17 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] Print view route
 
 **Acceptance:** golden-file tests for Markdown, the HTML page, the embed card and clipboard HTML. The PDF opens in pdf.js and the Word file in mammoth, each with every step and picture (unit tests and `e2e/export.spec.ts` on the 17-step sample). Copy HTML puts `text/html` and `text/plain` on the clipboard. A blurred region is measured as blurred in the exported picture. 20 e2e tests in total; 178 unit tests.
+
+## M5 detail (done 2026-10-10)
+
+- [x] Core: page matching and Discover, page marks (notes, pins), step plans and Run values, DOM actions and expectation checks, comments and analytics sidecars, on-device AI prompt and translation helpers
+- [x] Background guidance engine (Guide Me and Run for me) with frame routing, tab following, resume after restarts, confirm, secret and manual stops, speed and step-through
+- [x] In-page guidance script: highlight ring and step card (inside modal dialogs too), visible pointer for Run for me, note and pin badges, element picker
+- [x] Side panel: running guide with step list and controls, Discover, notes and pins for the page, Guidance switch
+- [x] Library: Guide Me and Run for me in the reader, comments and reactions, view counts, Insights page, Settings (name, Guidance, on-device AI), AI tools in the editor
+- [x] Fix found while testing: the capture toolbar was inert while a page's modal dialog was open; it now moves into the dialog
+
+**Acceptance:** `e2e/guidance.spec.ts`: Guide Me completes the 17-step demo flow with every step done on the highlighted target (two pages, a cross-origin iframe, a same-origin iframe, shadow DOM, a modal dialog). Run for me completes it, waits for the password and stops at the confirm step until approved. `e2e/pages.spec.ts` covers notes, pins, Discover, the Guidance switch, comments, reactions, Insights and the AI tools. 25 e2e tests in total; 197 unit tests.
 
 ## Waiting on the owner
 

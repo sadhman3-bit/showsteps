@@ -1,0 +1,178 @@
+// Messages for guidance (Guide Me, Run for me), notes and pins, validated with Zod on receipt.
+import { PageMarkSchema, StepSchema, TargetSchema } from '@trailmark/core';
+import { z } from 'zod';
+
+export const SpeedSchema = z.enum(['slow', 'normal', 'fast']);
+export type Speed = z.infer<typeof SpeedSchema>;
+
+export const GuidanceStateSchema = z.object({
+  status: z.enum(['idle', 'active', 'done']),
+  mode: z.enum(['guide', 'run']),
+  guideId: z.string().optional(),
+  title: z.string().optional(),
+  tabId: z.number().int().optional(),
+  /** Current step, 0-based among the guide's steps. */
+  index: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+  /**
+   * finding: looking for the target · showing: highlighted, waiting for the person ·
+   * not-found: target missing · manual: the person does this step · navigate: open a page ·
+   * confirm: Run for me waits for approval · acting: Run for me is doing the step ·
+   * paused · failed: Run for me could not do the step or an expectation failed.
+   */
+  phase: z.enum([
+    'finding',
+    'showing',
+    'not-found',
+    'manual',
+    'navigate',
+    'confirm',
+    'acting',
+    'paused',
+    'failed',
+  ]),
+  reason: z.string().optional(),
+  speed: SpeedSchema,
+  stepThrough: z.boolean(),
+});
+export type GuidanceState = z.infer<typeof GuidanceStateSchema>;
+
+export const GUIDANCE_IDLE: GuidanceState = {
+  status: 'idle',
+  mode: 'guide',
+  index: 0,
+  total: 0,
+  phase: 'finding',
+  speed: 'normal',
+  stepThrough: false,
+};
+
+export const GuideControlSchema = z.enum([
+  'next',
+  'back',
+  'skip',
+  'stop',
+  'pause',
+  'resume',
+  'confirm',
+  'retry',
+  'step',
+]);
+export type GuideControl = z.infer<typeof GuideControlSchema>;
+
+const Values = z.record(z.string().max(200), z.string().max(10_000));
+
+export const SettingsSchema = z.object({
+  /** Shown on comments and used to name per-user files. */
+  userName: z.string().min(1).max(100),
+  /** Notes, pins and Discover suggestions on pages. */
+  guidanceEnabled: z.boolean(),
+  /** Optional on-device AI (off by default). */
+  aiEnabled: z.boolean(),
+});
+export type Settings = z.infer<typeof SettingsSchema>;
+export const DEFAULT_SETTINGS: Settings = {
+  userName: 'Me',
+  guidanceEnabled: true,
+  aiEnabled: false,
+};
+export const SETTINGS_KEY = 'settings';
+export const MARKS_KEY = 'marks';
+
+/** Messages from extension pages. */
+export const GuidePageMessageSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('guide-start'),
+    guideId: z.string().min(1),
+    mode: z.enum(['guide', 'run']),
+    /** Use this tab (else the current tab if it is already on the first page, else a new tab). */
+    tabId: z.number().int().optional(),
+    windowId: z.number().int().optional(),
+    values: Values.optional(),
+    speed: SpeedSchema.optional(),
+    stepThrough: z.boolean().optional(),
+    /** Start at this step (0-based). */
+    from: z.number().int().nonnegative().optional(),
+  }),
+  z.object({ type: z.literal('guide-control'), action: GuideControlSchema }),
+  z.object({ type: z.literal('guide-goto'), index: z.number().int().nonnegative() }),
+  z.object({ type: z.literal('guide-speed'), speed: SpeedSchema, stepThrough: z.boolean() }),
+  z.object({ type: z.literal('guide-get') }),
+  z.object({ type: z.literal('mark-save'), mark: PageMarkSchema }),
+  z.object({ type: z.literal('mark-delete'), id: z.string().min(1) }),
+  /** Let the person click an element on the page to attach a note or pin. */
+  z.object({ type: z.literal('pick-start'), tabId: z.number().int() }),
+  z.object({ type: z.literal('pick-cancel'), tabId: z.number().int() }),
+  z.object({ type: z.literal('settings-changed') }),
+]);
+export type GuidePageMessage = z.infer<typeof GuidePageMessageSchema>;
+
+/** Messages from content scripts. */
+export const GuideContentMessageSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('guide-hello') }),
+  /** The person did the highlighted step. */
+  z.object({ type: z.literal('guide-done'), stepId: z.string().min(1) }),
+  z.object({ type: z.literal('guide-control'), action: GuideControlSchema }),
+  z.object({
+    type: z.literal('picked'),
+    target: TargetSchema.optional(),
+    cancelled: z.boolean().optional(),
+  }),
+  /** A pin or note asked to open its guide. */
+  z.object({
+    type: z.literal('open-guide'),
+    guideId: z.string().min(1),
+    mode: z.enum(['view', 'guide']),
+  }),
+]);
+export type GuideContentMessage = z.infer<typeof GuideContentMessageSchema>;
+
+/** From the background to a frame. */
+export const GuideToContentSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('guide-show'),
+    step: StepSchema,
+    number: z.number().int().positive(),
+    total: z.number().int().positive(),
+    /** What the tooltip offers: Guide Me waits for the person; Run for me asks to confirm. */
+    phase: z.enum(['showing', 'manual', 'confirm']),
+    timeoutMs: z.number().int().positive(),
+  }),
+  z.object({
+    type: z.literal('guide-run'),
+    step: StepSchema,
+    value: z.string().max(10_000).optional(),
+    speed: SpeedSchema,
+    timeoutMs: z.number().int().positive(),
+  }),
+  z.object({ type: z.literal('guide-clear') }),
+  /** Top frame: scroll the iframe that holds the next target into view. */
+  z.object({
+    type: z.literal('guide-frame'),
+    frames: z.array(z.string().max(2000)).max(10),
+    frameUrl: z.string().max(4096),
+  }),
+  z.object({ type: z.literal('guide-check'), step: StepSchema }),
+  z.object({ type: z.literal('marks-changed') }),
+  z.object({ type: z.literal('pick'), on: z.boolean() }),
+]);
+export type GuideToContent = z.infer<typeof GuideToContentSchema>;
+
+export const ShowReplySchema = z.object({ found: z.boolean() });
+export const RunReplySchema = z.object({ result: z.enum(['acted', 'not-found', 'cannot']) });
+export const CheckReplySchema = z.object({ failed: z.array(z.string()) });
+
+/** Broadcasts to extension pages. */
+export const GuideBroadcastSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('guidance'), state: GuidanceStateSchema }),
+  z.object({
+    type: z.literal('picked'),
+    tabId: z.number().int(),
+    page: z.string(),
+    frameUrl: z.string().optional(),
+    target: TargetSchema.optional(),
+    cancelled: z.boolean().optional(),
+  }),
+  z.object({ type: z.literal('marks-changed') }),
+]);
+export type GuideBroadcast = z.infer<typeof GuideBroadcastSchema>;

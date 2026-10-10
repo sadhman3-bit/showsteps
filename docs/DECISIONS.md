@@ -92,3 +92,23 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Save to shared folder** uses the File System Access API; the chosen folder is remembered (IndexedDB) and writes the web page, the embed card and the `.trailmark` file named after the guide title, so saving again overwrites them. Renaming a guide writes new files beside the old ones.
 - **Print view** is a library route (`#/guide/<id>/print`) showing the reader with a Print button; the browser's print dialog also offers "Save as PDF".
 - **Export file names:** `<title>.pdf`, `.docx`, `<title> (Markdown).zip`, `.html`, `.embed.html`, `.trailmark`; unsafe characters become spaces.
+
+## M5
+
+- **One guidance engine** (`apps/extension/lib/guidance.ts`) runs both Guide Me and Run for me, one session at a time, following the active tab. Its state persists in session storage; after a worker restart Guide Me carries on and Run for me waits, paused.
+- **A second runtime content script** (`guide.js`) shows Guide Me, Run for me, notes and pins. It is registered for the sites the user has granted (persisting across restarts) so pins and notes appear on page load; without website access nothing runs. It stays idle until there is something to show.
+- **Steps go to the frame they were recorded in** (matched by frame URL). For a step inside an iframe the top frame first scrolls that iframe into view, because a cross-origin frame cannot scroll its parent.
+- **Guide Me moves on** when the person acts on the highlighted element (click, committed typing, choice, key, hover), or on "I did this". In Guide Me, secrets and uploads are highlighted like any step; only steps with nothing to point at are "manual".
+- **Run for me uses page events** (pointer and mouse events, `click()`, the native value setter plus input/change events, `requestSubmit` for Enter). There is no `debugger` permission and no trusted input, so the few apps that ignore synthetic events need the person, and the step becomes "do it yourself". The page replies before acting, because the action may replace the page.
+- **Run for me always stops** for confirm steps, manual and desktop steps, passwords and other secrets (never stored, so never typed by Trailmark), file uploads, missing targets and failed expectations. Speeds: slow 1.4 s, normal 0.7 s, fast 0.25 s between steps; "Pause after each step" gives step-through.
+- **Run values** are asked once at the start for inputs set to "ask" or tied to a variable. They live only in the session (memory and session storage), never in the guide.
+- **Overlays inside modal dialogs:** a modal `<dialog>` makes everything outside it inert, so Trailmark's on-page card and the capture toolbar move inside the topmost open modal dialog while one is open.
+- **Card placement** tries below, above, right and left of the target. In a frame too small to fit it without covering the target, the card is hidden (the side panel still shows the step).
+- **Notes and pins** are "page marks" kept in extension storage (`marks`), tied to a page (origin + path) and optionally to an element (a recorded target) or an iframe. Note text accepts **bold**, *italic* and links written Markdown-style. A note may also hold a guide; a pin is a mark whose job is to open a guide.
+- **Guidance switch** (side panel and Settings) hides notes, pins and Discover suggestions on pages. Guide Me and Run for me still run when someone starts them.
+- **Discover** lists guides whose recorded sites include the active tab's origin, newest first.
+- **Comments and reactions** live in per-user sidecars (`comments.<user>`), merged for reading. People can delete only their own. Reactions: 👍 🎉 ❤️ 👀 ❓.
+- **Analytics** live in per-user sidecars (`analytics.<user>`): a view count and the last 500 runs (mode, furthest step, completed). Insights shows views, runs by mode, completions, people, and a funnel of how many runs reached each step. Nothing leaves the machine.
+- **User name** (Settings, default "Me") labels comments and names the per-user files.
+- **On-device AI** uses Chrome's Prompt API (`LanguageModel`), `Summarizer` and `Translator` when present. It is off by default in Settings, and each tool is hidden when its API is unavailable. Suggested step text is reviewed before it is applied; a summary replaces the description only on "Use"; translation makes a copy tagged with the language code and assumes English source text.
+- **Settings so far:** your name, Guidance on/off, on-device AI on/off. The rest of section 8 comes with M6 and M9.
