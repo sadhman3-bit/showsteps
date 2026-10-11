@@ -263,7 +263,21 @@ export class Desktop {
 
   async close(): Promise<void> {
     await this.app.close().catch(() => undefined);
+    await this.unregisterOwnHost();
     rmSync(this.dir, { recursive: true, force: true });
+  }
+
+  /**
+   * The app registered its browser connection pointing into this test's temporary folder:
+   * remove those registry entries (and only those), so nothing points at a deleted file.
+   */
+  private async unregisterOwnHost(): Promise<void> {
+    for (const browser of ['Google\\Chrome', 'Chromium', 'Microsoft\\Edge']) {
+      const key = `HKCU\\Software\\${browser}\\NativeMessagingHosts\\com.trailmark.host`;
+      const out = await run('reg', ['query', key, '/ve']).catch(() => undefined);
+      if (out?.stdout.toLowerCase().includes(this.dir.toLowerCase()))
+        await run('reg', ['delete', key, '/f']).catch(() => undefined);
+    }
   }
 }
 
