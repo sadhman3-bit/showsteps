@@ -413,6 +413,11 @@ export default defineBackground(() => {
       case 'shot-words':
         if (frameId === 0) recorder.shotWords(msg.shotId, msg.words);
         return { ok: true };
+      case 'observe-top':
+        browser.tabs
+          .sendMessage(tabId, { type: 'observe', observeId: msg.observeId }, { frameId: 0 })
+          .catch(() => undefined);
+        return { ok: true };
       case 'observed':
         void recorder.observed(msg.observeId, msg.expect);
         return { ok: true };

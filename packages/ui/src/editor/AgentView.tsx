@@ -24,6 +24,11 @@ function targetText(t: Partial<Target>): string {
 }
 
 export function expectationText(e: Expectation): string {
+  const text = expectationWhat(e);
+  return 'inFrame' in e && e.inFrame ? a.expectation.inFrame(text) : text;
+}
+
+function expectationWhat(e: Expectation): string {
   switch (e.type) {
     case 'url':
       return a.expectation.url(e.matches);

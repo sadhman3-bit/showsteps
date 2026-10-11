@@ -91,6 +91,8 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
     observeId: ShotId.optional(),
     event: ContentEventSchema,
   }),
+  /** An action in an iframe: ask the top frame to observe the page around it as well. */
+  z.object({ type: z.literal('observe-top'), observeId: ShotId }),
   z.object({
     type: z.literal('observed'),
     observeId: ShotId,
@@ -146,6 +148,8 @@ export const BackgroundToContentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('overlays'), visible: z.boolean() }),
   /** The user left this tab: record any typing not yet committed. */
   z.object({ type: z.literal('flush') }),
+  /** Top frame: an action in an iframe is under way; note what it changes here (U6). */
+  z.object({ type: z.literal('observe'), observeId: z.string().regex(/^[A-Za-z0-9-]{8,64}$/) }),
 ]);
 export type BackgroundToContent = z.infer<typeof BackgroundToContentSchema>;
 

@@ -61,7 +61,17 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * Expectations from the difference between two snapshots, most telling first: a new address,
  * a dialog that opened or closed, a new message, a new heading. At most three.
  */
-export function expectationsFrom(before: PageState, after: PageState): Expectation[] {
+export function expectationsFrom(
+  before: PageState,
+  after: PageState,
+  opts: { inFrame?: boolean } = {},
+): Expectation[] {
+  if (opts.inFrame) {
+    // Inside an iframe: its address is its own business; the rest is checked in that frame.
+    return expectationsFrom({ ...before, url: '' }, { ...after, url: '' })
+      .filter((e) => e.type !== 'url')
+      .map((e) => ({ ...e, inFrame: true }));
+  }
   const out: Expectation[] = [];
   const path = (u: string) => {
     try {

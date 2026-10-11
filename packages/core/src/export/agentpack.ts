@@ -73,6 +73,11 @@ export function describeTarget(t: Partial<ProcedureTarget>): string {
 }
 
 export function describeExpectation(e: Expectation): string {
+  const where = 'inFrame' in e && e.inFrame ? ' (inside the step’s iframe)' : '';
+  return describeWhere(e) + where;
+}
+
+function describeWhere(e: Expectation): string {
   switch (e.type) {
     case 'url':
       return `the address matches ${code(e.matches)}`;

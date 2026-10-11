@@ -531,6 +531,7 @@ export const strings = {
       hidden: (what: string) => `${what} goes away`,
       text: (t: string) => `Text “${t}” appears`,
       window: (t: string) => `Window “${t}” is open`,
+      inFrame: (what: string) => `${what} (in the step’s frame)`,
     },
   },
   inputMode: {

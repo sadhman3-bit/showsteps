@@ -38,16 +38,19 @@ export function locatorFor(target: Partial<ProcedureTarget>, root = 'page'): str
   return `${scope}.locator('body')`;
 }
 
-function expectation(e: Expectation, timeout: number): string | undefined {
+/** `frames`: the step's iframe chain, for expectations that hold inside its iframe. */
+function expectation(e: Expectation, timeout: number, frames: string[] = []): string | undefined {
+  const within = 'inFrame' in e && e.inFrame ? frames : [];
+  const scope = within.reduce((s, f) => `${s}.frameLocator(${q(f)})`, 'page');
   switch (e.type) {
     case 'url':
       return `await expect(page).toHaveURL(new RegExp(${q(e.matches)}), { timeout: ${timeout} });`;
     case 'visible':
-      return `await expect(${locatorFor(e.target)}.first()).toBeVisible({ timeout: ${timeout} });`;
+      return `await expect(${locatorFor({ ...e.target, frames: within })}.first()).toBeVisible({ timeout: ${timeout} });`;
     case 'hidden':
-      return `await expect(${locatorFor(e.target)}).toHaveCount(0, { timeout: ${timeout} });`;
+      return `await expect(${locatorFor({ ...e.target, frames: within })}).toHaveCount(0, { timeout: ${timeout} });`;
     case 'text':
-      return `await expect(page.getByText(${q(e.contains)}).first()).toBeVisible({ timeout: ${timeout} });`;
+      return `await expect(${scope}.getByText(${q(e.contains)}).first()).toBeVisible({ timeout: ${timeout} });`;
     case 'window':
       return undefined; // desktop windows are outside the browser
   }
@@ -132,7 +135,7 @@ function stepCode(step: ProcedureStep): string[] {
       break;
   }
   for (const e of step.expect) {
-    const line = expectation(e, timeout);
+    const line = expectation(e, timeout, step.target?.frames);
     if (line) lines.push(line);
   }
   return lines;

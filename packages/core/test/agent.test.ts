@@ -401,3 +401,29 @@ describe('checking a captured address', () => {
     expect(urlMatches('http://x.test/a(b', 'a(b')).toBe(true);
   });
 });
+
+describe('expectations inside iframes', () => {
+  it('are recorded without the frame address and checked inside the frame by the replay', () => {
+    const before = { url: 'http://127.0.0.1:5174/widget.html', landmarks: [], messages: [] };
+    const after = {
+      url: 'http://127.0.0.1:5174/widget.html#done',
+      landmarks: [],
+      messages: ['Saved'],
+    };
+    expect(expectationsFrom(before, after, { inFrame: true })).toEqual([
+      { type: 'text', contains: 'Saved', inFrame: true },
+    ]);
+    const g = sample();
+    const use = byTitle(g, 'Click Use this cost centre');
+    use.agent.expect = [
+      { type: 'text', contains: 'Saved', inFrame: true },
+      { type: 'text', contains: 'Cost centre set' },
+    ];
+    const spec = replaySpec(toProcedure(g));
+    expect(spec).toContain(
+      'await expect(page.frameLocator("iframe[title=\\"Cost centre lookup\\"]").getByText("Saved").first()).toBeVisible',
+    );
+    expect(spec).toContain('await expect(page.getByText("Cost centre set").first()).toBeVisible');
+    expect(() => parseGuide(g)).not.toThrow();
+  });
+});

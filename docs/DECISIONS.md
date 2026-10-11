@@ -171,7 +171,7 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Captured expectations (U6):**
   - For clicks, double clicks, keys, choices and checkboxes in the top frame, the page notes its address, open dialogs, headings, and alert and status messages. It looks again 800 ms later and records up to three changes, in this order: new address; dialog opened or closed; new message (its first line); new heading, unless it repeats a dialog's name.
   - If the page is replaced within 3 s, the new address is recorded from the background.
-  - Steps inside iframes are not observed.
+  - For a step inside an iframe, both the iframe and the top page are observed. Changes inside the iframe (dialogs, messages, headings) are marked "inside the step's iframe" and are checked there; the address is the top page's.
   - Addresses are regular expressions on the path (`/app/$`); Run for me and the replay test them as such, and as plain text if they are not valid expressions.
   - Run for me checks expectations up to 4 times, 750 ms apart.
   - In the Agent view, expectations can be removed, and "text appears" expectations added.

@@ -213,14 +213,21 @@ export class PageRecorder {
    * now and again shortly after, and report the difference as the step's expected result.
    */
   private observe(event: ContentEvent): string | undefined {
-    if (window !== window.top || !OBSERVED.has(event.kind)) return undefined;
+    if (!OBSERVED.has(event.kind)) return undefined;
     const observeId = crypto.randomUUID();
+    // An action in an iframe often changes the page around it: the top frame looks too.
+    if (!this.isTop) void send({ type: 'observe-top', observeId });
+    this.observeNow(observeId);
+    return observeId;
+  }
+
+  /** Note the page now and again shortly after; report what changed under `observeId`. */
+  observeNow(observeId: string): void {
     const before = pageState(document);
     setTimeout(() => {
-      const expect = expectationsFrom(before, pageState(document));
+      const expect = expectationsFrom(before, pageState(document), { inFrame: !this.isTop });
       if (expect.length) void send({ type: 'observed', observeId, expect });
     }, OBSERVE_AFTER_MS);
-    return observeId;
   }
 
   private activeElementDeep(): Element | null {
@@ -516,6 +523,10 @@ export class PageRecorder {
       const active = this.activeElementDeep();
       const event = this.recording && active ? this.takeTyping(active) : undefined;
       sendResponse({ event: event ?? null });
+      return false;
+    }
+    if (msg.type === 'observe') {
+      if (this.isTop && this.recording) this.observeNow(msg.observeId);
       return false;
     }
     if (msg.type === 'iframe-geometry') {

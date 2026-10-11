@@ -699,13 +699,19 @@ export class GuidePage {
       case 'guide-probe':
         void this.probe(msg.step, msg.timeoutMs).then(sendResponse);
         return true;
-      case 'guide-check':
+      case 'guide-check': {
+        // The top page checks its own expectations; an iframe checks those marked for it.
+        const inFrame = window !== window.top;
+        const mine = (msg.step.agent.expect ?? []).filter(
+          (e) => ('inFrame' in e && e.inFrame === true) === inFrame,
+        );
         sendResponse({
-          failed: failedExpectations(document, location.href, msg.step.agent.expect, {
-            isVisible,
-          }).map((e) => e.type),
+          failed: failedExpectations(document, location.href, mine, { isVisible }).map(
+            (e) => e.type,
+          ),
         });
         return undefined;
+      }
       case 'marks-changed':
         void this.loadMarks();
         return undefined;

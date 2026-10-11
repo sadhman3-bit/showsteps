@@ -384,14 +384,25 @@ export class Guidance {
       let reply: { failed: string[] } | undefined;
       for (let attempt = 0; attempt < CHECK_ATTEMPTS; attempt++) {
         if (attempt) await this.deps.sleep(CHECK_RETRY_MS);
-        reply = await this.deliver(
+        // The top page checks its expectations; the step's iframe checks those marked for it.
+        const top = await this.deliver(
           seq,
           { ...step, app: { kind: 'web', url: step.app.kind === 'web' ? step.app.url : '' } },
           { type: 'guide-check', step },
           CheckReplySchema,
           5000,
         );
+        const inFrame =
+          step.app.kind === 'web' &&
+          step.app.frameUrl &&
+          step.agent.expect?.some((e) => 'inFrame' in e && e.inFrame)
+            ? await this.deliver(seq, step, { type: 'guide-check', step }, CheckReplySchema, 5000)
+            : undefined;
         if (seq !== this.seq) return;
+        reply =
+          top || inFrame
+            ? { failed: [...(top?.failed ?? []), ...(inFrame?.failed ?? [])] }
+            : undefined;
         if (!reply?.failed.length) break;
       }
       if (reply?.failed.length) {

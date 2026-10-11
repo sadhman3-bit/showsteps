@@ -84,11 +84,14 @@ export type Target = z.infer<typeof TargetSchema>;
 
 export const PartialTargetSchema = TargetSchema.partial();
 
+/** Set on expectations that hold inside the step's iframe rather than on the top page. */
+const InFrame = z.boolean().optional();
+
 export const ExpectationSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('url'), matches: z.string() }),
-  z.object({ type: z.literal('visible'), target: PartialTargetSchema }),
-  z.object({ type: z.literal('hidden'), target: PartialTargetSchema }),
-  z.object({ type: z.literal('text'), contains: z.string() }),
+  z.object({ type: z.literal('visible'), target: PartialTargetSchema, inFrame: InFrame }),
+  z.object({ type: z.literal('hidden'), target: PartialTargetSchema, inFrame: InFrame }),
+  z.object({ type: z.literal('text'), contains: z.string(), inFrame: InFrame }),
   z.object({ type: z.literal('window'), titleContains: z.string() }),
 ]);
 export type Expectation = z.infer<typeof ExpectationSchema>;

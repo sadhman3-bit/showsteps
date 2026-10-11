@@ -167,5 +167,4 @@ Fixes found while testing:
 ## Deferred
 
 - Extension capture: screenshot encoding takes 1.5–2.5 s per step on a busy machine before the step appears (the step still lands in order). Look at faster encoding in M9's performance pass.
-- Expectations are not observed for actions inside iframes (the frame's own page changes are not diffed); authors can add them in the Agent view.
 - Secure Blur reads words only from the top frame of a web page at capture; a picture with iframe text can be re-read with OCR by deleting its word file (no button for that yet).

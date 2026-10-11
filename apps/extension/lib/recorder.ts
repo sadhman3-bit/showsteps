@@ -426,6 +426,10 @@ export class Recorder {
       }
       if (step && observeId) {
         this.observing.set(observeId, step.id);
+        if (this.observing.size > 50) {
+          const oldest = this.observing.keys().next().value;
+          if (oldest !== undefined) this.observing.delete(oldest);
+        }
         this.lastActed = { tabId: sender.tabId, stepId: step.id, at: Date.now() };
       }
       await this.save();
@@ -470,8 +474,8 @@ export class Recorder {
   /** U6: what changed on the page after a step's action (sent by the page ~800 ms later). */
   observed(observeId: string, expect: Expectation[]): Promise<void> {
     return this.serial(async () => {
+      // Kept (not deleted): an iframe action reports from its frame and from the top page.
       const stepId = this.observing.get(observeId);
-      this.observing.delete(observeId);
       const step = this.session?.steps.find((s) => s.id === stepId);
       if (!step || !expect.length) return;
       const known = new Set((step.agent.expect ?? []).map((e) => JSON.stringify(e)));
