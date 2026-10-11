@@ -1,6 +1,7 @@
 // Release files in dist/: the Chrome extension as a zip (install with "Load unpacked" after
-// unzipping), the Windows installer, and SHA-256 checksums. Run `pnpm release` (it builds
-// everything first). Trailmark is not published to the Chrome Web Store.
+// unzipping), the same extension packaged for the Chrome Web Store (manifest at the top, no
+// `key`: the store assigns the ID), the Windows installer, and SHA-256 checksums. Run
+// `pnpm release` (it builds everything first). Listing text and images: docs/webstore/.
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
@@ -34,8 +35,9 @@ if (manifest.host_permissions?.length) throw new Error('Release manifest has hos
 if (manifest.version !== version)
   throw new Error(`Manifest version ${manifest.version} ≠ ${version}`);
 
-rmSync(dist, { recursive: true, force: true });
+// Empty dist/ rather than delete it: a shell or Explorer window may have it open.
 mkdirSync(dist, { recursive: true });
+for (const name of readdirSync(dist)) rmSync(join(dist, name), { recursive: true, force: true });
 
 /** Every file under a folder, keyed by its path inside a top-level folder of the zip. */
 function tree(dir, prefix) {
@@ -51,7 +53,20 @@ function tree(dir, prefix) {
   return out;
 }
 
+// Chrome Web Store upload: files at the top of the zip, and no `key` (the store refuses it).
+const storeFiles = Object.fromEntries(
+  Object.entries(tree(extension, '.')).map(([path, bytes]) => [path.slice(2), bytes]),
+);
+const { key: _key, ...storeManifest } = manifest;
+storeFiles['manifest.json'] = new TextEncoder().encode(
+  `${JSON.stringify(storeManifest, null, 2)}\n`,
+);
+
 const files = {
+  [`trailmark-extension-${version}-chrome-web-store.zip`]: zipSync(storeFiles, {
+    level: 9,
+    mtime: new Date('2026-10-11T00:00:00Z'),
+  }),
   [`trailmark-extension-${version}.zip`]: zipSync(
     tree(extension, `trailmark-extension-${version}`),
     {

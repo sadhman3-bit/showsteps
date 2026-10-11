@@ -15,6 +15,13 @@ export const BROWSER_KEYS = [
 ];
 
 export const EXTENSION_ID: string = extensionKey.id;
+/**
+ * The same extension installed from the Chrome Web Store has an ID Google assigns (set
+ * `webstoreId` in extension-key.json once the item exists). Both may talk to the desktop app.
+ */
+export const EXTENSION_IDS: string[] = [EXTENSION_ID, extensionKey.webstoreId].filter(
+  (id): id is string => /^[a-p]{32}$/.test(id ?? ''),
+);
 
 export function hostManifest(hostExe: string): object {
   return {
@@ -22,7 +29,7 @@ export function hostManifest(hostExe: string): object {
     description: 'Trailmark desktop app bridge',
     path: hostExe,
     type: 'stdio',
-    allowed_origins: [`chrome-extension://${EXTENSION_ID}/`],
+    allowed_origins: EXTENSION_IDS.map((id) => `chrome-extension://${id}/`),
   };
 }
 

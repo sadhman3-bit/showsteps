@@ -22,7 +22,7 @@ Release files are in `dist/` (build them with `pnpm release`, see [For developer
 
 ### The browser extension (Chrome or Edge)
 
-Trailmark is not in the Chrome Web Store. Install it as an unpacked extension:
+Trailmark is not in the Chrome Web Store yet (the submission is prepared in `docs/webstore/`). Until then, install it as an unpacked extension:
 
 1. Unzip `trailmark-extension-1.0.0.zip` to a folder you will keep, for example `Documents\Trailmark\extension`. Chrome loads it from there each time.
 2. Open `chrome://extensions` (in Edge, `edge://extensions`).
