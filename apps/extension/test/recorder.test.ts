@@ -208,6 +208,21 @@ describe('Recorder', () => {
     );
   });
 
+  it('lists its steps in the state and deletes any one of them', async () => {
+    const { guideId } = await startNew(ctx.recorder);
+    await ctx.send({ kind: 'key', key: 'Enter' });
+    await ctx.send({ kind: 'key', key: 'Escape' });
+    const before = await stepsOf(ctx.store, guideId!);
+    expect(ctx.recorder.current.stepIds).toEqual(before.map((s) => s.id));
+    expect(ctx.recorder.current.lastStep).toMatchObject({ id: before[2]!.id, number: 3 });
+    const s = await ctx.recorder.deleteStep(before[1]!.id);
+    expect(s.stepCount).toBe(2);
+    expect(s.stepIds).toEqual([before[0]!.id, before[2]!.id]);
+    expect((await stepsOf(ctx.store, guideId!)).map((x) => x.id)).toEqual(s.stepIds);
+    const owners = (await ctx.store.listImages(guideId!)).map((n) => n.split('.')[0]);
+    expect(owners).not.toContain(before[1]!.id);
+  });
+
   it('finishes with a saved version and returns to idle', async () => {
     const { guideId } = await startNew(ctx.recorder);
     await ctx.send({ kind: 'key', key: 'Enter' });

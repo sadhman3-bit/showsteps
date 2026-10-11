@@ -267,6 +267,15 @@ export class CaptureSession {
     return step;
   }
 
+  /** Remove one step (the side panel's step list while recording). */
+  remove(id: string): Step | undefined {
+    const at = this.added.findIndex((s) => s.id === id);
+    if (at < 0) return undefined;
+    const [step] = this.added.splice(at, 1);
+    this.keys.delete(id);
+    return step;
+  }
+
   /** Remove every added step (Cancel). */
   clear(): Step[] {
     const all = this.added.splice(0);

@@ -46,6 +46,13 @@ export const strings = {
     cancelConfirm: 'Discard this capture? Steps recorded so far will be deleted.',
     drag: 'Drag to move',
     controllerLabel: 'Trailmark capture controls',
+    stepsTitle: 'Recorded steps',
+    noStepsYet:
+      'Click, type and choose things on the page. Each action appears here as a step with its screenshot.',
+    deleteStep: (n: number) => `Delete step ${n}`,
+    stepLabel: (n: number) => `Step ${n}`,
+    justRecorded: (n: number, title: string) => `Step ${n}: ${title}`,
+    pictureComing: 'Screenshot on its way…',
   },
   library: {
     title: 'Library',

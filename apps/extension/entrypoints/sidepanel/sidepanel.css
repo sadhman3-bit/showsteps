@@ -211,3 +211,116 @@
   color: var(--tm-text-muted);
   text-align: end;
 }
+
+/* While recording: controls stay at the top, the step list scrolls under them. */
+.tm-sidepanel--recording {
+  padding-top: 0;
+}
+
+.tm-rec-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-4) 0 var(--tm-space-3);
+  background: var(--tm-bg);
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tm-rec-head > p {
+  margin: 0;
+}
+
+.tm-rec-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-rec-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--tm-space-2);
+}
+
+.tm-rec-controls .tm-button {
+  justify-content: center;
+}
+
+.tm-rec-steps h2 {
+  margin: 0 0 var(--tm-space-2);
+  font-size: 1rem;
+}
+
+.tm-rec-steps ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-rec-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-3);
+  border: 1px solid var(--tm-border);
+  border-radius: var(--tm-radius);
+  background: var(--tm-surface);
+  box-shadow: var(--tm-shadow);
+}
+
+.tm-rec-step:last-child {
+  border-color: var(--tm-accent);
+}
+
+.tm-rec-step__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tm-space-2);
+}
+
+.tm-rec-step__title {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.tm-rec-step__delete {
+  flex: none;
+  display: inline-flex;
+  padding: var(--tm-space-1);
+  border: 0;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-text-muted);
+  cursor: pointer;
+}
+
+.tm-rec-step__delete:hover {
+  background: var(--tm-surface-2);
+  color: var(--tm-alert);
+}
+
+.tm-rec-step__delete:focus-visible {
+  outline: 2px solid var(--tm-focus);
+  outline-offset: 1px;
+}
+
+.tm-rec-step .tm-shot {
+  margin: 0;
+  border-radius: var(--tm-radius-sm);
+  overflow: hidden;
+}
+
+.tm-rec-step__wait {
+  margin: 0;
+  font-size: 0.8125rem;
+}

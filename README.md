@@ -56,7 +56,7 @@ Settings → **Delete all Trailmark data** removes everything the extension keep
 
 ## Three things to try first
 
-1. **Record a guide.** Open a web page, click the Trailmark icon, then **Start capture**. Do the task as usual: each click, entry and choice becomes a step with a screenshot. Click **Finish** on the small toolbar. Then tidy the guide in the editor: drag steps, add tips, blur what should not be seen. **Secure Blur** finds emails, phone, card, bank and tax numbers in every screenshot for you to review.
+1. **Record a guide.** Open a web page, click the Trailmark icon, then **Start capture**. Do the task as usual: each click, entry and choice becomes a step with a screenshot. The side panel shows every step as it is recorded, with its screenshot, and you can delete any of them there. Click **Finish** on the small toolbar or in the side panel. Then tidy the guide in the editor: drag steps, add tips, blur what should not be seen. **Secure Blur** finds emails, phone, card, bank and tax numbers in every screenshot for you to review.
 2. **Guide someone through it.** Open the guide and click **Guide Me**. Trailmark rings each element on the real page and moves on as the person does each step. **Run for me** does the steps itself. It stops for passwords, and for anything that cannot be undone, until you confirm.
 3. **Share it.** **Share** makes a PDF, a Word document, Markdown, a single web page, an embed card for SharePoint, or rich text for Teams and Outlook. **Agent Pack** turns the guide into instructions an AI agent can follow, with a Playwright script that replays it.
 

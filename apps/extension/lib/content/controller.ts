@@ -25,8 +25,18 @@ button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 button[aria-pressed='true'] { background: #2f3f3c; border-color: var(--accent); color: var(--accent); }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 button.danger { border-color: var(--rec); color: var(--rec); }
-.hint { position: absolute; right: 0; bottom: calc(100% + 6px); background: var(--bg); color: var(--fg);
-  border: 1px solid var(--accent); border-radius: 8px; padding: 6px 10px; white-space: nowrap; font-size: 12px; }
+.above { position: absolute; right: 0; bottom: calc(100% + 6px); display: flex; flex-direction: column;
+  align-items: flex-end; gap: 6px; pointer-events: none; }
+.hint, .toast { background: var(--bg); color: var(--fg); border: 1px solid var(--accent); border-radius: 8px;
+  padding: 6px 10px; font-size: 12px; }
+.hint { white-space: nowrap; }
+.toast { display: flex; align-items: center; gap: 8px; max-width: 340px; border-color: var(--line);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); transition: opacity 0.2s; }
+.toast[hidden] { display: none; }
+.toast .num { display: grid; place-items: center; flex: none; min-width: 20px; height: 20px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 11px; padding: 0 4px; }
+.toast .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 .main { display: contents; }
 .confirm { display: none; }
 .confirming .main { display: none; }
@@ -44,6 +54,9 @@ export class Controller {
   private holds = 0;
   private hiddenSince = 0;
   private showTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The newest step shown in the "just recorded" note, and when the note goes away. */
+  private lastSeen: string | undefined;
+  private toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private readonly onAction: (action: ControlAction) => void) {
     this.host = document.createElement('trailmark-controller');
@@ -72,7 +85,12 @@ export class Controller {
         <button type="button" class="danger" data-act="cancel">${s.cancel}</button>
         <button type="button" data-act="keep">${s.resume}</button>
       </span>
-      <span class="hint" data-el="hint" hidden>${s.liveBlurOn}</span>`;
+      <span class="above">
+        <span class="toast" data-el="toast" role="status" hidden>
+          <span class="num" data-el="toastNum"></span><span class="text" data-el="toastText"></span>
+        </span>
+        <span class="hint" data-el="hint" hidden>${s.liveBlurOn}</span>
+      </span>`;
     for (const el of Array.from(this.bar.querySelectorAll<HTMLElement>('[data-el]'))) {
       this.els[el.dataset.el ?? ''] = el;
     }
@@ -151,6 +169,27 @@ export class Controller {
     }
     blur?.setAttribute('aria-pressed', String(state.liveBlur));
     if (hint) hint.hidden = !state.liveBlur;
+    this.noteStep(state);
+  }
+
+  /** Briefly show the step just recorded (or retitled, as typing goes on) above the toolbar. */
+  private noteStep(state: CaptureState): void {
+    const { toast, toastNum, toastText } = this.els;
+    const last = state.lastStep;
+    const seen = last ? `${last.id}|${last.title}` : undefined;
+    // The first state a page sees describes steps from before it loaded: no note for those.
+    const before = this.lastSeen;
+    this.lastSeen = seen ?? '';
+    if (!toast || !toastNum || !toastText || before === undefined || !last || seen === before) {
+      if (!last && toast) toast.hidden = true;
+      return;
+    }
+    toastNum.textContent = String(last.number);
+    toastText.textContent = last.title;
+    toast.title = s.justRecorded(last.number, last.title);
+    toast.hidden = false;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => (toast.hidden = true), 3000);
   }
 
   /**

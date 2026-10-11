@@ -51,6 +51,7 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **First step** of a new capture is "Go to <site>" with a screenshot of the starting page. Direct navigations (address bar, back/forward) add "Go to" steps; navigations caused by recorded clicks do not.
 - **New guide title** defaults to the page title at capture start; renamed in the library.
 - **Library** is a full extension page (`library.html`, hash routes `#/` and `#/guide/<id>`); the side panel shows Start, status, the last 5 guides and a link to the library. Shared Preact components live in `packages/ui` for reuse by the desktop app.
+- **While recording, the side panel lists the capture's steps**, newest last, each with its number, text, screenshot (as readers see it: highlight and zoom) and a delete button; the controls stay at the top. The on-page toolbar shows the step just recorded for 3 s.
 - **Capture more:** the guide view stores the request (guide, position) in session storage and opens the side panel; Start then records into the active tab and inserts at that position.
 - **Controller** uses an open shadow root (tests can reach it; styles stay isolated) and plain DOM rather than Preact, to keep the content script small.
 - **Extension icon:** an original design (dotted trail to a map pin on a teal tile), rendered from `apps/extension/assets/icon.svg` by `pnpm make:icons`.

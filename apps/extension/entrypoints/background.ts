@@ -449,6 +449,8 @@ export default defineBackground(() => {
         return { state: recorder.current };
       case 'control':
         return { state: await recorder.control(msg.action) };
+      case 'delete-step':
+        return { state: await recorder.deleteStep(msg.stepId) };
       case 'recapture': {
         if (recorder.isActive) return { state: recorder.current, error: 'busy' };
         const tab = await browser.tabs.get(msg.tabId).catch(() => undefined);

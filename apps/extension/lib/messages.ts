@@ -116,6 +116,8 @@ export const PageMessageSchema = z.discriminatedUnion('type', [
   /** Settings: stop everything and clear Trailmark's storage in this browser. */
   z.object({ type: z.literal('delete-all') }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
+  /** While recording: remove one recorded step (the side panel's step list). */
+  z.object({ type: z.literal('delete-step'), stepId: z.string().min(1).max(64) }),
   /** Replace a step's screenshot with a fresh capture of the tab. */
   z.object({
     type: z.literal('recapture'),
@@ -131,6 +133,12 @@ export const CaptureStateSchema = z.object({
   guideId: z.string().optional(),
   title: z.string().optional(),
   stepCount: z.number().int().nonnegative(),
+  /** This capture's steps in order, for the side panel's live list. */
+  stepIds: z.array(z.string().max(64)).max(5000).optional(),
+  /** The newest step, for the on-page toolbar's "just recorded" note. */
+  lastStep: z
+    .object({ id: z.string().max(64), number: z.number().int().positive(), title: z.string() })
+    .optional(),
   liveBlur: z.boolean(),
   /** Set after Finish so the UI can offer to open the guide. */
   lastFinishedGuideId: z.string().optional(),

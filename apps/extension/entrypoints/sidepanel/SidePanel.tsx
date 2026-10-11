@@ -1,6 +1,6 @@
-import type { GuideSummary } from '@trailmark/core';
-import { Button, Icon, relativeTime, strings } from '@trailmark/ui';
-import { useEffect, useState } from 'preact/hooks';
+import { stepNumbers, toPlainText, type Guide, type GuideSummary } from '@trailmark/core';
+import { Button, Icon, Screenshot, relativeTime, strings } from '@trailmark/ui';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   getStore,
   libraryUrl,
@@ -171,45 +171,121 @@ function Recording({ state }: { state: CaptureState }) {
   const paused = state.status === 'paused';
   const control = (action: ControlAction) => void request({ type: 'control', action });
   return (
-    <main class="tm-sidepanel">
-      <h1 class="tm-brand">
-        <Icon name="trail" size={22} /> {s.title}
-      </h1>
-      <section class="tm-status" aria-live="polite">
-        <span class={`tm-dot${paused ? ' tm-dot--paused' : ''}`} aria-hidden="true" />
-        <strong>{paused ? c.paused : c.recording}</strong>
-        <span class="tm-muted">{c.steps(state.stepCount)}</span>
-      </section>
-      {state.title ? <p class="tm-muted">{state.title}</p> : null}
-      {confirming ? (
-        <div class="tm-stack">
-          <p>{c.cancelConfirm}</p>
-          <Button variant="danger" onClick={() => control('cancel')}>
-            {c.cancel}
-          </Button>
-          <Button onClick={() => setConfirming(false)}>{c.resume}</Button>
-        </div>
-      ) : (
-        <div class="tm-stack">
-          <Button variant="primary" onClick={() => control('finish')}>
-            {c.finish}
-          </Button>
-          <Button onClick={() => control(paused ? 'resume' : 'pause')}>
-            {paused ? c.resume : c.pause}
-          </Button>
-          <Button onClick={() => control('delete-last')} disabled={state.stepCount === 0}>
-            {c.deleteLast}
-          </Button>
-          <Button aria-pressed={state.liveBlur} onClick={() => control('toggle-live-blur')}>
-            {c.liveBlur}
-          </Button>
-          {state.liveBlur ? <p class="tm-muted">{c.liveBlurOn}</p> : null}
-          <Button variant="ghost" onClick={() => setConfirming(true)}>
-            {c.cancel}
-          </Button>
-        </div>
-      )}
+    <main class="tm-sidepanel tm-sidepanel--recording">
+      <div class="tm-rec-head">
+        <section class="tm-status" aria-live="polite">
+          <span class={`tm-dot${paused ? ' tm-dot--paused' : ''}`} aria-hidden="true" />
+          <strong>{paused ? c.paused : c.recording}</strong>
+          <span class="tm-muted">{c.steps(state.stepCount)}</span>
+        </section>
+        {state.title ? <p class="tm-muted tm-rec-title">{state.title}</p> : null}
+        {confirming ? (
+          <div class="tm-stack">
+            <p>{c.cancelConfirm}</p>
+            <Button variant="danger" onClick={() => control('cancel')}>
+              {c.cancel}
+            </Button>
+            <Button onClick={() => setConfirming(false)}>{c.resume}</Button>
+          </div>
+        ) : (
+          <div class="tm-rec-controls">
+            <Button variant="primary" onClick={() => control('finish')}>
+              {c.finish}
+            </Button>
+            <Button onClick={() => control(paused ? 'resume' : 'pause')}>
+              {paused ? c.resume : c.pause}
+            </Button>
+            <Button aria-pressed={state.liveBlur} onClick={() => control('toggle-live-blur')}>
+              {c.liveBlur}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirming(true)}>
+              {c.cancel}
+            </Button>
+          </div>
+        )}
+        {state.liveBlur ? <p class="tm-muted">{c.liveBlurOn}</p> : null}
+      </div>
+      <RecordedSteps state={state} />
     </main>
+  );
+}
+
+/** The capture's steps as they are recorded: number, text and screenshot, newest last. */
+function RecordedSteps({ state }: { state: CaptureState }) {
+  const [guide, setGuide] = useState<Guide>();
+  const end = useRef<HTMLDivElement>(null);
+  const ids = state.stepIds ?? [];
+  const key = `${ids.join(',')}|${state.lastStep?.title ?? ''}`;
+  useEffect(() => {
+    if (!state.guideId) return;
+    let cancelled = false;
+    void getStore()
+      .getGuide(state.guideId)
+      .then((g) => {
+        if (!cancelled && g) setGuide(g);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [state.guideId, key]);
+  const byId = new Map(
+    (guide?.blocks ?? []).flatMap((b) => (b.kind === 'step' ? [[b.id, b] as const] : [])),
+  );
+  const numbers = guide ? stepNumbers(guide) : new Map<string, number>();
+  const steps = ids.flatMap((id) => {
+    const step = byId.get(id);
+    return step ? [step] : [];
+  });
+  const shown = steps.length;
+  // Bring a new step into view once it has loaded (not on every refresh, so reading back is undisturbed).
+  const seen = useRef(0);
+  useEffect(() => {
+    if (shown <= seen.current) {
+      seen.current = shown;
+      return;
+    }
+    seen.current = shown;
+    end.current?.scrollIntoView({ block: 'end' });
+  }, [shown]);
+
+  return (
+    <section class="tm-rec-steps" aria-labelledby="rec-steps-h">
+      <h2 id="rec-steps-h">{c.stepsTitle}</h2>
+      {steps.length ? (
+        <ol>
+          {steps.map((step) => {
+            const n = numbers.get(step.id) ?? 0;
+            const title = toPlainText(step.human.title);
+            return (
+              <li key={step.id} class="tm-rec-step" aria-label={`${c.stepLabel(n)}: ${title}`}>
+                <div class="tm-rec-step__head">
+                  <span class="tm-step__num">{n}</span>
+                  <span class="tm-rec-step__title">{title}</span>
+                  <button
+                    type="button"
+                    class="tm-rec-step__delete"
+                    aria-label={c.deleteStep(n)}
+                    title={c.deleteStep(n)}
+                    onClick={() => void request({ type: 'delete-step', stepId: step.id })}
+                  >
+                    <Icon name="trash" />
+                  </button>
+                </div>
+                {step.human.screenshot && guide ? (
+                  <Screenshot store={getStore()} guideId={guide.id} step={step} alt={title} />
+                ) : (
+                  <p class="tm-muted tm-rec-step__wait">{c.pictureComing}</p>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <p class="tm-muted">{c.noStepsYet}</p>
+      )}
+      <div ref={end} />
+    </section>
   );
 }
 

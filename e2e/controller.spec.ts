@@ -174,3 +174,56 @@ test('capture more inserts steps at the chosen position (C7)', async ({
     'Click **Sign in**',
   ]);
 });
+
+test('side panel lists each step as it is recorded, with its screenshot, and deletes any one', async ({
+  context,
+  serviceWorker,
+  extensionId,
+}) => {
+  test.setTimeout(90_000);
+  const page = await context.newPage();
+  await page.goto('http://localhost:5173/app/');
+  await page.getByRole('cell', { name: 'INV-1042' }).waitFor();
+  // The panel in a window of its own, as the real side panel is beside the page, not a tab.
+  const opened = context.waitForEvent('page');
+  await serviceWorker.evaluate(
+    (url) => chrome.windows.create({ url, type: 'popup', width: 400, height: 800, focused: false }),
+    `chrome-extension://${extensionId}/sidepanel.html`,
+  );
+  const panel = await opened;
+  await page.bringToFront();
+  const id = await startCaptureOn(serviceWorker, 'http://localhost:5173/');
+  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  await expect(bar).toContainText('1 step');
+  const steps = panel.getByRole('list').getByRole('listitem');
+  await expect(steps).toHaveCount(1);
+  await page.waitForTimeout(650);
+
+  await page.getByRole('heading', { name: 'Recent invoices' }).click({ delay: 100 });
+  // The toolbar notes the step just recorded.
+  await expect(page.locator('trailmark-controller .toast')).toContainText('Recent invoices');
+  await page.waitForTimeout(650);
+  await page.getByRole('cell', { name: 'INV-1042' }).click({ delay: 100 });
+  await expect(bar).toContainText('3 steps');
+
+  await expect(steps).toHaveCount(3);
+  await expect(steps.nth(1)).toHaveAccessibleName(/^Step 2: Click .*Recent invoices/);
+  await expect(steps.nth(2)).toHaveAccessibleName(/^Step 3: Click .*INV-1042/);
+  for (let i = 0; i < 3; i++) await expect(steps.nth(i).getByRole('img')).toBeVisible();
+  await panel.screenshot({ path: test.info().outputPath('sidepanel-recording.png') });
+  // Each picture's highlight sits on the clicked element.
+  const guide = await serviceWorker.evaluate((g) => __trailmark.store.getGuide(g), id);
+  const shot = (guide?.blocks[2] as { human: { screenshot: { width: number } } }).human.screenshot;
+  expect(shot.width).toBeGreaterThan(1000);
+
+  await panel.getByRole('button', { name: 'Delete step 2' }).click();
+  await expect(steps).toHaveCount(2);
+  await expect(steps.nth(1)).toHaveAccessibleName(/^Step 2: Click .*INV-1042/);
+  await expect(bar).toContainText('2 steps');
+
+  await panel.getByRole('button', { name: 'Finish' }).click();
+  await expect(bar).toHaveCount(0);
+  const titles = await titlesOf(serviceWorker, id);
+  expect(titles).toHaveLength(2);
+  expect(titles[1]).toContain('INV-1042');
+});

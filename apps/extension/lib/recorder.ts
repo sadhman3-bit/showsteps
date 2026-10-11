@@ -7,6 +7,7 @@ import {
   nowIso,
   scalePageText,
   serializePageText,
+  toPlainText,
   wordsFileFor,
   type AppContext,
   type CaptureEvent,
@@ -261,10 +262,39 @@ export class Recorder {
   private async deleteLast(): Promise<void> {
     const step = this.session?.deleteLast();
     if (!step || !this.guide || !this.session) return;
-    this.state.stepCount = this.session.count;
+    this.syncSteps();
     await this.deleteStepImages([step]);
     if (this.lastShot?.stepId === step.id) this.lastShot = undefined;
     await this.save();
+  }
+
+  /** Remove one recorded step (the side panel's list), with its pictures unless another step shows them. */
+  deleteStep(stepId: string): Promise<CaptureState> {
+    return this.serial(async () => {
+      if (!this.isActive || !this.session || !this.guide) return this.current;
+      const step = this.session.remove(stepId);
+      if (!step) return this.current;
+      this.syncSteps();
+      const file = step.human.screenshot?.file;
+      const shown = this.session.steps.some((s) => file && s.human.screenshot?.file === file);
+      if (shown) {
+        // A later step reuses this picture: it now owns it.
+        for (const s of this.session.steps) {
+          const shot = s.human.screenshot;
+          if (shot?.reusedFromStepId === stepId) delete shot.reusedFromStepId;
+        }
+      } else {
+        await this.deleteStepImages([step]);
+        // Its picture may have come from a step deleted earlier (named after that step).
+        const owner = file?.replace(/^img\//, '').split('.')[0];
+        if (owner && owner !== stepId && !this.session.steps.some((s) => s.id === owner))
+          await this.deleteImagesOf(new Set([owner]));
+        if (this.lastShot && file === this.lastShot.file) this.lastShot = undefined;
+      }
+      await this.save();
+      this.publish();
+      return this.current;
+    });
   }
 
   private async finish(): Promise<void> {
@@ -394,7 +424,7 @@ export class Recorder {
       } else if (result.wantsShot) {
         await this.attachShot(step, undefined);
       }
-      this.state.stepCount = this.session.count;
+      this.syncSteps();
       await this.save();
       this.publish();
     });
@@ -628,7 +658,7 @@ export class Recorder {
     const result = this.session.apply(ev);
     for (const removed of result.removed) await this.deleteStepImages([removed]);
     if (result.wantsShot) await this.attachShot(result.step, shot);
-    this.state.stepCount = this.session.count;
+    this.syncSteps();
     return result.step;
   }
 
@@ -663,9 +693,13 @@ export class Recorder {
     }
   }
 
-  private async deleteStepImages(steps: Step[]): Promise<void> {
+  private deleteStepImages(steps: Step[]): Promise<void> {
+    return this.deleteImagesOf(new Set(steps.map((s) => s.id)));
+  }
+
+  /** Every picture, thumbnail and word file named after these step ids. */
+  private async deleteImagesOf(ids: Set<string>): Promise<void> {
     if (!this.guide) return;
-    const ids = new Set(steps.map((s) => s.id));
     for (const name of await this.deps.store.listImages(this.guide.id)) {
       const owner = name.split('.')[0] ?? '';
       if (ids.has(owner)) await this.deps.store.deleteImage(this.guide.id, name);
@@ -719,6 +753,25 @@ export class Recorder {
     return this.deps.persist(data);
   }
 
+  /** Step count, ids and the newest step's title, from the session. */
+  private syncSteps(): void {
+    const steps = this.session?.steps ?? [];
+    this.state.stepCount = steps.length;
+    this.state.stepIds = steps.map((s) => s.id);
+    const last = steps.at(-1);
+    // Numbered as in the guide: steps added mid-guide (capture more) follow the ones before them.
+    const before = this.base
+      .slice(0, this.session?.insertAt ?? this.base.length)
+      .filter((b) => b.kind === 'step').length;
+    if (last)
+      this.state.lastStep = {
+        id: last.id,
+        number: before + steps.length,
+        title: toPlainText(last.human.title).slice(0, 200),
+      };
+    else delete this.state.lastStep;
+  }
+
   private publish(): void {
     const state = this.current;
     for (const tabId of this.tabs) this.deps.sendState(tabId, state);
@@ -742,7 +795,8 @@ export class Recorder {
       this.replacing = data.replaceStepId;
       if (this.replacing && steps.length) this.finishReplaceSoon();
       this.lastShot = data.lastShot;
-      this.state = { ...data.state, stepCount: steps.length };
+      this.state = { ...data.state };
+      this.syncSteps();
       for (const [tab, vp] of data.viewports) this.viewports.set(tab, vp);
       for (const tab of data.tabs) this.tabs.add(tab);
       this.deps.frames.load(data.frames);

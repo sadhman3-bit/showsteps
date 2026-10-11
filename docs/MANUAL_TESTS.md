@@ -68,6 +68,10 @@ Open the side panel and click **Open library**. **Expected:** a tab with the lib
 
 While recording, drag the toolbar by its ⋮⋮ handle. **Expected:** it moves and stays inside the window; clicks on it are never recorded as steps.
 
+### MT-M2-4b Steps in the side panel while recording
+
+Open the side panel, start a capture and click through a few things on the page. **Expected:** each step appears in the side panel straight away with its text and screenshot, the newest scrolls into view, and the toolbar on the page briefly shows the step just recorded. Delete a step in the middle with its bin icon: it disappears from the list and from the finished guide.
+
 ### MT-M2-5 Display scaling and browser zoom
 
 1. Windows Settings → Display → Scale: set 125% or 150%.

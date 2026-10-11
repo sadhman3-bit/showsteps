@@ -201,6 +201,15 @@ describe('CaptureSession', () => {
     expect(s.count).toBe(0);
   });
 
+  it('removes any one step by id', () => {
+    const s = new CaptureSession();
+    const a = s.apply(ev({ kind: 'key', key: 'Escape' })).step;
+    const b = s.apply(ev({ kind: 'key', key: 'Enter' })).step;
+    expect(s.remove(a.id)?.key).toBe('Escape');
+    expect(s.remove('nope')).toBeUndefined();
+    expect(s.steps.map((x) => x.id)).toEqual([b.id]);
+  });
+
   it('inserts captured steps at a chosen position (capture more)', () => {
     const guide = createGuide({ blocks: [createHeading('A'), createHeading('B')] });
     const s = new CaptureSession(1);
