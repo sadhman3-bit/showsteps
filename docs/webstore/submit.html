@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trailmark store fields</title>
+<style>
+:root { --bg: #faf8f5; --surface: #fff; --text: #1f1c18; --muted: #5c554b; --line: #d9d3ca; --accent: #0f6b62; --on-accent: #fff; }
+@media (prefers-color-scheme: dark) { :root { --bg: #161513; --surface: #1f1d1a; --text: #f2eee8; --muted: #b5ada1; --line: #3d3933; --accent: #4fbfb2; --on-accent: #0b1513; } }
+body { margin: 0 auto; max-width: 860px; padding: 24px 16px 64px; background: var(--bg); color: var(--text); font: 15px/1.5 'Segoe UI', system-ui, sans-serif; }
+h1 { font-size: 1.4rem; margin: 0 0 4px; } h2 { font-size: 1.05rem; margin: 28px 0 8px; }
+p, li { color: var(--muted); }
+.f { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+.h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+pre { white-space: pre-wrap; font: inherit; margin: 6px 0 0; color: var(--muted); max-height: 9em; overflow: auto; }
+button { font: inherit; border: 0; border-radius: 6px; padding: 4px 14px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+button.done { opacity: 0.6; }
+code { font-family: Consolas, monospace; }
+</style></head><body>
+<h1>Trailmark: Chrome Web Store fields</h1>
+<p>Open <b>chrome.google.com/webstore/devconsole</b>, click <b>New item</b> and upload <code>dist/trailmark-extension-1.0.0-chrome-web-store.zip</code>. Then copy each field below into the matching box.</p>
+<h2>Files to upload</h2>
+<ul>
+<li>Store icon: <code>apps/extension/public/icon/128.png</code></li>
+<li>Screenshots: <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code></li>
+<li>Small promo tile: <code>docs/webstore/images/promo-440x280.png</code></li>
+</ul>
+<h2>Store listing</h2><div class="f"><div class="h"><b>Name</b><button data-i="0">Copy</button></div><pre id="t0">Trailmark</pre></div>
+<div class="f"><div class="h"><b>Summary</b><button data-i="1">Copy</button></div><pre id="t1">Record a process once and get a step-by-step guide with screenshots. Private: everything stays on your computer.</pre></div>
+<div class="f"><div class="h"><b>Description</b><button data-i="2">Copy</button></div><pre id="t2">Show a process once, and Trailmark writes the how-to guide for you.
+
+Click Start, do the task as usual, then click Finish. Every click, entry and choice becomes a step with a written instruction and a screenshot that highlights what you clicked. Steps appear in the side panel as you go, and you can delete any of them before you finish.
+
+PRIVATE BY DESIGN
+• Everything stays on your computer. No account, no cloud, no tracking.
+• Passwords, one-time codes and card numbers are never recorded.
+• Secure Blur finds emails, phone numbers, card, bank and tax numbers in your screenshots so you can blur them before sharing.
+
+EDIT AND SHARE
+• Reorder steps, add sections, tips and warnings, crop and annotate screenshots.
+• Export to PDF, Word, Markdown or HTML, or copy into a document or wiki.
+• Version history: go back to any earlier version.
+
+GUIDE PEOPLE THROUGH IT
+• Guide Me shows each step on the real page, one at a time.
+• Run for me does the steps for you and stops before anything irreversible.
+• Pin guides and notes to the pages where they are needed.
+
+FOR AUTOMATION
+• Each guide also holds a precise, machine-readable procedure that automation tools and AI agents can follow, with a ready-made Playwright test.
+
+Free and open source (MIT licence).</pre></div>
+<div class="f"><div class="h"><b>Category</b><button data-i="3">Copy</button></div><pre id="t3">Productivity → Workflow &amp; Planning</pre></div>
+<h2>Privacy</h2><div class="f"><div class="h"><b>Single purpose</b><button data-i="4">Copy</button></div><pre id="t4">Trailmark records a process the user performs in the browser and turns it into a step-by-step guide that people can read, follow on the page, or have performed for them.</pre></div>
+<div class="f"><div class="h"><b>Justification: sidePanel</b><button data-i="5">Copy</button></div><pre id="t5">The side panel is Trailmark's main control: start and finish a recording, see the steps as they are recorded, and follow guides.</pre></div>
+<div class="f"><div class="h"><b>Justification: storage</b><button data-i="6">Copy</button></div><pre id="t6">Saves the user's settings, page notes and the state of a recording in progress, on this device.</pre></div>
+<div class="f"><div class="h"><b>Justification: unlimitedStorage</b><button data-i="7">Copy</button></div><pre id="t7">Guides contain many screenshots; they are kept on this device, and a long guide can exceed the default storage quota.</pre></div>
+<div class="f"><div class="h"><b>Justification: scripting</b><button data-i="8">Copy</button></div><pre id="t8">While the user records or follows a guide, Trailmark adds its recording or guidance script to that page to see clicks and typing, or to highlight the next step. Nothing is added to other pages or at other times.</pre></div>
+<div class="f"><div class="h"><b>Justification: webNavigation</b><button data-i="9">Copy</button></div><pre id="t9">Notices when the recorded tab goes to a new page, so the page change becomes a step and its frames are mapped correctly.</pre></div>
+<div class="f"><div class="h"><b>Justification: Host permission &lt;all_urls&gt; (optional)</b><button data-i="10">Copy</button></div><pre id="t10">Requested only when the user first starts a recording or a walkthrough, because guides can be recorded on any website the user chooses. Used to take screenshots of the visible tab and to run the recording script on it.</pre></div>
+<div class="f"><div class="h"><b>Justification: nativeMessaging (optional)</b><button data-i="11">Copy</button></div><pre id="t11">Requested only if the user turns on the connection to the Trailmark desktop app, to record Windows programs into the same guide. It talks only to that app, on the same computer.</pre></div>
+<div class="f"><div class="h"><b>Are you using remote code?</b><button data-i="12">Copy</button></div><pre id="t12">No</pre></div>
+<h2>Privacy: data usage</h2>
+<p>Tick <b>Website content</b> and <b>User activity</b>, then tick all three statements (not sold; not used for unrelated purposes; not used for creditworthiness or lending). Paste the privacy policy's link into <b>Privacy policy URL</b>.</p>
+<h2>Distribution</h2>
+<p>Visibility <b>Unlisted</b> · all regions · free. Then <b>Submit for review</b>.</p>
+<script>
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-i]');
+  if (!b) return;
+  await navigator.clipboard.writeText(document.getElementById('t' + b.dataset.i).textContent);
+  b.textContent = 'Copied'; b.classList.add('done');
+});
+</script>
+</body></html>
