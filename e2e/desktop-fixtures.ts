@@ -164,7 +164,7 @@ export class Desktop {
     );
   }
 
-  /** Minimise Trailmark's window so the app under test is in front. */
+  /** Minimise ABCXYZ's window so the app under test is in front. */
   async minimise(): Promise<void> {
     await this.app.evaluate(({ BrowserWindow }) => {
       for (const w of BrowserWindow.getAllWindows()) if (w.isVisible()) w.minimize();

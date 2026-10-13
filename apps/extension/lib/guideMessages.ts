@@ -69,7 +69,7 @@ export const SettingsSchema = z.object({
   guidanceEnabled: z.boolean(),
   /** Optional on-device AI (off by default). */
   aiEnabled: z.boolean(),
-  /** Connect to the Trailmark desktop app (native messaging). */
+  /** Connect to the ABCXYZ desktop app (native messaging). */
   desktopApp: z.boolean(),
   /** Keep guides in the desktop app's library instead of browser storage. */
   desktopLibrary: z.boolean(),
@@ -77,7 +77,7 @@ export const SettingsSchema = z.object({
   desktopAsked: z.boolean(),
   /** How typed values in new guides are used (U4): fixed, ask every run, ask with a default. */
   defaultInputMode: InputModeSchema,
-  /** Colours of Trailmark's pages. */
+  /** Colours of ABCXYZ's pages. */
   theme: z.enum(['system', 'light', 'dark']),
   /** Live Blur is on when a capture starts. */
   liveBlurDefault: z.boolean(),

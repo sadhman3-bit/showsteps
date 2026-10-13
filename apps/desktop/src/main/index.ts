@@ -313,7 +313,7 @@ function showMain(hash = ''): void {
     mainWindow = new BrowserWindow({
       width: 1280,
       height: 860,
-      title: 'Trailmark',
+      title: 'ABCXYZ',
       icon,
       show: false,
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
@@ -322,7 +322,7 @@ function showMain(hash = ''): void {
     mainWindow.once('ready-to-show', () => mainWindow?.show());
     void mainWindow.loadFile(join(renderer, 'index.html'), hash ? { hash: hash.slice(1) } : {});
     mainWindow.on('close', (e) => {
-      // Closing the window keeps Trailmark in the tray (the shortcut still works).
+      // Closing the window keeps ABCXYZ in the tray (the shortcut still works).
       if (!quitting) {
         e.preventDefault();
         mainWindow?.hide();
@@ -340,10 +340,10 @@ let quitting = false;
 function updateTray(): void {
   if (!tray) return;
   const recording = recorder.isActive;
-  tray.setToolTip(recording ? 'Trailmark: recording' : 'Trailmark');
+  tray.setToolTip(recording ? 'ABCXYZ: recording' : 'ABCXYZ');
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: 'Open Trailmark', click: () => showMain() },
+      { label: 'Open ABCXYZ', click: () => showMain() },
       recording
         ? { label: 'Finish capture', click: () => void finishCapture() }
         : { label: `Start capture (Ctrl+Alt+R)`, click: () => void startCapture() },
@@ -449,7 +449,7 @@ void app.whenReady().then(async () => {
   await registerNativeHost(app.getPath('userData'), hostExe).catch(() => undefined);
   await bridge
     .listen()
-    .catch((error: unknown) => console.error('Trailmark: bridge unavailable', error));
+    .catch((error: unknown) => console.error('ABCXYZ: bridge unavailable', error));
 
   tray = new Tray(nativeImage.createFromPath(icon).resize({ width: 16, height: 16 }));
   tray.on('click', () => showMain());

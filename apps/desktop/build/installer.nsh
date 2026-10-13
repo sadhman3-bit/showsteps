@@ -1,4 +1,4 @@
-; Trailmark installer hooks (per-user NSIS from electron-builder).
+; ABCXYZ installer hooks (per-user NSIS from electron-builder).
 ; Install: the app registers its Chrome/Edge native messaging host for this user.
 ; Uninstall: remove those registry keys and the host manifest. Guides are left in place.
 
@@ -11,5 +11,5 @@
   DeleteRegKey HKCU "Software\Google\Chrome\NativeMessagingHosts\com.trailmark.host"
   DeleteRegKey HKCU "Software\Chromium\NativeMessagingHosts\com.trailmark.host"
   DeleteRegKey HKCU "Software\Microsoft\Edge\NativeMessagingHosts\com.trailmark.host"
-  Delete "$APPDATA\Trailmark\com.trailmark.host.json"
+  Delete "$APPDATA\ABCXYZ\com.trailmark.host.json"
 !macroend

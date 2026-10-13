@@ -38,7 +38,7 @@ Use your own username.
 
 **You’re done when:** The page says “Invoice submitted”.
 
-*Agent-readable procedure embedded (Trailmark schema v1).*
+*Agent-readable procedure embedded (ABCXYZ schema v1).*
 
 <details><summary>Agent procedure</summary>
 

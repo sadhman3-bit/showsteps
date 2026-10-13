@@ -26,7 +26,7 @@ export const EXTENSION_IDS: string[] = [EXTENSION_ID, extensionKey.webstoreId].f
 export function hostManifest(hostExe: string): object {
   return {
     name: BRIDGE_HOST,
-    description: 'Trailmark desktop app bridge',
+    description: 'ABCXYZ desktop app bridge',
     path: hostExe,
     type: 'stdio',
     allowed_origins: EXTENSION_IDS.map((id) => `chrome-extension://${id}/`),

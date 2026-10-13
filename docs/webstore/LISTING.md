@@ -1,6 +1,6 @@
 # Chrome Web Store submission
 
-Everything needed to publish the Trailmark extension. Each field below matches a field on the store's developer dashboard, so you can copy and paste.
+Everything needed to publish the ABCXYZ extension. Each field below matches a field on the store's developer dashboard, so you can copy and paste.
 
 **Files** (made by `pnpm release` and `pnpm store:images`):
 
@@ -23,7 +23,7 @@ Everything needed to publish the Trailmark extension. Each field below matches a
 
 ## Store listing
 
-**Name:** Trailmark
+**Name:** ABCXYZ
 
 **Summary** (132 characters or fewer):
 
@@ -35,7 +35,7 @@ Everything needed to publish the Trailmark extension. Each field below matches a
 
 **Description:**
 
-> Show a process once, and Trailmark writes the how-to guide for you.
+> Show a process once, and ABCXYZ writes the how-to guide for you.
 >
 > Click Start, do the task as usual, then click Finish. Every click, entry and choice becomes a step with a written instruction and a screenshot that highlights what you clicked. Steps appear in the side panel as you go, and you can delete any of them before you finish.
 >
@@ -63,23 +63,23 @@ Everything needed to publish the Trailmark extension. Each field below matches a
 
 **Single purpose:**
 
-> Trailmark records a process the user performs in the browser and turns it into a step-by-step guide that people can read, follow on the page, or have performed for them.
+> ABCXYZ records a process the user performs in the browser and turns it into a step-by-step guide that people can read, follow on the page, or have performed for them.
 
 **Permission justifications:**
 
 | Permission                              | Justification                                                                                                                                                                                                              |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sidePanel`                             | The side panel is Trailmark's main control: start and finish a recording, see the steps as they are recorded, and follow guides.                                                                                           |
+| `sidePanel`                             | The side panel is ABCXYZ's main control: start and finish a recording, see the steps as they are recorded, and follow guides.                                                                                              |
 | `storage`                               | Saves the user's settings, page notes and the state of a recording in progress, on this device.                                                                                                                            |
 | `unlimitedStorage`                      | Guides contain many screenshots; they are kept on this device, and a long guide can exceed the default storage quota.                                                                                                      |
-| `scripting`                             | While the user records or follows a guide, Trailmark adds its recording or guidance script to that page to see clicks and typing, or to highlight the next step. Nothing is added to other pages or at other times.        |
+| `scripting`                             | While the user records or follows a guide, ABCXYZ adds its recording or guidance script to that page to see clicks and typing, or to highlight the next step. Nothing is added to other pages or at other times.           |
 | `webNavigation`                         | Notices when the recorded tab goes to a new page, so the page change becomes a step and its frames are mapped correctly.                                                                                                   |
 | Host permission `<all_urls>` (optional) | Requested only when the user first starts a recording or a walkthrough, because guides can be recorded on any website the user chooses. Used to take screenshots of the visible tab and to run the recording script on it. |
-| `nativeMessaging` (optional)            | Requested only if the user turns on the connection to the Trailmark desktop app, to record Windows programs into the same guide. It talks only to that app, on the same computer.                                          |
+| `nativeMessaging` (optional)            | Requested only if the user turns on the connection to the ABCXYZ desktop app, to record Windows programs into the same guide. It talks only to that app, on the same computer.                                             |
 
 **Are you using remote code?** No. All code is in the package, including the OCR engine and its language data.
 
-**Data usage.** Trailmark stores data only on the user's device and never sends it to the developer or to anyone else. The store's form asks what the extension handles. To be transparent, tick:
+**Data usage.** ABCXYZ stores data only on the user's device and never sends it to the developer or to anyone else. The store's form asks what the extension handles. To be transparent, tick:
 
 - **Website content** (screenshots and page text of pages the user records)
 - **User activity** (the clicks and typing that make up a recorded step)

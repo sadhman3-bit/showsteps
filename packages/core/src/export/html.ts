@@ -37,7 +37,7 @@ function head(title: string, css: string): string {
     '<meta charset="utf-8">',
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">`,
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<meta name="generator" content="Trailmark">',
+    '<meta name="generator" content="ABCXYZ">',
     `<title>${escapeHtml(title)}</title>`,
     `<style>${css}</style>`,
     '</head>',

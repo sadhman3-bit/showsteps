@@ -1,4 +1,4 @@
-// Builds the two sample guides that ship with Trailmark (apps/extension/public/samples/).
+// Builds the two sample guides that ship with ABCXYZ (apps/extension/public/samples/).
 // Records real flows in the demo app with the e2e extension build, then adds sections, tips
 // and descriptions with the same core editing operations the editor uses.
 // Run: pnpm make:samples (after pnpm build and pnpm setup:browsers). Output is committed.
@@ -139,7 +139,7 @@ try {
   );
   guide = { ...guide, title: 'Create a supplier invoice in Ledgerline' };
   guide.description =
-    'Enter a supplier invoice and send it for approval. A sample made from the Trailmark demo app.';
+    'Enter a supplier invoice and send it for approval. A sample made from the ABCXYZ demo app.';
   guide.tags = ['sample', 'accounts payable'];
   guide.preconditions = ['You have a Ledgerline account'];
   guide.success = 'The page says “Invoice submitted” with the invoice number.';
@@ -181,8 +181,7 @@ try {
     },
   ));
   guide = { ...guide, title: 'Run a monthly report in Ledgerline' };
-  guide.description =
-    'Produce last month’s report. A short sample made from the Trailmark demo app.';
+  guide.description = 'Produce last month’s report. A short sample made from the ABCXYZ demo app.';
   guide.tags = ['sample', 'reports'];
   guide = core.insertCallout(guide, null, 'note', 'Reports cover whole calendar months.').guide;
   guide = describe(

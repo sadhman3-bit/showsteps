@@ -24,7 +24,7 @@ export interface UserSettings {
 
 export type Theme = 'system' | 'light' | 'dark';
 
-/** Show Trailmark's pages in light, dark or the system's colours. */
+/** Show ABCXYZ's pages in light, dark or the system's colours. */
 export function applyTheme(theme: Theme | undefined): void {
   if (!theme || theme === 'system') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;

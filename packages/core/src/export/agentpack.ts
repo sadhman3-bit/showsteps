@@ -202,7 +202,7 @@ function skillMarkdownWith(
   }
   if (p.success) out.push('## Done when', '', p.success, '');
   out.push('## Files', '');
-  out.push('- `references/procedure.json`: the full structured procedure (Trailmark schema v1).');
+  out.push('- `references/procedure.json`: the full structured procedure (ABCXYZ schema v1).');
   out.push('- `scripts/replay.spec.ts`: Playwright replay of the web steps.');
   if (screenshots)
     out.push('- `assets/screenshots/step-NN.png`: what the screen looked like at each step.');
@@ -301,7 +301,7 @@ export function validateAgentPack(
   try {
     const p = JSON.parse(json ?? '') as Procedure;
     if (p.format !== 'trailmark-procedure')
-      problems.push({ file: 'references/procedure.json', message: 'not a Trailmark procedure' });
+      problems.push({ file: 'references/procedure.json', message: 'not a ABCXYZ procedure' });
   } catch {
     problems.push({ file: 'references/procedure.json', message: 'missing or not JSON' });
   }

@@ -84,10 +84,8 @@ export class IndexedDbStore implements GuideStore {
         };
         resolve(db);
       };
-      open.onerror = () =>
-        reject(open.error ?? new StorageError('Could not open Trailmark storage'));
-      open.onblocked = () =>
-        reject(new StorageError('Trailmark storage is busy in another window'));
+      open.onerror = () => reject(open.error ?? new StorageError('Could not open ABCXYZ storage'));
+      open.onblocked = () => reject(new StorageError('ABCXYZ storage is busy in another window'));
     });
     return this.dbPromise;
   }

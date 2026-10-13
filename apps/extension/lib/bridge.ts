@@ -1,5 +1,5 @@
 // The extension's side of the desktop bridge: Chrome native messaging to trailmark-host.exe,
-// which relays to the Trailmark desktop app. Used by the service worker (capture, guidance) and
+// which relays to the ABCXYZ desktop app. Used by the service worker (capture, guidance) and
 // by pages (the library, when guides live in the desktop library).
 import {
   BRIDGE_HOST,

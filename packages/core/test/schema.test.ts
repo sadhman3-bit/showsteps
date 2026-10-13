@@ -148,9 +148,9 @@ describe('migrations', () => {
     expect(migrateRaw(g)).toBe(g);
   });
 
-  it('refuses guides from a newer Trailmark with a friendly message', () => {
+  it('refuses guides from a newer ABCXYZ with a friendly message', () => {
     expect(() => parseGuide({ ...sampleGuide(), schemaVersion: 99 })).toThrow(
-      /newer version of Trailmark/,
+      /newer version of ABCXYZ/,
     );
   });
 
@@ -159,8 +159,8 @@ describe('migrations', () => {
   });
 
   it('refuses non-guides', () => {
-    expect(() => parseGuide('hello')).toThrow(/not a Trailmark guide/);
-    expect(() => parseGuide([])).toThrow(/not a Trailmark guide/);
+    expect(() => parseGuide('hello')).toThrow(/not a ABCXYZ guide/);
+    expect(() => parseGuide([])).toThrow(/not a ABCXYZ guide/);
     expect(() => parseGuide({ schemaVersion: 'one' })).toThrow(/invalid schema version/);
   });
 });

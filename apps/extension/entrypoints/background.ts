@@ -131,7 +131,7 @@ export default defineBackground(() => {
     frames,
     async captureVisibleTab(tabId, { windowId, uiHidden }) {
       const window = windowId ?? (await browser.tabs.get(tabId)).windowId;
-      // Keep Trailmark's own controls out of the picture. Input in the top frame has already
+      // Keep ABCXYZ's own controls out of the picture. Input in the top frame has already
       // hidden them; anything else (iframes, navigations) asks the top frame first.
       // Input in the top frame hid them synchronously, before asking; the message round trip
       // gives that change time to reach the screen. Anything else (iframes, navigations) asks.
@@ -241,7 +241,7 @@ export default defineBackground(() => {
   });
 
   browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error: unknown) => {
-    console.error('Trailmark: could not set side panel behaviour', error);
+    console.error('ABCXYZ: could not set side panel behaviour', error);
   });
 
   // ---------- Content scripts ----------
@@ -408,7 +408,7 @@ export default defineBackground(() => {
             msg.shotId,
             msg.observeId,
           )
-          .catch((error: unknown) => console.error('Trailmark: could not record step', error));
+          .catch((error: unknown) => console.error('ABCXYZ: could not record step', error));
         return { ok: true };
       case 'shot-words':
         if (frameId === 0) recorder.shotWords(msg.shotId, msg.words);
@@ -481,7 +481,7 @@ export default defineBackground(() => {
       sender.url?.startsWith(extensionOrigin) && !sender.tab?.url?.match(/^(https?|file):/);
     const respond = (p: Promise<unknown>) => {
       p.then(sendResponse, (error: unknown) => {
-        console.error('Trailmark:', error);
+        console.error('ABCXYZ:', error);
         sendResponse({ error: 'internal' });
       });
       return true;

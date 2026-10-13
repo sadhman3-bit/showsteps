@@ -4,7 +4,7 @@ import { GuideFormatError, parseGuide, serializeGuide } from './migrations.js';
 import type { Guide } from './schema.js';
 import { assertSafeName, type GuideStore } from './storage/types.js';
 
-/** File extension of a Trailmark guide archive (a zip of the guide folder). */
+/** File extension of a ABCXYZ guide archive (a zip of the guide folder). */
 export const ARCHIVE_EXTENSION = '.trailmark';
 const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
@@ -40,10 +40,10 @@ export async function importGuideArchive(
   try {
     entries = unzipSync(bytes);
   } catch {
-    throw new GuideFormatError('This file is not a Trailmark guide.');
+    throw new GuideFormatError('This file is not a ABCXYZ guide.');
   }
   const json = entries['guide.json'];
-  if (!json) throw new GuideFormatError('This file is not a Trailmark guide (no guide.json).');
+  if (!json) throw new GuideFormatError('This file is not a ABCXYZ guide (no guide.json).');
   let raw: unknown;
   try {
     raw = JSON.parse(strFromU8(json));

@@ -103,7 +103,7 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
     .brand svg { width: 64px; height: 64px; }
     p { margin: 0; font-size: 17px; line-height: 1.35; color: var(--tm-chrome-muted); }
     b { color: var(--tm-chrome-accent); font-weight: 600; }</style>
-    <div class="brand">${icon}Trailmark</div>
+    <div class="brand">${icon}ABCXYZ</div>
     <p>Record a process once. Get a step-by-step guide.<br><b>Private: nothing leaves your computer.</b></p>`);
   await tile.screenshot({ path: `${OUT}promo-440x280.png` });
 });

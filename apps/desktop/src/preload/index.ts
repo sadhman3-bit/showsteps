@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 
-// The only door between Trailmark's pages and the main process: named channels, no Node.
+// The only door between ABCXYZ's pages and the main process: named channels, no Node.
 const INVOKE = new Set([
   'settings:get',
   'settings:set',

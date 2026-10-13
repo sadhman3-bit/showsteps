@@ -78,7 +78,7 @@ export class DesktopRecorder {
     deps.helper.on('event', (ev) => {
       if (this.state.status !== 'recording') return;
       void this.serial(() => this.onEvent(ev)).catch((error: unknown) =>
-        console.error('Trailmark: could not record desktop step', error),
+        console.error('ABCXYZ: could not record desktop step', error),
       );
     });
   }

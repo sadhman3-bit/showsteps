@@ -49,9 +49,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   const { guideId } = await startOn(serviceWorker, 'http://localhost:5173/');
   expect(guideId).toBeTruthy();
   const controller = page.locator('trailmark-controller');
-  await expect(
-    controller.getByRole('toolbar', { name: 'Trailmark capture controls' }),
-  ).toBeVisible();
+  await expect(controller.getByRole('toolbar', { name: 'ABCXYZ capture controls' })).toBeVisible();
   await human(page);
 
   // Page 1: login (full page load afterwards)

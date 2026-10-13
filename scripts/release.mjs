@@ -21,7 +21,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const version = JSON.parse(readFileSync(join(root, 'apps/extension/package.json'), 'utf8')).version;
 const dist = join(root, 'dist');
 const extension = join(root, 'apps/extension/.output/chrome-mv3');
-const installer = join(root, 'apps/desktop/release', `Trailmark-Setup-${version}.exe`);
+const installer = join(root, 'apps/desktop/release', `ABCXYZ-Setup-${version}.exe`);
 
 for (const [path, what] of [
   [join(extension, 'manifest.json'), 'the extension build (pnpm build)'],
@@ -76,7 +76,7 @@ const files = {
   ),
 };
 for (const [name, bytes] of Object.entries(files)) writeFileSync(join(dist, name), bytes);
-copyFileSync(installer, join(dist, `Trailmark-Setup-${version}.exe`));
+copyFileSync(installer, join(dist, `ABCXYZ-Setup-${version}.exe`));
 
 const sums = readdirSync(dist)
   .sort()

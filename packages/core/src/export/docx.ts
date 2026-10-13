@@ -183,7 +183,7 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
     );
 
   const file = new Document({
-    creator: 'Trailmark',
+    creator: 'ABCXYZ',
     title: doc.title,
     ...(doc.description ? { description: doc.description } : {}),
     styles: {
@@ -288,7 +288,7 @@ export function withProcedurePart(docx: Uint8Array, json: string): Uint8Array {
   return zipSync(files, { level: 6 });
 }
 
-/** The procedure JSON from a Word file made by Trailmark, if it has one. */
+/** The procedure JSON from a Word file made by ABCXYZ, if it has one. */
 export function procedureFromDocx(docx: Uint8Array): string | undefined {
   const item = unzipSync(docx)['customXml/item1.xml'];
   if (!item) return undefined;

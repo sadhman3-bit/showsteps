@@ -1,10 +1,10 @@
 {
   "name": "@trailmark/desktop",
-  "productName": "Trailmark",
+  "productName": "ABCXYZ",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Trailmark for Windows: record desktop and web steps, edit, export and guide.",
+  "description": "ABCXYZ for Windows: record desktop and web steps, edit, export and guide.",
   "type": "module",
   "main": "dist/main/index.cjs",
   "scripts": {
@@ -27,7 +27,7 @@
   },
   "build": {
     "appId": "app.trailmark.desktop",
-    "productName": "Trailmark",
+    "productName": "ABCXYZ",
     "copyright": "MIT licence",
     "directories": {
       "output": "release",
@@ -63,7 +63,7 @@
       "createDesktopShortcut": true,
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
-      "artifactName": "Trailmark-Setup-${version}.${ext}"
+      "artifactName": "ABCXYZ-Setup-${version}.${ext}"
     }
   }
 }

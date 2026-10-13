@@ -40,7 +40,7 @@ function desktopLibraryOn(): Promise<boolean> {
 }
 
 /**
- * Settings → Delete all Trailmark data: stop captures and guides, clear settings, notes and
+ * Settings → Delete all ABCXYZ data: stop captures and guides, clear settings, notes and
  * pins, and delete the guide database in this browser.
  */
 export async function deleteAllData(): Promise<void> {

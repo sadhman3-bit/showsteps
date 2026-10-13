@@ -1,4 +1,4 @@
-// Simple stroke icons drawn for Trailmark (24×24 grid, currentColor).
+// Simple stroke icons drawn for ABCXYZ (24×24 grid, currentColor).
 const PATHS = {
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',

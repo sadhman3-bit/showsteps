@@ -15,10 +15,10 @@ pnpm build
 
 1. Open `chrome://extensions` in Chrome.
 2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and choose `apps\extension\.output\chrome-mv3` inside the Trailmark folder.
-4. Pin Trailmark: click the puzzle-piece icon in the toolbar, then the pin next to Trailmark.
+3. Click **Load unpacked** and choose `apps\extension\.output\chrome-mv3` inside the ABCXYZ folder.
+4. Pin ABCXYZ: click the puzzle-piece icon in the toolbar, then the pin next to ABCXYZ.
 
-After a rebuild, click the circular reload arrow on Trailmark's card in `chrome://extensions`.
+After a rebuild, click the circular reload arrow on ABCXYZ's card in `chrome://extensions`.
 
 ### Start the demo app
 
@@ -35,9 +35,9 @@ Then open <http://localhost:5173>. Any username and password work; nothing is st
 ### MT-M0-1 Side panel opens from the toolbar icon
 
 1. Load the extension (above).
-2. Click the Trailmark toolbar icon.
+2. Click the ABCXYZ toolbar icon.
 
-**Expected:** a side panel opens on the right showing "Trailmark", the tagline and "Everything stays on this computer. Nothing is uploaded." No errors appear on the extension's card in `chrome://extensions`.
+**Expected:** a side panel opens on the right showing "ABCXYZ", the tagline and "Everything stays on this computer. Nothing is uploaded." No errors appear on the extension's card in `chrome://extensions`.
 
 ---
 
@@ -48,15 +48,15 @@ Use the normal build (`apps\extension\.output\chrome-mv3`), not the `-e2e` one. 
 ### MT-M2-1 First capture asks for website access
 
 1. Remove and re-add the extension (Load unpacked) so it starts with no access.
-2. Open <http://localhost:5173>, click the Trailmark icon, then **Start capture**.
+2. Open <http://localhost:5173>, click the ABCXYZ icon, then **Start capture**.
 
-**Expected:** Chrome asks to let Trailmark read and change data on all websites. Choose **Allow**: a dark toolbar appears at the bottom right of the page saying "Recording · 1 step". Choosing **Deny** instead shows "Trailmark needs website access to record…" in the side panel.
+**Expected:** Chrome asks to let ABCXYZ read and change data on all websites. Choose **Allow**: a dark toolbar appears at the bottom right of the page saying "Recording · 1 step". Choosing **Deny** instead shows "ABCXYZ needs website access to record…" in the side panel.
 
 ### MT-M2-2 Keyboard shortcut
 
 1. On the demo page, press **Alt+Shift+R**.
 2. Click a couple of things, then press **Alt+Shift+R** again.
-3. Open `chrome://extensions/shortcuts` and check that Trailmark's "Start or finish a capture" can be changed.
+3. Open `chrome://extensions/shortcuts` and check that ABCXYZ's "Start or finish a capture" can be changed.
 
 **Expected:** the first press starts recording (the toolbar appears); the second finishes it, and the side panel shows "Guide saved." If access was never granted, the first press opens the side panel instead.
 
@@ -99,7 +99,7 @@ Record a short, safe process in SharePoint, Redmap and Pronto Xi (for example: o
 ### MT-M2-9 Recording survives Chrome pausing the extension
 
 1. Start a capture and record one click.
-2. Open `chrome://serviceworker-internals`, find Trailmark and click **Stop**.
+2. Open `chrome://serviceworker-internals`, find ABCXYZ and click **Stop**.
 3. Back on the page, click two more things, then **Finish**.
 
 **Expected:** the guide has all the steps.
@@ -135,7 +135,7 @@ Edit a guide for a few minutes (a version is kept at most every 2 minutes and wh
 
 ### MT-M3-6 Sample guides on first install
 
-Remove Trailmark from `chrome://extensions`, then Load unpacked again and open the library. **Expected:** two sample guides are there ("Create a supplier invoice in Ledgerline" and "Run a monthly report in Ledgerline").
+Remove ABCXYZ from `chrome://extensions`, then Load unpacked again and open the library. **Expected:** two sample guides are there ("Create a supplier invoice in Ledgerline" and "Run a monthly report in Ledgerline").
 
 ---
 
@@ -230,9 +230,9 @@ Build the installer with `pnpm --filter @trailmark/desktop dist` (output in `app
 
 ### MT-M6-1 Install and uninstall for one user
 
-Run `Trailmark-Setup-<version>.exe` without admin rights and keep the default folder.
+Run `ABCXYZ-Setup-<version>.exe` without admin rights and keep the default folder.
 
-**Expected:** no UAC prompt. Trailmark is in the Start menu and on the desktop. `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.trailmark.host` points at `%APPDATA%\Trailmark\com.trailmark.host.json`. Uninstall from Settings → Apps: that key (and the Chromium and Edge ones) and the manifest are gone, and `Documents\Trailmark\Library` is still there.
+**Expected:** no UAC prompt. ABCXYZ is in the Start menu and on the desktop. `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.trailmark.host` points at `%APPDATA%\ABCXYZ\com.trailmark.host.json`. Uninstall from Settings → Apps: that key (and the Chromium and Edge ones) and the manifest are gone, and `Documents\ABCXYZ\Library` is still there.
 
 ### MT-M6-2 Record Excel
 
@@ -305,7 +305,7 @@ In the unzipped pack, run `npx playwright test scripts/replay.spec.ts` with `TM_
 
 Export the guide as PDF, Word, Markdown and a web page.
 
-**Expected:** each ends with "Agent-readable procedure embedded (Trailmark schema v1)." In detail:
+**Expected:** each ends with "Agent-readable procedure embedded (ABCXYZ schema v1)." In detail:
 
 - the PDF has an attachment, `procedure.json` (in Acrobat or Edge, the attachments pane);
 - the Word file opens normally;
@@ -365,7 +365,7 @@ Record two steps.
 
 ### MT-M9-4 Delete all data
 
-Export a guide you want to keep, then click **Settings → Delete all Trailmark data… → Delete everything**.
+Export a guide you want to keep, then click **Settings → Delete all ABCXYZ data… → Delete everything**.
 
 **Expected:** the library reloads empty (the sample guides can be added again), and settings, notes and pins are back to their defaults.
 
@@ -373,4 +373,4 @@ Export a guide you want to keep, then click **Settings → Delete all Trailmark 
 
 Run `pnpm release`. On a clean Windows user account, follow the README's **Install** section using only the files in `dist/`.
 
-**Expected:** the extension loads with Load unpacked, the desktop app installs without admin rights, and turning on **Use the Trailmark desktop app** connects the two (the desktop app shows "Connected to the Trailmark browser extension").
+**Expected:** the extension loads with Load unpacked, the desktop app installs without admin rights, and turning on **Use the ABCXYZ desktop app** connects the two (the desktop app shows "Connected to the ABCXYZ browser extension").

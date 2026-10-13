@@ -13,7 +13,7 @@ export const BRAND_FONTS: Record<string, string> = {
 /** Fonts with serifs, for exporters that map branding onto a built-in font family. */
 export const SERIF_FONTS = new Set(['Georgia', 'Cambria']);
 
-/** Trailmark's own accent and highlight colours, used when a guide has no branding. */
+/** ABCXYZ's own accent and highlight colours, used when a guide has no branding. */
 export const DEFAULT_ACCENT = '#0f6b62';
 export const HIGHLIGHT_COLOR = '#c2410c';
 
@@ -34,13 +34,13 @@ export function textOn(hex: string): '#ffffff' | '#111111' {
   return lum > 0.4 ? '#111111' : '#ffffff';
 }
 
-/** The guide's accent colour, or Trailmark's. */
+/** The guide's accent colour, or ABCXYZ's. */
 export function accentOf(guide: Pick<Guide, 'branding'>): string {
   const accent = guide.branding?.accent;
   return isHexColor(accent) ? accent : DEFAULT_ACCENT;
 }
 
-/** The guide's branding font name if it is one Trailmark offers. */
+/** The guide's branding font name if it is one ABCXYZ offers. */
 export function fontOf(guide: Pick<Guide, 'branding'>): string | undefined {
   const f = guide.branding?.font;
   return f && BRAND_FONTS[f] ? f : undefined;

@@ -1,4 +1,4 @@
-// Demo app server for Trailmark tests. No dependencies.
+// Demo app server for ABCXYZ tests. No dependencies.
 // Main origin serves the app; a second port serves the cross-origin iframe widget.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -125,6 +125,6 @@ if (isMain) {
   const port = Number(process.env.DEMO_PORT ?? 5173);
   const xoriginPort = Number(process.env.DEMO_XORIGIN_PORT ?? 5174);
   const app = await startDemoApp({ port, xoriginPort });
-  console.log(`Trailmark demo app:   ${app.url}`);
+  console.log(`ABCXYZ demo app:   ${app.url}`);
   console.log(`Cross-origin widget:  http://127.0.0.1:${app.xoriginPort}`);
 }

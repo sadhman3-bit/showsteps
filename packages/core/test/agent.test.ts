@@ -300,7 +300,7 @@ describe('embedded procedure in human exports (U3)', () => {
       html,
     );
     expect(procedureOf(m![1]!).steps).toHaveLength(17);
-    expect(html).toContain('Agent-readable procedure embedded (Trailmark schema v1).');
+    expect(html).toContain('Agent-readable procedure embedded (ABCXYZ schema v1).');
   });
 
   it('Markdown: a collapsed block at the end', () => {
@@ -310,7 +310,7 @@ describe('embedded procedure in human exports (U3)', () => {
         md,
       );
     expect(procedureOf(m![1]!).steps).toHaveLength(17);
-    expect(md).toContain('*Agent-readable procedure embedded (Trailmark schema v1).*');
+    expect(md).toContain('*Agent-readable procedure embedded (ABCXYZ schema v1).*');
   });
 
   it('Word: a custom XML part', async () => {
@@ -328,7 +328,7 @@ describe('embedded procedure in human exports (U3)', () => {
     const pdf = await getDocument({ data: bytes.slice() }).promise;
     const attachments = (await pdf.getAttachments()) as Map<string, { description: string }>;
     expect(attachments.get('procedure.json')?.description).toBe(
-      'Agent-readable procedure embedded (Trailmark schema v1).',
+      'Agent-readable procedure embedded (ABCXYZ schema v1).',
     );
     const last = await pdf.getPage(pdf.numPages);
     const text = (await last.getTextContent()).items

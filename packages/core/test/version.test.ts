@@ -7,6 +7,6 @@ describe('core package', () => {
   });
 
   it('exposes the product name', () => {
-    expect(PRODUCT_NAME).toBe('Trailmark');
+    expect(PRODUCT_NAME).toBe('ABCXYZ');
   });
 });

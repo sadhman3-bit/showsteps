@@ -41,7 +41,7 @@ export interface Viewport {
 export interface ShotOptions {
   /** Known window of the tab (saves a lookup on the hot path). */
   windowId?: number;
-  /** The page already hid Trailmark's controls and painted, so no round trip is needed. */
+  /** The page already hid ABCXYZ's controls and painted, so no round trip is needed. */
   uiHidden?: boolean;
   /** When the input happened (epoch ms, from the page). */
   inputAt?: number;
