@@ -182,7 +182,12 @@ Fixes found while testing:
 - [x] P7b (owner request): agent instructions tuned for computer-use agents and the GitHub Copilot coding agent (Agent Pack, embedded procedure, repo instructions): SKILL.md gains "How it runs" with browser-automation (Playwright, Playwright MCP, Copilot) and computer-use sections, each step an "On screen" position and its screenshot; every procedure step carries `screen` (target box as fractions of the screen); packs include AGENTS.md; the repo has AGENTS.md, .github/copilot-instructions.md and a copilot-setup-steps workflow
 - [x] P8: desktop app: shared tokens and components, navy pill controller window (44 px buttons, Undo step), overlay matching Guide Me, lockup in the window bar, About dialog (Ripple band, lockup, version, licences; also in the extension library), new tray icons, installer ShowSteps-Setup-1.0.0.exe with the new icon; links open in the browser, never in app windows; licences (NOTICES.txt with every bundled package, OFL font licences) ship in both apps
 - [x] P9: store images (3 × 1280×800, 440×280 promo, 1400×560 marquee), README with screenshots and the move from Trailmark/ABCXYZ, docs/design/POLISH_REPORT.md, after screenshots, accessibility e2e (names, 24 px targets, visible focus, reduced motion), offline e2e (no outside requests), `pnpm release` → dist/ (extension zip, Web Store zip, ShowSteps-Setup-1.0.0.exe, SHA256SUMS). Notification runs after P10
-- [ ] P10 (owner request): legal review of store listing, privacy policy, licence, README; trader status note; GitHub push and release; Web Store submission steps
+- [x] P10 (owner request): privacy policy and store listing corrected so every claim matches the code; trader/non-trader guidance; licences shipped (NOTICES.txt); README states the name is not covered by the MIT licence; commit emails rewritten to the GitHub no-reply address; pushed to the private repo sadhman3-bit/showsteps with a draft v1.0.0 release. **Waiting on the owner:** the name check below, then make the repo public, publish the release and submit to the Chrome Web Store
+
+### Waiting on the owner (Polish)
+
+- **Name:** "ShowSteps" is close to **ScreenSteps** (an established step-by-step guide product with a browser extension, and a US trademark application for guide-making software). Decide whether to keep the name (ideally after a trademark search or a word with a trademark lawyer) or pick a more distinct one before anything goes public. The repo is private and the release is a draft until then.
+- **Public steps after that:** `gh repo edit sadhman3-bit/showsteps --visibility public --accept-visibility-change-consequences`, publish the draft release, then submit the store listing (`docs/webstore/submit.html`).
 
 ### Polish: open issues
 
