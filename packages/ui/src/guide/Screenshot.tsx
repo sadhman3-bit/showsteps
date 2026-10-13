@@ -1,4 +1,4 @@
-import type { GuideStore, Rect, Step } from '@trailmark/core';
+import type { GuideStore, Rect, Step } from '@showsteps/core';
 import { useId } from 'preact/hooks';
 import { AnnotationShape, strokeFor } from '../components/Annotations.js';
 import { useImageUrl } from '../hooks.js';
@@ -56,7 +56,7 @@ export function ImageLayers({
       ))}
       {showActionBox && box ? (
         <rect
-          class="tm-shot__box"
+          class="ss-shot__box"
           x={box.x}
           y={box.y}
           width={box.w}
@@ -96,10 +96,10 @@ export function Screenshot({
       ? shot.crop
       : { x: 0, y: 0, w: shot.width, h: shot.height };
   return (
-    <figure class="tm-shot" style={{ aspectRatio: `${view.w} / ${view.h}` }}>
+    <figure class="ss-shot" style={{ aspectRatio: `${view.w} / ${view.h}` }}>
       {url ? (
         <svg
-          class="tm-shot__svg"
+          class="ss-shot__svg"
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           role="img"
           aria-label={alt}
@@ -108,7 +108,7 @@ export function Screenshot({
           <ImageLayers url={url} step={step} idPrefix={`s${id}`} />
         </svg>
       ) : (
-        <div class="tm-shot__loading" aria-hidden="true" />
+        <div class="ss-shot__loading" aria-hidden="true" />
       )}
     </figure>
   );

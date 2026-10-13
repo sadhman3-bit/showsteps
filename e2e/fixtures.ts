@@ -25,7 +25,7 @@ export const test = base.extend<{
     if (!existsSync(join(EXTENSION_PATH, 'manifest.json'))) {
       throw new Error('The extension is not built. Run `pnpm build` before `pnpm e2e`.');
     }
-    const userDataDir = mkdtempSync(join(tmpdir(), 'trailmark-e2e-'));
+    const userDataDir = mkdtempSync(join(tmpdir(), 'showsteps-e2e-'));
     const context = await chromium.launchPersistentContext(userDataDir, {
       channel: 'chromium',
       headless: !headed,

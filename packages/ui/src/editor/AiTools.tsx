@@ -11,7 +11,7 @@ import {
   type Guide,
   type GuideStore,
   type RichText,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
@@ -126,7 +126,7 @@ export function AiTools({
   const close = () => setPanel(null);
 
   return (
-    <div class="tm-popmenu">
+    <div class="ss-popmenu">
       <Button
         aria-expanded={open}
         aria-haspopup="menu"
@@ -136,7 +136,7 @@ export function AiTools({
         {s.menu}
       </Button>
       {open ? (
-        <div class="tm-popmenu__list" role="menu">
+        <div class="ss-popmenu__list" role="menu">
           {caps.improve ? (
             <button type="button" role="menuitem" onClick={() => void improve()}>
               {s.improve}
@@ -201,9 +201,9 @@ export function AiTools({
             </>
           }
         >
-          <p class="tm-muted">{s.before}</p>
+          <p class="ss-muted">{s.before}</p>
           <p>{guide.description || '—'}</p>
-          <p class="tm-muted">{s.after}</p>
+          <p class="ss-muted">{s.after}</p>
           <p>{panel.text}</p>
         </Dialog>
       ) : null}
@@ -238,10 +238,10 @@ export function AiTools({
             </>
           }
         >
-          <ul class="tm-checklist">
+          <ul class="ss-checklist">
             {panel.suggestions.map((x) => (
               <li key={x.stepId}>
-                <label class="tm-check">
+                <label class="ss-check">
                   <input
                     type="checkbox"
                     checked={panel.chosen.has(x.stepId)}
@@ -254,10 +254,10 @@ export function AiTools({
                   />
                   <span>
                     <strong>{strings.guide.stepLabel(x.number)}</strong>
-                    <span class="tm-muted tm-block-text">
+                    <span class="ss-muted ss-block-text">
                       {s.before}: <RichTextView value={x.before} />
                     </span>
-                    <span class="tm-block-text">
+                    <span class="ss-block-text">
                       {s.after}: <RichTextView value={x.after} />
                     </span>
                   </span>
@@ -281,10 +281,10 @@ export function AiTools({
             </>
           }
         >
-          <label class="tm-field">
+          <label class="ss-field">
             {s.language}
             <select
-              class="tm-input"
+              class="ss-input"
               value={panel.language}
               onChange={(e) => setPanel({ kind: 'translate', language: e.currentTarget.value })}
             >

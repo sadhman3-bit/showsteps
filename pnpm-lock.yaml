@@ -14,12 +14,12 @@ importers:
       '@playwright/test':
         specifier: ^1.64.0
         version: 1.64.0
+      '@showsteps/core':
+        specifier: workspace:*
+        version: link:packages/core
       '@tesseract.js-data/eng':
         specifier: 1.0.0
         version: 1.0.0
-      '@trailmark/core':
-        specifier: workspace:*
-        version: link:packages/core
       '@types/node':
         specifier: ^22.20.5
         version: 22.20.5
@@ -56,10 +56,10 @@ importers:
       '@preact/preset-vite':
         specifier: ^2.10.6
         version: 2.10.6(@babel/core@7.29.7)(preact@11.0.1)(vite@8.3.4(@types/node@26.6.5)(jiti@2.7.0))
-      '@trailmark/core':
+      '@showsteps/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@trailmark/ui':
+      '@showsteps/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       electron:
@@ -80,10 +80,10 @@ importers:
 
   apps/extension:
     dependencies:
-      '@trailmark/core':
+      '@showsteps/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@trailmark/ui':
+      '@showsteps/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       fflate:
@@ -144,7 +144,7 @@ importers:
 
   packages/ui:
     dependencies:
-      '@trailmark/core':
+      '@showsteps/core':
         specifier: workspace:*
         version: link:../core
       dompurify:

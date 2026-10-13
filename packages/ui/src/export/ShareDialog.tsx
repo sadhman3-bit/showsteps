@@ -3,8 +3,8 @@ import {
   exportGuideArchive,
   type Guide,
   type GuideStore,
-} from '@trailmark/core';
-import type { ExportInput } from '@trailmark/core/export';
+} from '@showsteps/core';
+import type { ExportInput } from '@showsteps/core/export';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
@@ -22,14 +22,14 @@ const MIME: Record<Format, string> = {
   markdown: 'application/zip',
   html: 'text/html',
   embed: 'text/html',
-  trailmark: 'application/zip',
+  showsteps: 'application/zip',
   agentpack: 'application/zip',
 };
 
 const encode = (text: string) => new TextEncoder().encode(text);
 
 // The PDF and Word libraries load only when someone exports.
-const exporters = () => import('@trailmark/core/export');
+const exporters = () => import('@showsteps/core/export');
 
 export function fileNameFor(title: string, format: Format): string {
   const base = safeFileName(title);
@@ -44,7 +44,7 @@ export function fileNameFor(title: string, format: Format): string {
       return `${base}.html`;
     case 'embed':
       return `${base}.embed.html`;
-    case 'trailmark':
+    case 'showsteps':
       return `${base}${ARCHIVE_EXTENSION}`;
     case 'agentpack':
       return `${base} (Agent Pack).zip`;
@@ -74,7 +74,7 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
   const input = () => (prepared.current ??= prepareExport(store, guide));
 
   async function bytesFor(format: Format): Promise<Uint8Array> {
-    if (format === 'trailmark') return exportGuideArchive(store, guide.id);
+    if (format === 'showsteps') return exportGuideArchive(store, guide.id);
     const [x, data] = await Promise.all([exporters(), input()]);
     switch (format) {
       case 'pdf':
@@ -143,7 +143,7 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
 
   const saveToFolder = (handle: NonNullable<typeof folder>) =>
     run(async () => {
-      const formats: Format[] = ['html', 'embed', 'trailmark'];
+      const formats: Format[] = ['html', 'embed', 'showsteps'];
       const files = [];
       for (const f of formats)
         files.push({ name: fileNameFor(guide.title, f), bytes: await bytesFor(f) });
@@ -153,15 +153,15 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
 
   return (
     <Dialog title={s.title} onClose={onClose}>
-      <div class="tm-share" aria-busy={busy}>
-        <p class="tm-muted">{s.privacy}</p>
+      <div class="ss-share" aria-busy={busy}>
+        <p class="ss-muted">{s.privacy}</p>
         <h3>{s.download}</h3>
-        <ul class="tm-share__grid">
+        <ul class="ss-share__grid">
           {(Object.keys(s.formats) as Format[]).map((f) => (
             <li key={f}>
               <button
                 type="button"
-                class="tm-share__format"
+                class="ss-share__format"
                 disabled={busy}
                 onClick={() => void download(f)}
               >
@@ -172,7 +172,7 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
           ))}
         </ul>
         <h3>{s.copyHeading}</h3>
-        <div class="tm-share__row">
+        <div class="ss-share__row">
           <Button variant="primary" disabled={busy} onClick={copyHtml}>
             {s.copyHtml}
           </Button>
@@ -182,12 +182,12 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
             </Button>
           ) : null}
         </div>
-        <p class="tm-muted tm-share__hint">{s.copyHtmlHint}</p>
+        <p class="ss-muted ss-share__hint">{s.copyHtmlHint}</p>
         <h3>{s.folder}</h3>
-        <p class="tm-muted tm-share__hint">{s.folderHint}</p>
+        <p class="ss-muted ss-share__hint">{s.folderHint}</p>
         {canPickFolder() ? (
-          <div class="tm-share__row">
-            <span class="tm-share__folder">
+          <div class="ss-share__row">
+            <span class="ss-share__folder">
               {folder ? s.folderCurrent(folder.name) : s.folderNone}
             </span>
             <Button disabled={busy} onClick={() => void chooseFolder()}>
@@ -202,7 +202,7 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
         ) : (
           <p>{s.folderUnsupported}</p>
         )}
-        <p class="tm-share__status" role="status">
+        <p class="ss-share__status" role="status">
           {status}
         </p>
       </div>

@@ -1,4 +1,4 @@
-import type { Guide, GuideStore } from '@trailmark/core';
+import type { Guide, GuideStore } from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
@@ -30,22 +30,22 @@ export function PrintView({
     };
   }, [store, guideId]);
 
-  if (guide === undefined) return <main class="tm-print" aria-busy="true" />;
+  if (guide === undefined) return <main class="ss-print" aria-busy="true" />;
   return (
-    <main class="tm-print">
-      <div class="tm-print__bar">
+    <main class="ss-print">
+      <div class="ss-print__bar">
         <Button variant="ghost" onClick={onBack}>
           <Icon name="back" /> {s.back}
         </Button>
         <Button variant="primary" onClick={() => window.print()} disabled={!guide}>
           {s.print}
         </Button>
-        <span class="tm-muted">{s.hint}</span>
+        <span class="ss-muted">{s.hint}</span>
       </div>
       {guide ? (
         <GuideReader store={store} guide={guide} />
       ) : (
-        <p class="tm-empty">{strings.guide.notFound}</p>
+        <p class="ss-empty">{strings.guide.notFound}</p>
       )}
     </main>
   );

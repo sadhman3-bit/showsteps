@@ -1,4 +1,4 @@
-import { strings } from '@trailmark/ui';
+import { strings } from '@showsteps/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { api } from './api';
 
@@ -36,7 +36,7 @@ export function Overlay() {
     <>
       {ring ? (
         <div
-          class="tm-ovl__ring"
+          class="ss-ovl__ring"
           style={{
             left: `${ring.x - 4}px`,
             top: `${ring.y - 4}px`,
@@ -47,7 +47,7 @@ export function Overlay() {
       ) : null}
       <div
         ref={card}
-        class="tm-ovl__card"
+        class="ss-ovl__card"
         style={cardStyle}
         role="dialog"
         aria-label={g.stepOf(view.number, view.total)}
@@ -55,16 +55,16 @@ export function Overlay() {
         onMouseLeave={() => api().overlayInteractive(false)}
       >
         {view.phase === 'done' ? (
-          <p class="tm-ovl__title">{d.allDone}</p>
+          <p class="ss-ovl__title">{d.allDone}</p>
         ) : (
           <>
-            <p class="tm-ovl__count">{g.stepOf(view.number, view.total)}</p>
-            <p class="tm-ovl__title">{view.title}</p>
-            {view.phase === 'web' ? <p class="tm-ovl__note">{d.webStep}</p> : null}
-            {view.phase === 'not-found' ? <p class="tm-ovl__note">{d.notFoundDesktop}</p> : null}
+            <p class="ss-ovl__count">{g.stepOf(view.number, view.total)}</p>
+            <p class="ss-ovl__title">{view.title}</p>
+            {view.phase === 'web' ? <p class="ss-ovl__note">{d.webStep}</p> : null}
+            {view.phase === 'not-found' ? <p class="ss-ovl__note">{d.notFoundDesktop}</p> : null}
           </>
         )}
-        <div class="tm-ovl__row">
+        <div class="ss-ovl__row">
           {view.canGoBack ? (
             <button type="button" onClick={() => control('back')}>
               {g.back}

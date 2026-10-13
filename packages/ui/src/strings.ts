@@ -1,20 +1,20 @@
 /**
- * Every user-facing string in ABCXYZ lives here, keyed by area, so the UI can be
+ * Every user-facing string in ShowSteps lives here, keyed by area, so the UI can be
  * translated later by swapping this object.
  */
 export const strings = {
   app: {
-    name: 'ABCXYZ',
+    name: 'ShowSteps',
     tagline: 'Show it once. Get a guide, a walkthrough and a runnable procedure.',
   },
   sidePanel: {
-    title: 'ABCXYZ',
+    title: 'ShowSteps',
     privacyNote: 'Everything stays on this computer. Nothing is uploaded.',
     start: 'Start capture',
     shortcutHint: (keys: string) => `Shortcut: ${keys}`,
     permissionNote:
-      'ABCXYZ will ask to read and change websites so it can record your clicks. It only does so while you record.',
-    permissionDenied: 'ABCXYZ needs website access to record. Try again and choose Allow.',
+      'ShowSteps will ask to read and change websites so it can record your clicks. It only does so while you record.',
+    permissionDenied: 'ShowSteps needs website access to record. Try again and choose Allow.',
     cannotRecordHere: 'This page cannot be recorded. Switch to a website tab and try again.',
     recent: 'Recent guides',
     noGuides: 'No guides yet. Start a capture to make your first one.',
@@ -45,7 +45,7 @@ export const strings = {
     cancel: 'Cancel',
     cancelConfirm: 'Discard this capture? Steps recorded so far will be deleted.',
     drag: 'Drag to move',
-    controllerLabel: 'ABCXYZ capture controls',
+    controllerLabel: 'ShowSteps capture controls',
     stepsTitle: 'Recorded steps',
     noStepsYet:
       'Click, type and choose things on the page. Each action appears here as a step with its screenshot.',
@@ -95,7 +95,7 @@ export const strings = {
     moveToRoot: 'No folder',
     duplicate: 'Duplicate',
     copyOf: (title: string) => `Copy of ${title}`,
-    export: 'Export (.trailmark)',
+    export: 'Export (.showsteps)',
     moveToTrash: 'Move to Trash',
     restore: 'Restore',
     deleteForever: 'Delete permanently',
@@ -217,7 +217,7 @@ export const strings = {
     textPrompt: 'Text',
     noImage: 'This step has no screenshot yet.',
     pasteEmpty: 'There is no image on the clipboard.',
-    badImage: 'That file is not an image ABCXYZ can read.',
+    badImage: 'That file is not an image ShowSteps can read.',
     save: 'Done',
     cancel: 'Cancel',
     canvasLabel: 'Screenshot being edited',
@@ -271,7 +271,7 @@ export const strings = {
       markdown: ['Markdown', 'guide.md and its pictures, zipped'],
       html: ['Web page', 'One .html file that works offline'],
       embed: ['Embed card', 'A compact page for an iframe, such as a SharePoint Embed web part'],
-      trailmark: ['ABCXYZ file', 'For someone else to import into ABCXYZ'],
+      showsteps: ['ShowSteps file', 'For someone else to import into ShowSteps'],
       agentpack: [
         'Agent Pack',
         'Steps for AI agents and automation (Agent Skills format), with a Playwright replay',
@@ -286,14 +286,14 @@ export const strings = {
     print: 'Print…',
     folder: 'Save to shared folder',
     folderHint:
-      'Writes the web page, the embed card and the ABCXYZ file into a folder, such as one synced with OneDrive or SharePoint. Saving again updates the same files, so an embed keeps working.',
+      'Writes the web page, the embed card and the ShowSteps file into a folder, such as one synced with OneDrive or SharePoint. Saving again updates the same files, so an embed keeps working.',
     folderNone: 'No folder chosen yet.',
     folderCurrent: (name: string) => `Folder: ${name}`,
     chooseFolder: 'Choose folder…',
     changeFolder: 'Change folder…',
     saveToFolder: 'Save to folder',
     savedToFolder: (n: number, name: string) => `Saved ${n} files to “${name}”.`,
-    folderDenied: 'ABCXYZ was not allowed to write to that folder. Choose it again.',
+    folderDenied: 'ShowSteps was not allowed to write to that folder. Choose it again.',
     folderUnsupported: 'This browser cannot save to a folder. Download the files instead.',
     preparing: 'Preparing pictures…',
     downloaded: (file: string) => `Downloaded “${file}”.`,
@@ -307,13 +307,14 @@ export const strings = {
   guidance: {
     recapture: 'Re-capture this step',
     recaptureHint:
-      'Do this step yourself now: ABCXYZ records it again in place of the old one and carries on.',
+      'Do this step yourself now: ShowSteps records it again in place of the old one and carries on.',
     ownValue: 'Type the value for this case.',
     suggestedValue: (v: string) => `Suggested value: ${v}`,
     guideMe: 'Guide Me',
     runForMe: 'Run for me',
     guideMeHint: 'Shows each step on the page and moves on when you do it.',
-    runForMeHint: 'ABCXYZ does the steps for you and stops before anything it should not do alone.',
+    runForMeHint:
+      'ShowSteps does the steps for you and stops before anything it should not do alone.',
     stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
     back: 'Back',
     next: 'Next',
@@ -346,10 +347,10 @@ export const strings = {
       secret: 'Passwords and other secrets are never stored, so type this yourself.',
       upload: 'Choose the file yourself.',
       desktop: 'This step is in a desktop app.',
-      'desktop-app': 'The ABCXYZ desktop app highlights this step on your screen.',
+      'desktop-app': 'The ShowSteps desktop app highlights this step on your screen.',
       'no-target': 'This step has no element to point at.',
       manual: 'This is a step for you to do.',
-      cannot: 'ABCXYZ cannot do this one on this page.',
+      cannot: 'ShowSteps cannot do this one on this page.',
       'not-found': 'The element could not be found.',
     } as Record<string, string>,
     expectFailed: (what: string) => `What should have happened did not: ${what}.`,
@@ -359,12 +360,13 @@ export const strings = {
     stepsHeading: 'Steps',
     runTitle: 'Run for me',
     runIntro:
-      'ABCXYZ will do the steps in a browser tab with a visible pointer. It stops for steps marked to confirm, for passwords and other secrets, and if something unexpected happens.',
+      'ShowSteps will do the steps in a browser tab with a visible pointer. It stops for steps marked to confirm, for passwords and other secrets, and if something unexpected happens.',
     runValues: 'Values to use',
     runStart: 'Start',
     noWebSteps: 'This guide has no web steps to guide.',
     startFailed: 'Could not start. Open a website tab and try again.',
-    permission: 'ABCXYZ needs website access to show steps on pages. Try again and choose Allow.',
+    permission:
+      'ShowSteps needs website access to show steps on pages. Try again and choose Allow.',
   },
   discover: {
     heading: 'Guides for this site',
@@ -391,7 +393,7 @@ export const strings = {
     edit: 'Edit',
     attachedTo: (what: string) => `On ${what}`,
     onPage: 'On this page',
-    badge: (kind: string) => `ABCXYZ ${kind}`,
+    badge: (kind: string) => `ShowSteps ${kind}`,
     openGuide: 'Open guide',
     guideMe: 'Guide Me',
     pin: 'Pin',
@@ -437,7 +439,7 @@ export const strings = {
     aiHint:
       'Uses the AI built into Chrome, on this computer only, to improve step text, summarise and translate guides.',
     aiUnavailable: 'This browser has no built-in AI, so these tools are hidden.',
-    desktopApp: 'Use the ABCXYZ desktop app',
+    desktopApp: 'Use the ShowSteps desktop app',
     desktopAppHint:
       'Adds steps in Windows apps to your captures and keeps guides in the desktop library. Needs the desktop app installed and running.',
     desktopConnected: 'Connected to the desktop app.',
@@ -464,14 +466,14 @@ export const strings = {
     qualities: { high: 'High (crisp text)', standard: 'Standard (smaller files)' },
     shortcuts: 'Change keyboard shortcuts…',
     dataHeading: 'Your data',
-    deleteAll: 'Delete all ABCXYZ data…',
-    deleteAllTitle: 'Delete all ABCXYZ data?',
+    deleteAll: 'Delete all ShowSteps data…',
+    deleteAllTitle: 'Delete all ShowSteps data?',
     deleteAllBody:
-      'This deletes every guide, picture, note, pin, comment and setting ABCXYZ keeps in this browser. It cannot be undone. Export guides you want to keep first.',
+      'This deletes every guide, picture, note, pin, comment and setting ShowSteps keeps in this browser. It cannot be undone. Export guides you want to keep first.',
     deleteAllConfirm: 'Delete everything',
     deleteAllDesktop:
       'This resets the desktop app’s settings. Your guide folders are not touched: delete them in File Explorer if you want them gone.',
-    deleted: 'All ABCXYZ data was deleted.',
+    deleted: 'All ShowSteps data was deleted.',
     inputMode: 'Typed values in new guides',
     inputModeHint:
       'Ask every run suits values that change, such as invoice numbers. You can change it for each step.',
@@ -589,7 +591,7 @@ export const strings = {
     finish: 'Finish',
     recording: (n: number) => `Recording · ${n === 1 ? '1 step' : `${n} steps`}`,
     shared: 'Browser steps are being added by the extension.',
-    connected: 'Connected to the ABCXYZ browser extension',
+    connected: 'Connected to the ShowSteps browser extension',
     notConnected: 'Browser extension not connected',
     myLibrary: 'My library',
     teamLibrary: 'Team library',
@@ -602,7 +604,7 @@ export const strings = {
     notFoundDesktop:
       'This could not be found on screen. Open the app, or do the step yourself and click “I did this”.',
     allDone: 'All steps done.',
-    controllerLabel: 'ABCXYZ capture controls',
+    controllerLabel: 'ShowSteps capture controls',
   },
   secureBlur: {
     button: 'Secure Blur',

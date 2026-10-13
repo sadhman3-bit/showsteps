@@ -76,7 +76,7 @@ describe('HTML (X4, X5, X6)', () => {
     const page = guideToHtml(fixtureInput());
     // The one script element is the procedure's JSON data block (U3), which never runs.
     const html = page.replace(
-      /<script type="application\/json" id="trailmark-procedure">[^<]*(?:<(?!\/script>)[^<]*)*<\/script>/,
+      /<script type="application\/json" id="showsteps-procedure">[^<]*(?:<(?!\/script>)[^<]*)*<\/script>/,
       '',
     );
     expect(html).not.toMatch(/<script|src="(?!data:)|href="(?!#|https:\/\/example\.com)/);

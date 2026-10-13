@@ -21,11 +21,11 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const version = JSON.parse(readFileSync(join(root, 'apps/extension/package.json'), 'utf8')).version;
 const dist = join(root, 'dist');
 const extension = join(root, 'apps/extension/.output/chrome-mv3');
-const installer = join(root, 'apps/desktop/release', `ABCXYZ-Setup-${version}.exe`);
+const installer = join(root, 'apps/desktop/release', `ShowSteps-Setup-${version}.exe`);
 
 for (const [path, what] of [
   [join(extension, 'manifest.json'), 'the extension build (pnpm build)'],
-  [installer, 'the desktop installer (pnpm --filter @trailmark/desktop dist)'],
+  [installer, 'the desktop installer (pnpm --filter @showsteps/desktop dist)'],
 ])
   if (!existsSync(path)) throw new Error(`Missing ${what}: ${path}`);
 
@@ -63,12 +63,12 @@ storeFiles['manifest.json'] = new TextEncoder().encode(
 );
 
 const files = {
-  [`trailmark-extension-${version}-chrome-web-store.zip`]: zipSync(storeFiles, {
+  [`showsteps-extension-${version}-chrome-web-store.zip`]: zipSync(storeFiles, {
     level: 9,
     mtime: new Date('2026-10-11T00:00:00Z'),
   }),
-  [`trailmark-extension-${version}.zip`]: zipSync(
-    tree(extension, `trailmark-extension-${version}`),
+  [`showsteps-extension-${version}.zip`]: zipSync(
+    tree(extension, `showsteps-extension-${version}`),
     {
       level: 9,
       mtime: new Date('2026-10-11T00:00:00Z'),
@@ -76,7 +76,7 @@ const files = {
   ),
 };
 for (const [name, bytes] of Object.entries(files)) writeFileSync(join(dist, name), bytes);
-copyFileSync(installer, join(dist, `ABCXYZ-Setup-${version}.exe`));
+copyFileSync(installer, join(dist, `ShowSteps-Setup-${version}.exe`));
 
 const sums = readdirSync(dist)
   .sort()

@@ -125,7 +125,7 @@ describe('target descriptors', () => {
 
   it('records the shadow host chain for elements inside a web component', () => {
     const t = describeElement(truth(open('new-invoice.a').document, 'approver-mei'), opts);
-    expect(t.shadowHosts).toEqual(['tm-approver-picker']);
+    expect(t.shadowHosts).toEqual(['ss-approver-picker']);
     expect(t).toMatchObject({ role: 'button', name: 'Mei Chen' });
   });
 

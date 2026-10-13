@@ -26,7 +26,7 @@ import {
   type GuideStore,
   type Rect,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
@@ -296,14 +296,14 @@ export function GuideEditor({
 
   const numbers = useMemo(() => (guide ? stepNumbers(guide) : new Map<string, number>()), [guide]);
 
-  if (guide === undefined) return <main class="tm-page" aria-busy="true" />;
+  if (guide === undefined) return <main class="ss-page" aria-busy="true" />;
   if (guide === null) {
     return (
-      <main class="tm-page">
+      <main class="ss-page">
         <Button variant="ghost" onClick={onBack}>
           <Icon name="back" /> {strings.guide.back}
         </Button>
-        <p class="tm-empty">{strings.guide.notFound}</p>
+        <p class="ss-empty">{strings.guide.notFound}</p>
       </main>
     );
   }
@@ -466,15 +466,15 @@ export function GuideEditor({
     : undefined;
 
   return (
-    <main class="tm-editor">
-      <header class="tm-editor__bar">
+    <main class="ss-editor">
+      <header class="ss-editor__bar">
         <Button variant="ghost" onClick={onBack}>
           <Icon name="back" /> {strings.guide.back}
         </Button>
-        <span class={`tm-save tm-save--${saveState}`} role="status">
+        <span class={`ss-save ss-save--${saveState}`} role="status">
           {saveState === 'saved' ? e.saved : saveState === 'saving' ? e.saving : e.saveFailed}
         </span>
-        <div class="tm-toolbar__spacer" />
+        <div class="ss-toolbar__spacer" />
         <Button
           variant="ghost"
           onClick={undo}
@@ -493,7 +493,7 @@ export function GuideEditor({
         >
           ↷
         </Button>
-        <div class="tm-segmented" role="group">
+        <div class="ss-segmented" role="group">
           <button type="button" aria-pressed={mode === 'edit'} onClick={() => setMode('edit')}>
             {e.edit}
           </button>
@@ -521,7 +521,7 @@ export function GuideEditor({
         <Button onClick={() => setModal('share')}>{strings.share.button}</Button>
         <Button onClick={() => setModal('secureBlur')}>{strings.secureBlur.button}</Button>
         {readOnlyToggle ? (
-          <label class="tm-check" title={strings.readOnly.markHint}>
+          <label class="ss-check" title={strings.readOnly.markHint}>
             <input
               type="checkbox"
               checked={!!guide.readOnly}
@@ -575,7 +575,7 @@ export function GuideEditor({
           {...(onSelfCheck ? { onSelfCheck: () => onSelfCheck(guide.id) } : {})}
         />
       ) : mode === 'preview' ? (
-        <div class="tm-page">
+        <div class="ss-page">
           <GuideReader
             store={store}
             guide={guide}
@@ -591,9 +591,9 @@ export function GuideEditor({
           />
         </div>
       ) : (
-        <div class="tm-page tm-editor__page">
+        <div class="ss-page ss-editor__page">
           <TextField
-            class="tm-editor__title"
+            class="ss-editor__title"
             aria-label={e.guideTitle}
             value={guide.title}
             onValue={(title) => apply((g) => ({ ...g, title }), 'type')}
@@ -601,7 +601,7 @@ export function GuideEditor({
           />
           <TextField
             multiline
-            class="tm-editor__desc tm-input"
+            class="ss-editor__desc ss-input"
             aria-label={e.guideDescription}
             placeholder={e.guideDescriptionPlaceholder}
             value={guide.description ?? ''}
@@ -618,7 +618,7 @@ export function GuideEditor({
           />
 
           {selected.size ? (
-            <div class="tm-selbar" role="toolbar" aria-label={e.selected(selected.size)}>
+            <div class="ss-selbar" role="toolbar" aria-label={e.selected(selected.size)}>
               <strong>{e.selected(selected.size)}</strong>
               <Button onClick={() => duplicate([...selected])}>{e.duplicateSelected}</Button>
               <Button variant="danger" onClick={() => removeBlocks([...selected])}>
@@ -631,7 +631,7 @@ export function GuideEditor({
           ) : null}
 
           <ol
-            class={`tm-eblocks${compact === 'on' ? ' tm-eblocks--compact' : ''}`}
+            class={`ss-eblocks${compact === 'on' ? ' ss-eblocks--compact' : ''}`}
             aria-label={guide.title}
             onDrop={onDrop}
             onDragOver={(ev) => ev.preventDefault()}
@@ -715,7 +715,7 @@ export function GuideEditor({
             )}
           </ol>
 
-          <div class="tm-addbar">
+          <div class="ss-addbar">
             <Button onClick={() => addStep(guide.blocks.at(-1)?.id ?? null)}>
               <Icon name="plus" /> {e.addStep}
             </Button>
@@ -729,7 +729,7 @@ export function GuideEditor({
               <Icon name="plus" /> {e.addCallout}
             </Button>
           </div>
-          <p class="tm-muted">{e.pasteHint}</p>
+          <p class="ss-muted">{e.pasteHint}</p>
           <input
             ref={imageInput}
             type="file"
@@ -879,14 +879,14 @@ function BlockCard(props: {
   ];
   return (
     <li
-      class={`tm-eblock tm-eblock--${b.kind}${props.selected ? ' is-selected' : ''}${props.dropMark ? ` drop-${props.dropMark}` : ''}`}
+      class={`ss-eblock ss-eblock--${b.kind}${props.selected ? ' is-selected' : ''}${props.dropMark ? ` drop-${props.dropMark}` : ''}`}
       data-block-id={b.id}
       tabIndex={0}
       aria-label={label}
       onFocusCapture={props.onFocus}
       onDragOver={props.onDragOver}
     >
-      <div class="tm-eblock__rail">
+      <div class="ss-eblock__rail">
         <input
           type="checkbox"
           aria-label={e.select(label)}
@@ -894,7 +894,7 @@ function BlockCard(props: {
           onChange={(ev) => props.onSelect(ev.currentTarget.checked)}
         />
         <span
-          class="tm-eblock__handle"
+          class="ss-eblock__handle"
           draggable
           role="button"
           aria-label={e.dragHandle(label)}
@@ -904,17 +904,17 @@ function BlockCard(props: {
         >
           ⋮⋮
         </span>
-        {b.kind === 'step' ? <span class="tm-step__num">{props.num}</span> : null}
+        {b.kind === 'step' ? <span class="ss-step__num">{props.num}</span> : null}
       </div>
 
-      <div class="tm-eblock__main">
+      <div class="ss-eblock__main">
         {b.kind === 'step' ? (
           <StepFields step={b} {...props} />
         ) : b.kind === 'heading' ? (
-          <div class="tm-eblock__row">
+          <div class="ss-eblock__row">
             <button
               type="button"
-              class="tm-link"
+              class="ss-link"
               aria-expanded={!props.collapsed}
               aria-label={props.collapsed ? e.expandSection : e.collapseSection}
               onClick={props.onToggleCollapse}
@@ -922,7 +922,7 @@ function BlockCard(props: {
               {props.collapsed ? '▸' : '▾'}
             </button>
             <TextField
-              class="tm-eblock__heading tm-input"
+              class="ss-eblock__heading ss-input"
               aria-label={e.headingText}
               value={b.text}
               onValue={(text) =>
@@ -932,9 +932,9 @@ function BlockCard(props: {
             />
           </div>
         ) : (
-          <div class={`tm-callout tm-callout--${b.tone} tm-eblock__callout`}>
+          <div class={`ss-callout ss-callout--${b.tone} ss-eblock__callout`}>
             <select
-              class="tm-input"
+              class="ss-input"
               aria-label={e.calloutTone}
               value={b.tone}
               onChange={(ev) => {
@@ -950,7 +950,7 @@ function BlockCard(props: {
             </select>
             <TextField
               multiline
-              class="tm-input"
+              class="ss-input"
               aria-label={e.calloutText}
               rows={2}
               value={b.text}
@@ -963,7 +963,7 @@ function BlockCard(props: {
         )}
       </div>
 
-      <details class="tm-menu tm-eblock__menu">
+      <details class="ss-menu ss-eblock__menu">
         <summary aria-label={e.blockActions(label)}>
           <Icon name="more" />
         </summary>
@@ -1009,14 +1009,14 @@ function StepFields(props: {
   return (
     <>
       <RichTextField
-        class="tm-eblock__title"
+        class="ss-eblock__title"
         label={e.stepTitle(num)}
         value={s.human.title}
         onChange={(title) => editHuman((h) => ({ ...h, title }))}
         onCommit={props.onEndTyping}
       />
       <RichTextField
-        class="tm-eblock__desc"
+        class="ss-eblock__desc"
         multiline
         label={e.stepDescription(num)}
         placeholder={e.descriptionPlaceholder}
@@ -1034,10 +1034,10 @@ function StepFields(props: {
         <InputControls step={s} num={num} onGuide={props.onGuide} onChange={props.onChange} />
       ) : null}
       {s.human.screenshot ? (
-        <div class="tm-eblock__shot">
+        <div class="ss-eblock__shot">
           <button
             type="button"
-            class="tm-eblock__shotbtn"
+            class="ss-eblock__shotbtn"
             aria-label={`${e.editImage}: ${strings.guide.stepLabel(num)}`}
             onClick={props.onEditImage}
           >
@@ -1048,17 +1048,17 @@ function StepFields(props: {
               alt={s.human.altText ?? strings.guide.screenshotAlt(num, toPlainText(s.human.title))}
             />
           </button>
-          <div class="tm-toolbar__group">
+          <div class="ss-toolbar__group">
             <Button onClick={props.onEditImage}>{e.editImage}</Button>
             <Button variant="ghost" aria-expanded={showAlt} onClick={() => setShowAlt(!showAlt)}>
               {e.altText}
             </Button>
           </div>
           {showAlt ? (
-            <label class="tm-field">
-              <span class="tm-muted">{e.altTextHint}</span>
+            <label class="ss-field">
+              <span class="ss-muted">{e.altTextHint}</span>
               <TextField
-                class="tm-input"
+                class="ss-input"
                 aria-label={e.altText}
                 value={s.human.altText ?? ''}
                 onValue={(altText) =>
@@ -1092,20 +1092,20 @@ function InputControls(props: {
   const input = s.input;
   if (!input) return null;
   if (input.sensitive && input.value === undefined)
-    return <p class="tm-muted tm-eblock__input">{m.secret}</p>;
+    return <p class="ss-muted ss-eblock__input">{m.secret}</p>;
   const suggestion = suggestAsk(s);
   return (
-    <div class="tm-eblock__input tm-row">
-      <label class="tm-row">
-        <span class="tm-muted">{m.label}</span>
+    <div class="ss-eblock__input ss-row">
+      <label class="ss-row">
+        <span class="ss-muted">{m.label}</span>
         <InputModeSelect
           label={`${m.label}: ${e.stepTitle(props.num)}`}
           value={input.mode}
           onChange={(mode) => props.onGuide((g) => setInputMode(g, s.id, mode))}
         />
       </label>
-      {input.variable ? <code class="tm-muted">{m.variable(input.variable)}</code> : null}
-      <label class="tm-check">
+      {input.variable ? <code class="ss-muted">{m.variable(input.variable)}</code> : null}
+      <label class="ss-check">
         <input
           type="checkbox"
           checked={input.sensitive}
@@ -1117,7 +1117,7 @@ function InputControls(props: {
         {m.sensitive}
       </label>
       {suggestion ? (
-        <span class="tm-eblock__suggest">
+        <span class="ss-eblock__suggest">
           {m.suggest}{' '}
           <Button
             variant="ghost"

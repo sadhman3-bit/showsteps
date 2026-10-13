@@ -6,7 +6,7 @@ export default defineContentScript({
   allFrames: true,
   registration: 'runtime',
   main() {
-    const flag = '__trailmarkGuide';
+    const flag = '__showstepsGuide';
     const scope = globalThis as unknown as Record<string, unknown>;
     if (scope[flag]) return;
     scope[flag] = true;

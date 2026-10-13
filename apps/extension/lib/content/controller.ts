@@ -1,4 +1,4 @@
-import { strings } from '@trailmark/ui/strings';
+import { strings } from '@showsteps/ui/strings';
 import type { CaptureState, ControlAction } from '../messages';
 
 const s = strings.capture;
@@ -59,7 +59,7 @@ export class Controller {
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private readonly onAction: (action: ControlAction) => void) {
-    this.host = document.createElement('trailmark-controller');
+    this.host = document.createElement('showsteps-controller');
     // Open so tests can reach it; page code has no reason to touch it.
     this.root = this.host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');

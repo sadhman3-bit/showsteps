@@ -1,5 +1,5 @@
 {
-  "name": "@trailmark/extension",
+  "name": "@showsteps/extension",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
@@ -14,8 +14,8 @@
     "build:e2e": "wxt build --mode e2e"
   },
   "dependencies": {
-    "@trailmark/core": "workspace:*",
-    "@trailmark/ui": "workspace:*",
+    "@showsteps/core": "workspace:*",
+    "@showsteps/ui": "workspace:*",
     "fflate": "^0.8.3",
     "preact": "^11.0.1",
     "zod": "^4.6.5"

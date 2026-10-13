@@ -4,7 +4,7 @@ type Hook = {
   startCapture(msg: { type: 'start'; tabId: number }): Promise<{ guideId?: string }>;
   recorder: { control(action: string): Promise<unknown>; current: { stepCount: number } };
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 /** Start a capture on the tab showing `url` through the e2e test hook. */
 export async function startCaptureOn(sw: Worker, urlPrefix: string): Promise<string> {
@@ -13,7 +13,7 @@ export async function startCaptureOn(sw: Worker, urlPrefix: string): Promise<str
     return tab?.id ?? -1;
   }, urlPrefix);
   const { guideId } = await sw.evaluate(
-    (id) => __trailmark.startCapture({ type: 'start', tabId: id }),
+    (id) => __showsteps.startCapture({ type: 'start', tabId: id }),
     tabId,
   );
   if (!guideId) throw new Error('capture did not start');
@@ -29,7 +29,7 @@ export async function recordShortGuide(
   await page.goto('http://localhost:5173/login.html');
   await page.bringToFront();
   const id = await startCaptureOn(sw, 'http://localhost:5173/');
-  await page.locator('trailmark-controller').getByRole('toolbar').waitFor();
+  await page.locator('showsteps-controller').getByRole('toolbar').waitFor();
   await page.waitForTimeout(650);
   await page.getByLabel('Username').fill('alex');
   await page.waitForTimeout(650);
@@ -39,7 +39,7 @@ export async function recordShortGuide(
   await page.waitForURL(/\/app\/$/);
   await page.waitForTimeout(650);
   // Let the last events from the page that just unloaded arrive before ending the capture.
-  await expect.poll(() => sw.evaluate(() => __trailmark.recorder.current.stepCount)).toBe(4);
-  await sw.evaluate(() => __trailmark.recorder.control('finish'));
+  await expect.poll(() => sw.evaluate(() => __showsteps.recorder.current.stepCount)).toBe(4);
+  await sw.evaluate(() => __showsteps.recorder.control('finish'));
   return { id, page };
 }

@@ -1,4 +1,4 @@
-import type { GuideStore } from '@trailmark/core';
+import type { GuideStore } from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 
 const MIME: Record<string, string> = {

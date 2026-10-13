@@ -4,7 +4,7 @@ import {
   withOriginal,
   type GuideStore,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import type { EncodedShot } from './shots';
 
 /**

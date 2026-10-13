@@ -1,4 +1,4 @@
-// Exporters (X1–X6). A separate entry point (`@trailmark/core/export`) so apps can load the
+// Exporters (X1–X6). A separate entry point (`@showsteps/core/export`) so apps can load the
 // PDF and Word libraries only when someone exports.
 export { EXPORT_LABELS, formatDate, type ExportLabels } from './labels.js';
 export {

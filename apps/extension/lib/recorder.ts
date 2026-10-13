@@ -18,7 +18,7 @@ import {
   type PageText,
   type ShotInfo,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import type { FrameRegistry } from './frames';
 import { IDLE_STATE, type CaptureState, type ContentEvent, type ControlAction } from './messages';
 import { ShotLimiter, type EncodedShot, type PendingShot } from './shots';
@@ -41,7 +41,7 @@ export interface Viewport {
 export interface ShotOptions {
   /** Known window of the tab (saves a lookup on the hot path). */
   windowId?: number;
-  /** The page already hid ABCXYZ's controls and painted, so no round trip is needed. */
+  /** The page already hid ShowSteps's controls and painted, so no round trip is needed. */
   uiHidden?: boolean;
   /** When the input happened (epoch ms, from the page). */
   inputAt?: number;

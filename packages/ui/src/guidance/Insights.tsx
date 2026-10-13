@@ -1,4 +1,4 @@
-import { guideStats, type GuideStats, type GuideStore, type GuideSummary } from '@trailmark/core';
+import { guideStats, type GuideStats, type GuideStore, type GuideSummary } from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
@@ -52,18 +52,18 @@ export function Insights({
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 
   return (
-    <main class="tm-page tm-insights" aria-busy={!rows}>
-      <nav class="tm-guide__nav">
+    <main class="ss-page ss-insights" aria-busy={!rows}>
+      <nav class="ss-guide__nav">
         <Button variant="ghost" onClick={onBack}>
           <Icon name="back" /> {strings.guide.back}
         </Button>
       </nav>
       <h1>{s.title}</h1>
-      <p class="tm-muted">{s.intro}</p>
-      {rows && !rows.length ? <p class="tm-empty">{s.none}</p> : null}
+      <p class="ss-muted">{s.intro}</p>
+      {rows && !rows.length ? <p class="ss-empty">{s.none}</p> : null}
       {rows?.length ? (
-        <div class="tm-table-wrap">
-          <table class="tm-table">
+        <div class="ss-table-wrap">
+          <table class="ss-table">
             <thead>
               <tr>
                 <th scope="col">{s.guide}</th>
@@ -82,7 +82,7 @@ export function Insights({
                   <th scope="row">
                     <button
                       type="button"
-                      class="tm-link"
+                      class="ss-link"
                       onClick={() => setSelected(guide.id === selected ? undefined : guide.id)}
                     >
                       {guide.title}
@@ -102,15 +102,15 @@ export function Insights({
         </div>
       ) : null}
       {detail ? (
-        <section class="tm-dropoff" aria-labelledby="dropoff-h">
+        <section class="ss-dropoff" aria-labelledby="dropoff-h">
           <h2 id="dropoff-h">{s.dropOffFor(detail.guide.title)}</h2>
           {detail.stats.runs ? (
             <ol>
               {detail.stats.reachedSteps.map((n, i) => (
                 <li key={i}>
-                  <span class="tm-dropoff__label">{s.stepReached(i + 1, n)}</span>
+                  <span class="ss-dropoff__label">{s.stepReached(i + 1, n)}</span>
                   <span
-                    class="tm-dropoff__bar"
+                    class="ss-dropoff__bar"
                     style={{ width: `${(n / detail.stats.runs) * 100}%` }}
                     aria-hidden="true"
                   />
@@ -118,7 +118,7 @@ export function Insights({
               ))}
             </ol>
           ) : (
-            <p class="tm-muted">{s.noRuns}</p>
+            <p class="ss-muted">{s.noRuns}</p>
           )}
           <Button onClick={() => onOpen(detail.guide.id)}>{strings.marks.openGuide}</Button>
         </section>

@@ -2,6 +2,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { Window } from 'happy-dom';
 import { describe, expect, it } from 'vitest';
 import {
+  ARCHIVE_ACCEPT,
   ARCHIVE_EXTENSION,
   duplicateGuide,
   exportGuideArchive,
@@ -303,7 +304,7 @@ describe('field detection', () => {
   });
 });
 
-describe('.trailmark archives', () => {
+describe('.showsteps archives', () => {
   async function seeded() {
     const store = new IndexedDbStore(new IDBFactory());
     const step = createStep({ action: 'click', app, human: { title: plain('Click Save') } });
@@ -316,7 +317,9 @@ describe('.trailmark archives', () => {
   it('round-trips a guide with its images into another library', async () => {
     const { store, guide, step } = await seeded();
     const bytes = await exportGuideArchive(store, guide.id);
-    expect(ARCHIVE_EXTENSION).toBe('.trailmark');
+    expect(ARCHIVE_EXTENSION).toBe('.showsteps');
+    // Archives saved before the rename still show in the import picker.
+    expect(ARCHIVE_ACCEPT.split(',')).toEqual(['.showsteps', '.trailmark', 'application/zip']);
     const other = new IndexedDbStore(new IDBFactory());
     const result = await importGuideArchive(other, bytes);
     expect(result).toEqual({ guideId: guide.id, renamed: false });

@@ -4,7 +4,7 @@ import {
   marksForUrl,
   pageKey,
   type CaptureEvent,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { BridgeClient, bridgeStore, switchableStore } from '../lib/bridge';
 import { FrameRegistry } from '../lib/frames';
 import { Guidance, type PersistedGuidance } from '../lib/guidance';
@@ -40,11 +40,11 @@ import { recaptureStep } from '../lib/recapture';
 import { installSamples } from '../lib/samples';
 import { encodeScreenshot } from '../lib/shots';
 
-const SCRIPT_ID = 'trailmark-capture';
+const SCRIPT_ID = 'showsteps-capture';
 const SCRIPT_FILE = '/content-scripts/capture.js';
 const PERSIST_KEY = 'recorder';
 const GUIDANCE_KEY = 'guidance';
-const GUIDE_SCRIPT_ID = 'trailmark-guide';
+const GUIDE_SCRIPT_ID = 'showsteps-guide';
 const GUIDE_SCRIPT_FILE = '/content-scripts/guide.js';
 /** Navigations the user made directly (not caused by a recorded click). */
 const DIRECT_TRANSITIONS = new Set([
@@ -131,7 +131,7 @@ export default defineBackground(() => {
     frames,
     async captureVisibleTab(tabId, { windowId, uiHidden }) {
       const window = windowId ?? (await browser.tabs.get(tabId)).windowId;
-      // Keep ABCXYZ's own controls out of the picture. Input in the top frame has already
+      // Keep ShowSteps's own controls out of the picture. Input in the top frame has already
       // hidden them; anything else (iframes, navigations) asks the top frame first.
       // Input in the top frame hid them synchronously, before asking; the message round trip
       // gives that change time to reach the screen. Anything else (iframes, navigations) asks.
@@ -241,7 +241,7 @@ export default defineBackground(() => {
   });
 
   browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error: unknown) => {
-    console.error('ABCXYZ: could not set side panel behaviour', error);
+    console.error('ShowSteps: could not set side panel behaviour', error);
   });
 
   // ---------- Content scripts ----------
@@ -408,7 +408,7 @@ export default defineBackground(() => {
             msg.shotId,
             msg.observeId,
           )
-          .catch((error: unknown) => console.error('ABCXYZ: could not record step', error));
+          .catch((error: unknown) => console.error('ShowSteps: could not record step', error));
         return { ok: true };
       case 'shot-words':
         if (frameId === 0) recorder.shotWords(msg.shotId, msg.words);
@@ -481,7 +481,7 @@ export default defineBackground(() => {
       sender.url?.startsWith(extensionOrigin) && !sender.tab?.url?.match(/^(https?|file):/);
     const respond = (p: Promise<unknown>) => {
       p.then(sendResponse, (error: unknown) => {
-        console.error('ABCXYZ:', error);
+        console.error('ShowSteps:', error);
         sendResponse({ error: 'internal' });
       });
       return true;
@@ -810,7 +810,7 @@ export default defineBackground(() => {
   if (import.meta.env.MODE === 'e2e') {
     // Test hook for Playwright, compiled out of normal builds.
     Object.assign(globalThis, {
-      __trailmark: {
+      __showsteps: {
         recorder,
         store,
         startCapture,

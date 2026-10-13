@@ -5,7 +5,7 @@ import {
   recordView,
   type Guide,
   type GuideStore,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
@@ -81,11 +81,11 @@ export function GuideView({
     if (user) void countView(store, guideId, user).catch(() => undefined);
   }, [store, guideId, user]);
 
-  if (guide === undefined) return <main class="tm-page" aria-busy="true" />;
+  if (guide === undefined) return <main class="ss-page" aria-busy="true" />;
   const hasSteps = !!guide?.blocks.some((b) => b.kind === 'step');
   return (
-    <main class="tm-page tm-guide">
-      <nav class="tm-guide__nav">
+    <main class="ss-page ss-guide">
+      <nav class="ss-guide__nav">
         <Button variant="ghost" onClick={onBack}>
           <Icon name="back" /> {s.back}
         </Button>
@@ -107,7 +107,7 @@ export function GuideView({
         {guide && onEdit ? <Button onClick={onEdit}>{strings.editor.edit}</Button> : null}
       </nav>
       {guide === null ? (
-        <p class="tm-empty">{s.notFound}</p>
+        <p class="ss-empty">{s.notFound}</p>
       ) : (
         <GuideReader
           store={store}
@@ -127,8 +127,8 @@ export function GuideView({
             ? {
                 renderAfter: (blockId: string) => <CommentBox api={comments} blockId={blockId} />,
                 footer: (
-                  <section class="tm-social__end" aria-labelledby="tm-end-h">
-                    <h2 id="tm-end-h">{strings.social.endHeading}</h2>
+                  <section class="ss-social__end" aria-labelledby="ss-end-h">
+                    <h2 id="ss-end-h">{strings.social.endHeading}</h2>
                     <CommentBox api={comments} blockId={END_OF_GUIDE} />
                   </section>
                 ),

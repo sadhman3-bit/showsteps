@@ -1,12 +1,12 @@
 import { toBase64 } from './export/model.js';
 
 /**
- * The extension ↔ desktop bridge protocol (Chrome native messaging through trailmark-host.exe
+ * The extension ↔ desktop bridge protocol (Chrome native messaging through showsteps-host.exe
  * to the desktop app's named pipe). Every message is JSON; bytes travel as {"$b64": "..."}.
  * Messages to Chrome are capped at 1 MB, so the desktop app splits large replies into parts.
  */
 
-export const BRIDGE_HOST = 'com.trailmark.host';
+export const BRIDGE_HOST = 'com.showsteps.host';
 export const BRIDGE_VERSION = 1;
 /** Stay well under Chrome's 1 MB limit for one message from a native host. */
 export const CHUNK_CHARS = 700_000;

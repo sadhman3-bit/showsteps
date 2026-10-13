@@ -1,5 +1,5 @@
 import { IDBFactory } from 'fake-indexeddb';
-import { IndexedDbStore, toMarkdown, type Step, type Target } from '@trailmark/core';
+import { IndexedDbStore, toMarkdown, type Step, type Target } from '@showsteps/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FrameRegistry } from '../lib/frames';
 import type { CaptureState, ContentEvent } from '../lib/messages';

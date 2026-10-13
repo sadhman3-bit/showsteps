@@ -1,4 +1,4 @@
-// Trailmark UI Automation helper. Line-delimited JSON over stdin/stdout:
+// ShowSteps UI Automation helper. Line-delimited JSON over stdin/stdout:
 //   in:  {"id":1,"cmd":"elementFromPoint","x":100,"y":200}
 //   out: {"id":1,"ok":true,"result":{...}}  or  {"id":1,"ok":false,"error":"..."}
 // Built with the C# compiler that ships with the .NET Framework (C# 5), so no SDK is needed.
@@ -17,7 +17,7 @@ using System.Web.Script.Serialization;
 using System.Windows.Automation;
 using System.Windows.Forms;
 
-namespace Trailmark
+namespace ShowSteps
 {
     internal static class Native
     {

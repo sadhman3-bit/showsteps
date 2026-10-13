@@ -16,7 +16,7 @@ type Stored = {
     };
   }[];
 };
-declare const __trailmark: {
+declare const __showsteps: {
   recorder: { control(action: string): Promise<unknown>; current: { stepCount: number } };
   store: {
     getGuide(id: string): Promise<Stored>;
@@ -37,7 +37,7 @@ async function recordDashboard(context: BrowserContext, sw: Worker): Promise<str
   await page.goto('http://localhost:5173/login.html');
   await page.bringToFront();
   const guideId = await startCaptureOn(sw, 'http://localhost:5173/');
-  await page.locator('trailmark-controller').getByRole('toolbar').waitFor();
+  await page.locator('showsteps-controller').getByRole('toolbar').waitFor();
   await page.waitForTimeout(650);
   await page.getByLabel('Username').fill('alex');
   await page.waitForTimeout(650);
@@ -54,9 +54,9 @@ async function recordDashboard(context: BrowserContext, sw: Worker): Promise<str
   await expect(heading).toBeInViewport();
   await page.waitForTimeout(650);
   await heading.click({ delay: 120 });
-  await expect.poll(() => sw.evaluate(() => __trailmark.recorder.current.stepCount)).toBe(5);
+  await expect.poll(() => sw.evaluate(() => __showsteps.recorder.current.stepCount)).toBe(5);
   await page.waitForTimeout(400);
-  await sw.evaluate(() => __trailmark.recorder.control('finish'));
+  await sw.evaluate(() => __showsteps.recorder.control('finish'));
   return guideId;
 }
 
@@ -70,9 +70,9 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
   // Word files sit next to the pictures and never hold the password.
   const words = await sw.evaluate(async (id) => {
     const out: string[] = [];
-    for (const name of await __trailmark.store.listImages(id))
+    for (const name of await __showsteps.store.listImages(id))
       if (name.endsWith('.words.json'))
-        out.push(new TextDecoder().decode(await __trailmark.store.getImage(id, name)));
+        out.push(new TextDecoder().decode(await __showsteps.store.getImage(id, name)));
     return out;
   }, guideId);
   // Each picture taken from the page has its words (how many pictures there are depends on
@@ -111,7 +111,7 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
   await expect(dialog).toBeHidden();
   await expect
     .poll(async () => {
-      const g = await sw.evaluate((id) => __trailmark.store.getGuide(id), guideId);
+      const g = await sw.evaluate((id) => __showsteps.store.getGuide(id), guideId);
       return g.blocks.find((b) => b.kind === 'step' && b.human?.blurs.length)?.human?.blurs.length;
     })
     .toBe(planted.values.length - 1);
@@ -131,8 +131,8 @@ test('OCR reads the screenshots that have no word positions, offline (U8, E11 fo
   const guideId = await recordDashboard(context, sw);
   // As for desktop and uploaded pictures: no word positions saved with the screenshots.
   await sw.evaluate(async (id) => {
-    for (const name of await __trailmark.store.listImages(id))
-      if (name.endsWith('.words.json')) await __trailmark.store.deleteImage(id, name);
+    for (const name of await __showsteps.store.listImages(id))
+      if (name.endsWith('.words.json')) await __showsteps.store.deleteImage(id, name);
   }, guideId);
   // Nothing may come from the internet: the engine is bundled with the extension.
   const remote: string[] = [];
@@ -163,7 +163,7 @@ test('OCR reads the screenshots that have no word positions, offline (U8, E11 fo
   // The text read is kept beside each picture, so the next scan needs no OCR.
   const kept = await sw.evaluate(
     async (id) =>
-      (await __trailmark.store.listImages(id)).filter((n) => n.endsWith('.words.json')).length,
+      (await __showsteps.store.listImages(id)).filter((n) => n.endsWith('.words.json')).length,
     guideId,
   );
   expect(kept).toBeGreaterThanOrEqual(3);
@@ -171,19 +171,19 @@ test('OCR reads the screenshots that have no word positions, offline (U8, E11 fo
 
   // U8: a visual-only step gets the text around its action.
   await sw.evaluate(async (id) => {
-    const g = await __trailmark.store.getGuide(id);
+    const g = await __showsteps.store.getGuide(id);
     const last = g.blocks.filter((b) => b.kind === 'step').at(-1) as unknown as {
       agent: { visualOnly: boolean };
     };
     last.agent.visualOnly = true;
-    await __trailmark.store.saveGuide(g);
+    await __showsteps.store.saveGuide(g);
   }, guideId);
   await editor.reload();
   await expect
     .poll(
       async () =>
         sw.evaluate(async (id) => {
-          const g = await __trailmark.store.getGuide(id);
+          const g = await __showsteps.store.getGuide(id);
           const last = g.blocks.filter((b) => b.kind === 'step').at(-1) as unknown as {
             target?: { ocrText?: string };
           };

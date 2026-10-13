@@ -17,7 +17,7 @@ type Step = {
 };
 type Guide = { id: string; title: string; blocks: (Step | { kind: string; id: string })[] };
 type State = { status: string; index: number; phase: string; reason?: string };
-declare const __trailmark: {
+declare const __showsteps: {
   installSamples(): Promise<string[]>;
   store: {
     listGuides(): Promise<{ id: string; title: string }[]>;
@@ -31,12 +31,12 @@ declare const __trailmark: {
 
 const INVOICE = 'Create a supplier invoice in Ledgerline';
 const titleOf = (s: Step) => s.human.title.spans.map((x) => x.text).join('');
-const state = (sw: Worker) => sw.evaluate(() => __trailmark.guidance.current);
+const state = (sw: Worker) => sw.evaluate(() => __showsteps.guidance.current);
 
 async function sampleId(sw: Worker): Promise<string> {
   return sw.evaluate(async (title) => {
-    await __trailmark.installSamples();
-    return (await __trailmark.store.listGuides()).find((g) => g.title === title)!.id;
+    await __showsteps.installSamples();
+    return (await __showsteps.store.listGuides()).find((g) => g.title === title)!.id;
   }, INVOICE);
 }
 
@@ -77,7 +77,7 @@ test('guide health: re-capture a step Guide Me cannot find, keeping the rest (U9
   const id = await sampleId(sw);
   // The app changed since recording: "New invoice" is no longer called that.
   const broken = await sw.evaluate(async (gid) => {
-    const g = await __trailmark.store.getGuide(gid);
+    const g = await __showsteps.store.getGuide(gid);
     const s = g.blocks.find(
       (b) =>
         b.kind === 'step' &&
@@ -96,10 +96,10 @@ test('guide health: re-capture a step Guide Me cannot find, keeping the rest (U9
       selectors: [{ type: 'aria', value: 'button "Create invoice"', score: 0.9 }],
     };
     s.agent.timeoutMs = 1500;
-    await __trailmark.store.saveGuide(g);
+    await __showsteps.store.saveGuide(g);
     return s.id;
   }, id);
-  const before = (await sw.evaluate((gid) => __trailmark.store.getGuide(gid), id)).blocks.filter(
+  const before = (await sw.evaluate((gid) => __showsteps.store.getGuide(gid), id)).blocks.filter(
     (b): b is Step => b.kind === 'step',
   );
   const brokenIndex = before.findIndex((s) => s.id === broken);
@@ -117,7 +117,7 @@ test('guide health: re-capture a step Guide Me cannot find, keeping the rest (U9
   );
   await sw.evaluate(
     ([g, t, from]) =>
-      __trailmark.startGuidance({ type: 'guide-start', guideId: g, mode: 'guide', tabId: t, from }),
+      __showsteps.startGuidance({ type: 'guide-start', guideId: g, mode: 'guide', tabId: t, from }),
     [id, tabId, brokenIndex] as const,
   );
   await expect.poll(async () => (await state(sw)).phase, { timeout: 20_000 }).toBe('not-found');
@@ -125,19 +125,19 @@ test('guide health: re-capture a step Guide Me cannot find, keeping the rest (U9
   const panel = await context.newPage();
   await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
   await panel.getByRole('button', { name: 'Re-capture this step' }).click();
-  await expect.poll(() => sw.evaluate(() => __trailmark.recorder.current.status)).toBe('recording');
+  await expect.poll(() => sw.evaluate(() => __showsteps.recorder.current.status)).toBe('recording');
 
   // Do the step for real; the capture ends by itself and the guide carries on.
   await page.bringToFront();
   await page.waitForTimeout(650);
   await page.getByRole('button', { name: 'New invoice' }).click({ delay: 120 });
   await expect
-    .poll(() => sw.evaluate(() => __trailmark.recorder.current.status), { timeout: 10_000 })
+    .poll(() => sw.evaluate(() => __showsteps.recorder.current.status), { timeout: 10_000 })
     .toBe('idle');
   await expect.poll(async () => (await state(sw)).status, { timeout: 15_000 }).toBe('active');
   expect((await state(sw)).index).toBe(brokenIndex + 1);
 
-  const after = (await sw.evaluate((gid) => __trailmark.store.getGuide(gid), id)).blocks.filter(
+  const after = (await sw.evaluate((gid) => __showsteps.store.getGuide(gid), id)).blocks.filter(
     (b): b is Step => b.kind === 'step',
   );
   expect(after.map(titleOf)).toEqual(before.map(titleOf));

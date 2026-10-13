@@ -1,5 +1,5 @@
-import { agentPackFiles } from '@trailmark/core/export';
-import { parseGuide } from '@trailmark/core';
+import { agentPackFiles } from '@showsteps/core/export';
+import { parseGuide } from '@showsteps/core';
 import { strFromU8, unzipSync } from 'fflate';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -11,7 +11,7 @@ import { expect, test } from '@playwright/test';
 // Playwright and browser, so it runs as its own project after the extension tests.
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SAMPLE = join(ROOT, 'apps/extension/public/samples/create-invoice.trailmark');
+const SAMPLE = join(ROOT, 'apps/extension/public/samples/create-invoice.showsteps');
 
 test('the Agent Pack’s Playwright replay runs the demo flow and stops before confirm steps (U10)', async () => {
   test.setTimeout(180_000);
@@ -57,10 +57,10 @@ test('the Agent Pack’s Playwright replay runs the demo flow and stops before c
   expect(stopped.status, stopped.out).toBe('passed');
   expect(stopped.annotations).toContainEqual({
     type: 'stopped',
-    description: 'Step 17 needs confirmation: set TRAILMARK_ALLOW_CONFIRM=1 to do it',
+    description: 'Step 17 needs confirmation: set SHOWSTEPS_ALLOW_CONFIRM=1 to do it',
   });
   // With approval it submits, and the recorded expectations (address, message) hold.
-  const done = run({ TRAILMARK_ALLOW_CONFIRM: '1' });
+  const done = run({ SHOWSTEPS_ALLOW_CONFIRM: '1' });
   expect(done.status, done.out).toBe('passed');
   expect(done.annotations).toEqual([]);
 });

@@ -44,12 +44,12 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 ## M2 detail (done 2026-10-10)
 
-- [x] Capture session rules in core (merges, insert position, restore), screenshot geometry, sensitive-field detection, .trailmark archives
+- [x] Capture session rules in core (merges, insert position, restore), screenshot geometry, sensitive-field detection, .showsteps archives
 - [x] Background recorder: optional permission, runtime content-script registration, rate-limited screenshots with reuse, iframe mapping, tab following, navigation steps, persistence across worker restarts, Alt+Shift+R
 - [x] Content script in every frame: clicks, typing, selects, checks, uploads, keys, double and right clicks; never records secret values
 - [x] On-page controller (drag, pause/resume, delete last, Live Blur, finish, cancel), hidden from screenshots
 - [x] Side panel: Start, status, recent guides, capture-more hand-over
-- [x] Library page: grid/list, nested folders, move, rename, tags, search, sort, app/tag filters, Trash (restore, delete permanently), duplicate, import/export `.trailmark`; read-only guide view
+- [x] Library page: grid/list, nested folders, move, rename, tags, search, sort, app/tag filters, Trash (restore, delete permanently), duplicate, import/export `.showsteps`; read-only guide view
 - [x] Extension icon
 
 **Acceptance:** `e2e/capture.spec.ts` records the demo "create invoice" flow (20 steps across 2 pages, a cross-origin and a same-origin iframe, shadow DOM and the dialog). It checks every title, screenshot, Action Box and frame chain, that the password is stored nowhere, and that the dialog-opening click's screenshot was taken before the dialog appeared. 13 e2e tests in total, stable across 3 repeated runs; 151 unit tests.
@@ -67,7 +67,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 ## M4 detail (done 2026-10-10)
 
-- [x] Exporters in core (`@trailmark/core/export`): PDF (pdf-lib), Word (docx), Markdown zip, self-contained HTML page, embed card, clipboard HTML and plain text, with branding
+- [x] Exporters in core (`@showsteps/core/export`): PDF (pdf-lib), Word (docx), Markdown zip, self-contained HTML page, embed card, clipboard HTML and plain text, with branding
 - [x] Pictures flattened for export with blurs, highlight and annotations burned in
 - [x] Share dialog in the reader and the editor: six downloads, Copy HTML, Print, Save to shared folder (remembered, overwrites on re-save)
 - [x] Print view route
@@ -87,11 +87,11 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 
 ## M6 detail (done 2026-10-11)
 
-- [x] Windows helpers without a .NET SDK (built-in csc.exe): uia-helper.exe (UI Automation, pre-click window screenshots, typing reported without characters, foreground events, guarded input) and trailmark-host.exe (native messaging relay to the pipe `trailmark-<user>`)
+- [x] Windows helpers without a .NET SDK (built-in csc.exe): uia-helper.exe (UI Automation, pre-click window screenshots, typing reported without characters, foreground events, guarded input) and showsteps-host.exe (native messaging relay to the pipe `showsteps-<user>`)
 - [x] Electron desktop app: library, editor, reader and insights from `ui`; tray, Ctrl+Alt+R, capture toolbar, desktop recorder, Guide Me overlay (G8), My library and Team library folders (L3), read-only guides and personal copies (L6), settings
 - [x] Bridge: fixed extension ID, optional nativeMessaging, one shared capture (the extension recorder is the only writer), mixed guides in Guide Me, guides kept in the desktop library from the browser
 - [x] Secure Blur for web steps (E11): word positions saved with each screenshot, detection with check digits in core, review screen in the editor
-- [x] Installer: electron-builder NSIS per user (`pnpm --filter @trailmark/desktop dist`), registers the native host on install and removes it on uninstall
+- [x] Installer: electron-builder NSIS per user (`pnpm --filter @showsteps/desktop dist`), registers the native host on install and removes it on uninstall
 - [x] Fixes found while testing: typing in a desktop app is committed when another app comes to the front; screenshots show only the clicked window
 
 **Acceptance:** `pnpm e2e:desktop` (3 tests, real mouse and keyboard, only into a Notepad window the test opened):
@@ -115,7 +115,7 @@ Stable across 3 repeated runs. The installer builds, and the install/uninstall h
 
 - the Agent Pack passes the format checks (core tests, and the e2e download);
 - embedded copies are read back from all four formats;
-- the generated Playwright replay runs the demo flow, stops before "Submit invoice", and completes with `TRAILMARK_ALLOW_CONFIRM=1`;
+- the generated Playwright replay runs the demo flow, stops before "Submit invoice", and completes with `SHOWSTEPS_ALLOW_CONFIRM=1`;
 - a fresh AI agent with only the Agent Pack completed the demo flow (`docs/agent-run-transcript.md`).
 
 `pnpm e2e`: 28 tests (the replay runs as its own project after the extension tests, because its second browser slowed timing-sensitive capture tests); `pnpm e2e:desktop`: 3 tests. Unit tests: 224.
@@ -142,7 +142,7 @@ Fixes found while testing:
 
 - [x] U7 self-check: Agent view → Check every step (dry run in a new tab, ring only, per-step report)
 - [x] U9 guide health: Re-capture this step from the side panel; the step is replaced in place and guidance carries on
-- [x] Settings: colours, Live Blur default, zoom level, picture quality, shortcuts link, Delete all Trailmark data (extension); colours (desktop)
+- [x] Settings: colours, Live Blur default, zoom level, picture quality, shortcuts link, Delete all ShowSteps data (extension); colours (desktop)
 - [x] Performance: pictures encoded as soon as they are taken; a 68-step guide stays smooth (`e2e/performance.spec.ts`)
 - [x] Hardening:
   - the toolbar hide is counted per picture;
@@ -172,15 +172,17 @@ Fixes found while testing:
 ## Polish (POLISH_PLAN.md)
 
 - [x] P0: finish notification (local tooling, Stop hook in local tooling), branch `polish`, "before" screenshots in `docs/design/before/` (`DESIGN_OUT=before pnpm design:shots`)
-- [ ] P1: rename to ShowSteps
+- [x] P1: rename to ShowSteps (`@showsteps/*`, `--ss-`/`ss-`, `.showsteps`, `com.showsteps.host`, `app.showsteps.desktop`; compatibility for `.trailmark` imports, `trailmark-procedure`, the old library folder and the old native host keys)
 - [ ] P2: tokens, fonts, components, patterns
 - [ ] P3: logo, wordmark, generated assets
 - [ ] P4: side panel, toolbar, toast
 - [ ] P5: Guide Me and Run for me
 - [ ] P6: editor, agent view, image editor, dialogs, library
 - [ ] P7: reader and exports
+- [ ] P7b (owner request): agent instructions tuned for computer-use agents and the GitHub Copilot coding agent (Agent Pack, embedded procedure, repo instructions)
 - [ ] P8: desktop app
 - [ ] P9: store images, docs, final QA, POLISH_REPORT.md, notification
+- [ ] P10 (owner request): legal review of store listing, privacy policy, licence, README; trader status note; GitHub push and release; Web Store submission steps
 
 ### Polish: open issues
 

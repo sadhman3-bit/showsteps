@@ -40,7 +40,7 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
   const list = lib.getByRole('list', { name: 'Library' });
   await list.getByRole('button', { name: 'Create a supplier invoice in Ledgerline' }).click();
   await lib.getByRole('button', { name: 'Preview' }).click();
-  await expect(lib.locator('.tm-reader .tm-step svg[role="img"]').first()).toBeVisible();
+  await expect(lib.locator('.ss-reader .ss-step svg[role="img"]').first()).toBeVisible();
   await toSection(lib);
   await lib.screenshot({ path: `${OUT}2-guide.png` });
   await lib.getByRole('button', { name: 'Agent' }).click();
@@ -62,7 +62,7 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
   await panel.setViewportSize({ width: 400, height: 800 });
   await page.bringToFront();
   await startCaptureOn(serviceWorker, 'http://localhost:5173/');
-  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  const bar = page.locator('showsteps-controller').getByRole('toolbar');
   await expect(bar).toContainText('1 step');
   await page.waitForTimeout(650);
   await page.getByRole('heading', { name: 'Recent invoices' }).click({ delay: 100 });
@@ -72,10 +72,10 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
   await expect(panel.getByRole('list').getByRole('listitem')).toHaveCount(3);
   await page.waitForTimeout(400);
   await page.getByRole('cell', { name: 'INV-1041' }).click({ delay: 100 });
-  await expect(page.locator('trailmark-controller .toast')).toContainText('INV-1041');
+  await expect(page.locator('showsteps-controller .toast')).toContainText('INV-1041');
   // The toolbar sits left of where the side panel goes in the picture.
   await page.evaluate(() => {
-    const bar = document.querySelector<HTMLElement>('trailmark-controller');
+    const bar = document.querySelector<HTMLElement>('showsteps-controller');
     if (bar) bar.style.right = '420px';
   });
   const left = (await page.screenshot()).toString('base64');
@@ -86,7 +86,7 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
 
   const shot = await context.newPage();
   await shot.setContent(`<style>${tokens}
-    body { margin: 0; width: 1280px; height: 800px; display: flex; background: var(--tm-border); }
+    body { margin: 0; width: 1280px; height: 800px; display: flex; background: var(--ss-border); }
     .l { width: 879px; height: 800px; object-fit: cover; object-position: left top; }
     .r { width: 400px; height: 800px; margin-left: 1px; }</style>
     <img class="l" src="data:image/png;base64,${left}"><img class="r" src="data:image/png;base64,${right}">`);
@@ -98,12 +98,12 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
   await tile.setContent(`<style>${tokens}
     body { margin: 0; width: 440px; height: 280px; display: flex; flex-direction: column;
       justify-content: center; gap: 14px; padding: 0 36px; box-sizing: border-box;
-      background: var(--tm-chrome-bg); color: var(--tm-chrome-fg); font-family: var(--tm-font); }
+      background: var(--ss-chrome-bg); color: var(--ss-chrome-fg); font-family: var(--ss-font); }
     .brand { display: flex; align-items: center; gap: 14px; font-size: 40px; font-weight: 700; }
     .brand svg { width: 64px; height: 64px; }
-    p { margin: 0; font-size: 17px; line-height: 1.35; color: var(--tm-chrome-muted); }
-    b { color: var(--tm-chrome-accent); font-weight: 600; }</style>
-    <div class="brand">${icon}ABCXYZ</div>
+    p { margin: 0; font-size: 17px; line-height: 1.35; color: var(--ss-chrome-muted); }
+    b { color: var(--ss-chrome-accent); font-weight: 600; }</style>
+    <div class="brand">${icon}ShowSteps</div>
     <p>Record a process once. Get a step-by-step guide.<br><b>Private: nothing leaves your computer.</b></p>`);
   await tile.screenshot({ path: `${OUT}promo-440x280.png` });
 });

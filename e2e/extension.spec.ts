@@ -10,7 +10,7 @@ test('extension loads and its side panel renders', async ({ context, extensionId
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 
   await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-  await expect(page.getByRole('heading', { name: 'ABCXYZ' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ShowSteps' })).toBeVisible();
   await expect(page.getByText('Nothing is uploaded')).toBeVisible();
   expect(errors).toEqual([]);
 });

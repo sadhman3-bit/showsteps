@@ -5,6 +5,7 @@
 //   <slug>/scripts/replay.spec.ts        Playwright replay of the web steps
 import { strToU8, zipSync, type Zippable } from 'fflate';
 import {
+  isProcedureFormat,
   procedureJson,
   toProcedure,
   type Procedure,
@@ -202,7 +203,7 @@ function skillMarkdownWith(
   }
   if (p.success) out.push('## Done when', '', p.success, '');
   out.push('## Files', '');
-  out.push('- `references/procedure.json`: the full structured procedure (ABCXYZ schema v1).');
+  out.push('- `references/procedure.json`: the full structured procedure (ShowSteps schema v1).');
   out.push('- `scripts/replay.spec.ts`: Playwright replay of the web steps.');
   if (screenshots)
     out.push('- `assets/screenshots/step-NN.png`: what the screen looked like at each step.');
@@ -300,8 +301,8 @@ export function validateAgentPack(
   const json = text('references/procedure.json');
   try {
     const p = JSON.parse(json ?? '') as Procedure;
-    if (p.format !== 'trailmark-procedure')
-      problems.push({ file: 'references/procedure.json', message: 'not a ABCXYZ procedure' });
+    if (!isProcedureFormat(p.format))
+      problems.push({ file: 'references/procedure.json', message: 'not a ShowSteps procedure' });
   } catch {
     problems.push({ file: 'references/procedure.json', message: 'missing or not JSON' });
   }

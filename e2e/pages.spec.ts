@@ -24,19 +24,19 @@ type Hook = {
     }[]
   >;
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 const REPORT = 'Run a monthly report in Ledgerline';
 const INVOICE = 'Create a supplier invoice in Ledgerline';
 
 async function samples(sw: Worker): Promise<Record<string, string>> {
   return sw.evaluate(async () => {
-    await __trailmark.installSamples();
-    return Object.fromEntries((await __trailmark.store.listGuides()).map((g) => [g.title, g.id]));
+    await __showsteps.installSamples();
+    return Object.fromEntries((await __showsteps.store.listGuides()).map((g) => [g.title, g.id]));
   });
 }
 
-const guidance = (sw: Worker) => sw.evaluate(() => __trailmark.guidance.current);
+const guidance = (sw: Worker) => sw.evaluate(() => __showsteps.guidance.current);
 
 test('notes, pins, Discover and the Guidance switch on a page', async ({
   context,
@@ -59,7 +59,7 @@ test('notes, pins, Discover and the Guidance switch on a page', async ({
 
   // A note on the "Run report" button: pick it on the page, then write the note.
   await panel.getByRole('button', { name: 'Add a note' }).click();
-  await expect(page.locator('trailmark-guide').getByRole('status')).toContainText(
+  await expect(page.locator('showsteps-guide').getByRole('status')).toContainText(
     'Click an element',
   );
   await page.getByRole('button', { name: 'Run report' }).click();
@@ -69,10 +69,10 @@ test('notes, pins, Discover and the Guidance switch on a page', async ({
   const notes = panel.getByRole('region', { name: 'Notes and pins on this page' });
   await expect(notes).toContainText('Reports take a minute to run.');
 
-  const badges = page.locator('trailmark-guide').locator('.badge');
+  const badges = page.locator('showsteps-guide').locator('.badge');
   await expect(badges).toHaveCount(1);
   await badges.first().hover();
-  const pop = page.locator('trailmark-guide').getByRole('dialog');
+  const pop = page.locator('showsteps-guide').getByRole('dialog');
   await expect(pop).toContainText('Reports take a minute to run.');
   await expect(pop.locator('strong')).toHaveText('a minute');
   await page.screenshot({ path: test.info().outputPath('note.png') });
@@ -80,11 +80,11 @@ test('notes, pins, Discover and the Guidance switch on a page', async ({
 
   // A pin for the whole page that starts Guide Me.
   await panel.getByRole('button', { name: 'Pin a guide' }).click();
-  await page.locator('trailmark-guide').getByRole('button', { name: 'Whole page' }).click();
+  await page.locator('showsteps-guide').getByRole('button', { name: 'Whole page' }).click();
   await panel.getByLabel('Guide', { exact: true }).selectOption({ label: REPORT });
   await panel.getByRole('button', { name: 'Save' }).click();
   await expect(badges).toHaveCount(2);
-  const marks = await sw.evaluate(() => __trailmark.readMarks());
+  const marks = await sw.evaluate(() => __showsteps.readMarks());
   expect(marks).toEqual([
     expect.objectContaining({ kind: 'note', tone: 'warning', target: expect.anything() }),
     expect.objectContaining({ kind: 'pin', guideId: ids[REPORT] }),
@@ -94,9 +94,9 @@ test('notes, pins, Discover and the Guidance switch on a page', async ({
   // Marks survive a reload, and the pin starts Guide Me.
   await page.reload();
   await expect(badges).toHaveCount(2);
-  await page.locator('trailmark-guide').locator('.badge.pin').click();
+  await page.locator('showsteps-guide').locator('.badge.pin').click();
   await page
-    .locator('trailmark-guide')
+    .locator('showsteps-guide')
     .getByRole('dialog')
     .getByRole('button', { name: 'Guide Me' })
     .click();
@@ -146,7 +146,7 @@ test('reader: Guide Me button, comments, reactions, views and Insights', async (
   await lib.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
 
   await lib.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}/view`);
-  const steps = lib.locator('.tm-step');
+  const steps = lib.locator('.ss-step');
   await expect(steps).toHaveCount(3);
 
   // Comment on step 1 and react at the end.
@@ -166,7 +166,7 @@ test('reader: Guide Me button, comments, reactions, views and Insights', async (
   );
   await lib.screenshot({ path: test.info().outputPath('comments.png'), fullPage: true });
 
-  const comments = await sw.evaluate((g) => __trailmark.store.listSidecars(g, 'comments'), id);
+  const comments = await sw.evaluate((g) => __showsteps.store.listSidecars(g, 'comments'), id);
   expect(comments).toEqual([
     {
       user: 'priya-raman',
@@ -186,7 +186,7 @@ test('reader: Guide Me button, comments, reactions, views and Insights', async (
       context.pages().some((p) => p.url().startsWith('http://localhost:5173/reports.html')),
     )
     .toBe(true);
-  await sw.evaluate(() => __trailmark.guidance.control('stop'));
+  await sw.evaluate(() => __showsteps.guidance.control('stop'));
 
   // Insights: one view and one Guide Me run for this guide.
   await lib.bringToFront();
@@ -272,7 +272,7 @@ test('on-device AI tools appear only when available and enabled; they improve, s
   await lib.getByRole('button', { name: 'Translate as a copy' }).click();
   await expect(lib.getByRole('dialog').getByRole('status')).toContainText('Translated copy saved');
   const titles = await sw.evaluate(async () =>
-    (await __trailmark.store.listGuides()).map((g) => g.title),
+    (await __showsteps.store.listGuides()).map((g) => g.title),
   );
   expect(titles).toContain(`[fr] ${REPORT}`);
   await lib.getByRole('button', { name: 'Open the copy' }).click();

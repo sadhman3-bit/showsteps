@@ -12,7 +12,7 @@ import {
   type Rect,
   type SensitiveFinding,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
@@ -162,9 +162,9 @@ export function SecureBlurDialog(props: {
         </>
       }
     >
-      <p class="tm-muted">{s.hint}</p>
-      <div class="tm-stack-form tm-secure__options">
-        <label class="tm-check">
+      <p class="ss-muted">{s.hint}</p>
+      <div class="ss-stack-form ss-secure__options">
+        <label class="ss-check">
           <input
             type="checkbox"
             checked={amounts === 'on'}
@@ -172,25 +172,25 @@ export function SecureBlurDialog(props: {
           />{' '}
           {s.amounts}
         </label>
-        <label class="tm-field">
+        <label class="ss-field">
           {s.names}
-          <div class="tm-row">
+          <div class="ss-row">
             <input
-              class="tm-input"
+              class="ss-input"
               value={names}
               onInput={(e) => setNames(e.currentTarget.value)}
             />
             <Button onClick={() => setRun(run + 1)}>{s.scan}</Button>
           </div>
-          <small class="tm-muted">{s.namesHint}</small>
+          <small class="ss-muted">{s.namesHint}</small>
         </label>
       </div>
       {!result ? (
         <p role="status">{reading ? s.reading(reading[0], reading[1]) : s.scanning}</p>
       ) : (
-        <div class="tm-secure" role="region" aria-label={s.title}>
+        <div class="ss-secure" role="region" aria-label={s.title}>
           {result.found.length ? (
-            <div class="tm-row">
+            <div class="ss-row">
               <Button variant="ghost" onClick={() => setSelected(new Set(all))}>
                 {s.selectAll}
               </Button>
@@ -202,15 +202,15 @@ export function SecureBlurDialog(props: {
             <p role="status">{s.none}</p>
           )}
           {result.found.map((sf) => (
-            <section key={sf.step.id} class="tm-secure__step">
+            <section key={sf.step.id} class="ss-secure__step">
               <h3>{s.stepHeading(sf.number, toPlainText(sf.step.human.title))}</h3>
               <FindingsPreview store={props.store} guideId={props.guide.id} item={sf} />
-              <ul class="tm-secure__list">
+              <ul class="ss-secure__list">
                 {sf.findings.map((f) => {
                   const key = keyOf(sf.step.id, f.id);
                   return (
                     <li key={key}>
-                      <label class="tm-check">
+                      <label class="ss-check">
                         <input
                           type="checkbox"
                           checked={selected.has(key)}
@@ -224,7 +224,7 @@ export function SecureBlurDialog(props: {
               </ul>
             </section>
           ))}
-          {result.unscanned ? <p class="tm-muted">{s.unscanned(result.unscanned)}</p> : null}
+          {result.unscanned ? <p class="ss-muted">{s.unscanned(result.unscanned)}</p> : null}
         </div>
       )}
     </Dialog>
@@ -238,7 +238,7 @@ function FindingsPreview(props: { store: GuideStore; guideId: string; item: Step
   if (!shot || !url) return null;
   return (
     <svg
-      class="tm-secure__preview"
+      class="ss-secure__preview"
       viewBox={`0 0 ${shot.width} ${shot.height}`}
       role="img"
       aria-label={s.preview(props.item.number)}
@@ -247,7 +247,7 @@ function FindingsPreview(props: { store: GuideStore; guideId: string; item: Step
       {props.item.findings.map((f) => (
         <rect
           key={f.id}
-          class="tm-secure__mark"
+          class="ss-secure__mark"
           x={f.rect.x}
           y={f.rect.y}
           width={f.rect.w}

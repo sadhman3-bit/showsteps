@@ -1,4 +1,4 @@
-import { exportGuideArchive, importGuideArchive, type Guide } from '@trailmark/core';
+import { exportGuideArchive, importGuideArchive, type Guide } from '@showsteps/core';
 import {
   Button,
   Dialog,
@@ -13,7 +13,7 @@ import {
   anyAi,
   detectAi,
   strings,
-} from '@trailmark/ui';
+} from '@showsteps/ui';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import {
   api,
@@ -100,27 +100,27 @@ export function App() {
   };
 
   const bar = (
-    <header class="tm-desktopbar">
+    <header class="ss-desktopbar">
       {capture.status === 'idle' ? (
         <Button variant="primary" onClick={() => void api().invoke('capture:start')}>
           <Icon name="record" /> {d.record}
         </Button>
       ) : (
         <>
-          <span class="tm-desktopbar__rec" role="status">
-            <span class="tm-dot" aria-hidden="true" /> {d.recording(capture.stepCount)}
+          <span class="ss-desktopbar__rec" role="status">
+            <span class="ss-dot" aria-hidden="true" /> {d.recording(capture.stepCount)}
           </span>
           <Button variant="primary" onClick={() => void api().invoke('capture:control', 'finish')}>
             {d.finish}
           </Button>
         </>
       )}
-      <span class="tm-muted tm-desktopbar__hint">
+      <span class="ss-muted ss-desktopbar__hint">
         {capture.shared ? d.shared : d.recordHint('Ctrl+Alt+R')}
       </span>
-      <span class="tm-desktopbar__spacer" />
+      <span class="ss-desktopbar__spacer" />
       {settings?.sharedAvailable ? (
-        <div class="tm-segmented" role="group" aria-label={strings.library.title}>
+        <div class="ss-segmented" role="group" aria-label={strings.library.title}>
           <button
             type="button"
             aria-pressed={!inTeam}
@@ -138,7 +138,7 @@ export function App() {
         </div>
       ) : null}
       <span
-        class={`tm-bridge${bridge.connected ? ' is-on' : ''}`}
+        class={`ss-bridge${bridge.connected ? ' is-on' : ''}`}
         title={bridge.connected ? d.connected : d.notConnected}
       >
         {bridge.connected ? d.connected : d.notConnected}
@@ -220,10 +220,10 @@ export function App() {
   }
 
   return (
-    <div class="tm-desktop">
+    <div class="ss-desktop">
       {bar}
       {notice ? (
-        <p class="tm-notice tm-desktop__notice" role="status">
+        <p class="ss-notice ss-desktop__notice" role="status">
           {notice}
         </p>
       ) : null}
@@ -247,11 +247,11 @@ function GuideEditorOrReadOnly(props: {
   useEffect(() => {
     void props.store.getGuide(props.id).then((g) => setGuide(g ?? null));
   }, [props.store, props.id]);
-  if (guide === undefined) return <main class="tm-page" aria-busy="true" />;
+  if (guide === undefined) return <main class="ss-page" aria-busy="true" />;
   if (guide && guide.readOnly && props.inTeam) {
     return (
       <>
-        <div class="tm-notice tm-readonly" role="status">
+        <div class="ss-notice ss-readonly" role="status">
           <strong>{strings.readOnly.badge}</strong> {strings.readOnly.notice}{' '}
           <Button variant="primary" onClick={() => props.onCopy(guide)}>
             {strings.readOnly.copy}
@@ -326,25 +326,25 @@ function DesktopSettings({
         </>
       }
     >
-      <div class="tm-stack-form">
-        <label class="tm-field">
+      <div class="ss-stack-form">
+        <label class="ss-field">
           {s.userName}
           <input
-            class="tm-input"
+            class="ss-input"
             value={draft.userName}
             onInput={(e) => setDraft({ ...draft, userName: e.currentTarget.value })}
           />
-          <small class="tm-muted">{s.userNameHint}</small>
+          <small class="ss-muted">{s.userNameHint}</small>
         </label>
-        <div class="tm-field">
+        <div class="ss-field">
           <span>{d.libraryFolder}</span>
-          <code class="tm-path">{draft.libraryPath}</code>
+          <code class="ss-path">{draft.libraryPath}</code>
           <Button onClick={() => void pick('libraryPath')}>{d.choose}</Button>
         </div>
-        <div class="tm-field">
+        <div class="ss-field">
           <span>{d.sharedFolder}</span>
-          <code class="tm-path">{draft.sharedPath || d.sharedNone}</code>
-          <div class="tm-row">
+          <code class="ss-path">{draft.sharedPath || d.sharedNone}</code>
+          <div class="ss-row">
             <Button onClick={() => void pick('sharedPath')}>{d.choose}</Button>
             {draft.sharedPath ? (
               <Button variant="ghost" onClick={() => setDraft({ ...draft, sharedPath: '' })}>
@@ -353,10 +353,10 @@ function DesktopSettings({
             ) : null}
           </div>
         </div>
-        <label class="tm-field">
+        <label class="ss-field">
           {s.theme}
           <select
-            class="tm-input"
+            class="ss-input"
             value={draft.theme}
             onChange={(e) =>
               setDraft({ ...draft, theme: e.currentTarget.value as DesktopSettingsView['theme'] })
@@ -369,15 +369,15 @@ function DesktopSettings({
             ))}
           </select>
         </label>
-        <label class="tm-field">
+        <label class="ss-field">
           {s.inputMode}
           <InputModeSelect
             value={draft.defaultInputMode}
             onChange={(mode) => setDraft({ ...draft, defaultInputMode: mode })}
           />
-          <small class="tm-muted">{s.inputModeHint}</small>
+          <small class="ss-muted">{s.inputModeHint}</small>
         </label>
-        <label class="tm-check">
+        <label class="ss-check">
           <input
             type="checkbox"
             checked={draft.guidanceEnabled}
@@ -386,7 +386,7 @@ function DesktopSettings({
           {s.guidance}
         </label>
         {aiAvailable ? (
-          <label class="tm-check">
+          <label class="ss-check">
             <input
               type="checkbox"
               checked={draft.aiEnabled}

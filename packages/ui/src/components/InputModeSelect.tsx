@@ -1,4 +1,4 @@
-import type { InputMode } from '@trailmark/core';
+import type { InputMode } from '@showsteps/core';
 import { strings } from '../strings.js';
 
 const MODES: InputMode[] = ['fixed', 'ask', 'default'];
@@ -11,7 +11,7 @@ export function InputModeSelect(props: {
 }) {
   return (
     <select
-      class="tm-input"
+      class="ss-input"
       value={props.value}
       {...(props.label ? { 'aria-label': props.label } : {})}
       onChange={(e) => props.onChange(e.currentTarget.value as InputMode)}

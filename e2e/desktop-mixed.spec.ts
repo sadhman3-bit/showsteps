@@ -19,7 +19,7 @@ type Hook = {
   guidance: { current: { status: string; index: number; phase: string; reason?: string } };
   startGuidance(msg: object): Promise<unknown>;
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 const titleOf = (s: Step) => s.human.title.spans.map((x) => x.text).join('');
 const LOGIN = 'http://localhost:5173/login.html';
@@ -31,7 +31,7 @@ async function connect(sw: Worker): Promise<void> {
     const { settings } = await chrome.storage.local.get('settings');
     await chrome.storage.local.set({ settings: { ...(settings ?? {}), desktopApp: true } });
   });
-  await expect.poll(() => sw.evaluate(() => __trailmark.syncDesktop())).toBe(true);
+  await expect.poll(() => sw.evaluate(() => __showsteps.syncDesktop())).toBe(true);
 }
 
 // A real browser window, so the test can switch between it and Notepad.
@@ -41,13 +41,13 @@ test.use({ headed: true });
 const titles = (sw: Worker, id: string) =>
   sw.evaluate(
     async (g) =>
-      (await __trailmark.store.getGuide(g)).blocks
+      (await __showsteps.store.getGuide(g)).blocks
         .filter((b) => b.kind === 'step')
         .map((b) => b.human.title.spans.map((x) => x.text).join('')),
     id,
   );
 
-const stepCount = (sw: Worker) => sw.evaluate(() => __trailmark.recorder.current.stepCount);
+const stepCount = (sw: Worker) => sw.evaluate(() => __showsteps.recorder.current.stepCount);
 
 test('one capture across a web page and Notepad, then Guide Me across both (C10, G8)', async ({
   desktop,
@@ -63,7 +63,7 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
   await page.goto(LOGIN);
   await page.bringToFront();
   const guideId = await startCaptureOn(sw, 'http://localhost:5173/');
-  await page.locator('trailmark-controller').getByRole('toolbar').waitFor();
+  await page.locator('showsteps-controller').getByRole('toolbar').waitFor();
   // The desktop app joins the extension's capture.
   await expect.poll(async () => (await desktop.capture()).shared).toBe(true);
   await page.waitForTimeout(650);
@@ -85,10 +85,10 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
   await page.getByRole('button', { name: 'Sign in' }).click({ delay: 120 });
   // The step lands once its screenshot is encoded and saved.
   await expect.poll(() => titles(sw, guideId), { timeout: 20_000 }).toContain('Click Sign in');
-  await sw.evaluate(() => __trailmark.recorder.control('finish'));
+  await sw.evaluate(() => __showsteps.recorder.control('finish'));
   await expect.poll(async () => (await desktop.capture()).status).toBe('idle');
 
-  const guide = await sw.evaluate((id) => __trailmark.store.getGuide(id), guideId);
+  const guide = await sw.evaluate((id) => __showsteps.store.getGuide(id), guideId);
   const steps = guide.blocks.filter((b) => b.kind === 'step');
   expect(steps.map(titleOf)).toEqual([
     'Go to localhost:5173',
@@ -143,20 +143,20 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
   );
   await sw.evaluate(
     ([g, t]) =>
-      __trailmark.startGuidance({ type: 'guide-start', guideId: g, mode: 'guide', tabId: t }),
+      __showsteps.startGuidance({ type: 'guide-start', guideId: g, mode: 'guide', tabId: t }),
     [guideId, tabId] as const,
   );
   // Step 1 (Go to) is done already; wait until the guide shows step 2 in the page.
   await expect
     .poll(() =>
-      sw.evaluate(() => [__trailmark.guidance.current.index, __trailmark.guidance.current.phase]),
+      sw.evaluate(() => [__showsteps.guidance.current.index, __showsteps.guidance.current.phase]),
     )
     .toEqual([1, 'showing']);
   await page.getByLabel('Username').fill('alex');
   await page.getByLabel('Username').press('Tab');
-  await expect.poll(() => sw.evaluate(() => __trailmark.guidance.current.index)).toBe(2);
+  await expect.poll(() => sw.evaluate(() => __showsteps.guidance.current.index)).toBe(2);
   await expect
-    .poll(() => sw.evaluate(() => __trailmark.guidance.current.reason))
+    .poll(() => sw.evaluate(() => __showsteps.guidance.current.reason))
     .toBe('desktop-app');
   await expect.poll(() => desktop.overlayText()).toContain('Invoice 1043 approved');
   await desktop.app
@@ -173,10 +173,10 @@ test('one capture across a web page and Notepad, then Guide Me across both (C10,
     { type: 'key', vk: 0x09 },
     { type: 'wait', ms: 300 },
   ]);
-  await expect.poll(() => sw.evaluate(() => __trailmark.guidance.current.index)).toBe(3);
+  await expect.poll(() => sw.evaluate(() => __showsteps.guidance.current.index)).toBe(3);
   await expect.poll(() => desktop.overlayText()).toBe('');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect
-    .poll(() => sw.evaluate(() => __trailmark.guidance.current.status))
+    .poll(() => sw.evaluate(() => __showsteps.guidance.current.status))
     .not.toBe('active');
 });

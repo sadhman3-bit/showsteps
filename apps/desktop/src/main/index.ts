@@ -1,5 +1,5 @@
-import { BRIDGE_STORE_METHODS, FolderStore, parseGuide, type GuideStore } from '@trailmark/core';
-import { nodeFileSystem } from '@trailmark/core/node';
+import { BRIDGE_STORE_METHODS, FolderStore, parseGuide, type GuideStore } from '@showsteps/core';
+import { nodeFileSystem } from '@showsteps/core/node';
 import {
   BrowserWindow,
   Menu,
@@ -36,7 +36,7 @@ import {
 import { ExtensionSink } from './sinks';
 
 const SHORTCUT = 'Control+Alt+R';
-const E2E = process.env.TRAILMARK_E2E === '1';
+const E2E = process.env.SHOWSTEPS_E2E === '1';
 
 /** Installer hooks: register or remove the browser bridge for this user, then exit. */
 const hostSetup = process.argv.includes('--register-native-host')
@@ -51,12 +51,12 @@ if (!hostSetup && !app.requestSingleInstanceLock()) app.quit();
 
 const resources = app.isPackaged ? process.resourcesPath : join(__dirname, '..', '..', 'resources');
 const helperExe = join(resources, 'bin', 'uia-helper.exe');
-const hostExe = join(resources, 'bin', 'trailmark-host.exe');
+const hostExe = join(resources, 'bin', 'showsteps-host.exe');
 const renderer = join(__dirname, '..', 'renderer');
 const icon = join(resources, 'icon.png');
-if (process.env.TRAILMARK_USER_DATA) app.setPath('userData', process.env.TRAILMARK_USER_DATA);
+if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 const settingsFile = () => join(app.getPath('userData'), 'settings.json');
-const shotDir = () => join(app.getPath('temp'), 'trailmark-shots');
+const shotDir = () => join(app.getPath('temp'), 'showsteps-shots');
 
 // ---------- State ----------
 
@@ -313,7 +313,7 @@ function showMain(hash = ''): void {
     mainWindow = new BrowserWindow({
       width: 1280,
       height: 860,
-      title: 'ABCXYZ',
+      title: 'ShowSteps',
       icon,
       show: false,
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
@@ -322,7 +322,7 @@ function showMain(hash = ''): void {
     mainWindow.once('ready-to-show', () => mainWindow?.show());
     void mainWindow.loadFile(join(renderer, 'index.html'), hash ? { hash: hash.slice(1) } : {});
     mainWindow.on('close', (e) => {
-      // Closing the window keeps ABCXYZ in the tray (the shortcut still works).
+      // Closing the window keeps ShowSteps in the tray (the shortcut still works).
       if (!quitting) {
         e.preventDefault();
         mainWindow?.hide();
@@ -340,10 +340,10 @@ let quitting = false;
 function updateTray(): void {
   if (!tray) return;
   const recording = recorder.isActive;
-  tray.setToolTip(recording ? 'ABCXYZ: recording' : 'ABCXYZ');
+  tray.setToolTip(recording ? 'ShowSteps: recording' : 'ShowSteps');
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: 'Open ABCXYZ', click: () => showMain() },
+      { label: 'Open ShowSteps', click: () => showMain() },
       recording
         ? { label: 'Finish capture', click: () => void finishCapture() }
         : { label: `Start capture (Ctrl+Alt+R)`, click: () => void startCapture() },
@@ -429,11 +429,11 @@ void app.whenReady().then(async () => {
     app.exit(0);
     return;
   }
-  settings = await loadSettings(settingsFile(), {
-    ...defaultSettings(app.getPath('documents')),
-    ...(process.env.TRAILMARK_LIBRARY ? { libraryPath: process.env.TRAILMARK_LIBRARY } : {}),
-  });
-  if (process.env.TRAILMARK_LIBRARY) settings.libraryPath = process.env.TRAILMARK_LIBRARY;
+  settings = await loadSettings(
+    settingsFile(),
+    defaultSettings(app.getPath('documents'), process.env.SHOWSTEPS_LIBRARY),
+  );
+  if (process.env.SHOWSTEPS_LIBRARY) settings.libraryPath = process.env.SHOWSTEPS_LIBRARY;
   mkdirSync(settings.libraryPath, { recursive: true });
   mkdirSync(shotDir(), { recursive: true });
   openStores();
@@ -442,14 +442,14 @@ void app.whenReady().then(async () => {
   // Exports save straight to Downloads (the renderer uses download links).
   session.defaultSession.on('will-download', (_e, item) => {
     item.setSavePath(
-      join(process.env.TRAILMARK_DOWNLOADS ?? app.getPath('downloads'), item.getFilename()),
+      join(process.env.SHOWSTEPS_DOWNLOADS ?? app.getPath('downloads'), item.getFilename()),
     );
   });
 
   await registerNativeHost(app.getPath('userData'), hostExe).catch(() => undefined);
   await bridge
     .listen()
-    .catch((error: unknown) => console.error('ABCXYZ: bridge unavailable', error));
+    .catch((error: unknown) => console.error('ShowSteps: bridge unavailable', error));
 
   tray = new Tray(nativeImage.createFromPath(icon).resize({ width: 16, height: 16 }));
   tray.on('click', () => showMain());
@@ -471,9 +471,9 @@ app.on('before-quit', () => {
 });
 
 if (E2E) {
-  // Test hook for Playwright's Electron tests; only set when TRAILMARK_E2E=1.
+  // Test hook for Playwright's Electron tests; only set when SHOWSTEPS_E2E=1.
   Object.assign(globalThis, {
-    __trailmarkDesktop: {
+    __showstepsDesktop: {
       helper,
       recorder,
       guide,

@@ -1,4 +1,4 @@
-import { runFields, type Guide } from '@trailmark/core';
+import { runFields, type Guide } from '@showsteps/core';
 import { useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
@@ -38,34 +38,34 @@ export function RunDialog({
       actions={
         <>
           <Button onClick={onClose}>{strings.library.cancel}</Button>
-          <Button variant="primary" type="submit" form="tm-run">
+          <Button variant="primary" type="submit" form="ss-run">
             {g.runStart}
           </Button>
         </>
       }
     >
-      <form id="tm-run" class="tm-stack-form" onSubmit={submit}>
-        <p class="tm-muted">{g.runIntro}</p>
+      <form id="ss-run" class="ss-stack-form" onSubmit={submit}>
+        <p class="ss-muted">{g.runIntro}</p>
         {fields.length ? (
-          <fieldset class="tm-fieldset">
+          <fieldset class="ss-fieldset">
             <legend>{g.runValues}</legend>
             {fields.map((f) => (
-              <label key={f.key} class="tm-field">
+              <label key={f.key} class="ss-field">
                 {f.label}
                 <input
-                  class="tm-input"
+                  class="ss-input"
                   value={values[f.key] ?? ''}
                   onInput={(e) => setValues({ ...values, [f.key]: e.currentTarget.value })}
                 />
-                {f.description ? <small class="tm-muted">{f.description}</small> : null}
+                {f.description ? <small class="ss-muted">{f.description}</small> : null}
               </label>
             ))}
           </fieldset>
         ) : null}
-        <label class="tm-field">
+        <label class="ss-field">
           {g.speed}
           <select
-            class="tm-input"
+            class="ss-input"
             value={speed}
             onChange={(e) => setSpeed(e.currentTarget.value as RunSpeed)}
           >
@@ -76,7 +76,7 @@ export function RunDialog({
             ))}
           </select>
         </label>
-        <label class="tm-check">
+        <label class="ss-check">
           <input
             type="checkbox"
             checked={stepThrough}

@@ -1,5 +1,5 @@
-import type { InputMode } from '@trailmark/core';
-import { BRIDGE_STORE_METHODS, type GuideStore } from '@trailmark/core';
+import type { InputMode } from '@showsteps/core';
+import { BRIDGE_STORE_METHODS, type GuideStore } from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 
 interface DesktopApi {
@@ -11,11 +11,11 @@ interface DesktopApi {
 
 declare global {
   interface Window {
-    trailmark: DesktopApi;
+    showsteps: DesktopApi;
   }
 }
 
-export const api = (): DesktopApi => window.trailmark;
+export const api = (): DesktopApi => window.showsteps;
 
 /**
  * The desktop library as a GuideStore: every call goes to the main process, which owns the

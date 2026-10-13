@@ -9,7 +9,7 @@ import {
   type CommentsSidecar,
   type GuideStore,
   type Thread,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { strings } from '../strings.js';
@@ -75,8 +75,8 @@ export function CommentBox({ api, blockId }: { api: CommentsApi; blockId: string
     setText('');
   };
   return (
-    <div class="tm-social" data-block={blockId}>
-      <div class="tm-social__bar">
+    <div class="ss-social" data-block={blockId}>
+      <div class="ss-social__bar">
         {REACTIONS.map((emoji) => {
           const who = thread?.reactions.get(emoji) ?? [];
           const mine = who.includes(api.user);
@@ -84,7 +84,7 @@ export function CommentBox({ api, blockId }: { api: CommentsApi; blockId: string
             <button
               key={emoji}
               type="button"
-              class="tm-react"
+              class="ss-react"
               aria-pressed={mine}
               aria-label={s.react(emoji)}
               title={who.length ? s.reactedBy(who) : s.react(emoji)}
@@ -96,38 +96,38 @@ export function CommentBox({ api, blockId }: { api: CommentsApi; blockId: string
           );
         })}
         {blockId !== END_OF_GUIDE ? (
-          <button type="button" class="tm-link" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <button type="button" class="ss-link" aria-expanded={open} onClick={() => setOpen(!open)}>
             {comments.length ? s.comments(comments.length) : s.addComment}
           </button>
         ) : null}
       </div>
       {open ? (
-        <div class="tm-social__thread">
+        <div class="ss-social__thread">
           {comments.length ? (
             <ul>
               {comments.map((c) => (
                 <li key={c.id}>
-                  <p class="tm-social__meta">
+                  <p class="ss-social__meta">
                     <strong>{c.mine ? s.you(c.author) : c.author}</strong>{' '}
-                    <span class="tm-muted">{relativeTime(c.at)}</span>
+                    <span class="ss-muted">{relativeTime(c.at)}</span>
                     {c.mine ? (
-                      <button type="button" class="tm-link" onClick={() => void api.remove(c.id)}>
+                      <button type="button" class="ss-link" onClick={() => void api.remove(c.id)}>
                         {s.delete}
                       </button>
                     ) : null}
                   </p>
-                  <p class="tm-social__text">{c.text}</p>
+                  <p class="ss-social__text">{c.text}</p>
                 </li>
               ))}
             </ul>
           ) : null}
-          <form class="tm-social__form" onSubmit={(e) => void submit(e)}>
-            <label class="tm-visually-hidden" for={`tm-c-${blockId}`}>
+          <form class="ss-social__form" onSubmit={(e) => void submit(e)}>
+            <label class="ss-visually-hidden" for={`ss-c-${blockId}`}>
               {s.addComment}
             </label>
             <textarea
-              id={`tm-c-${blockId}`}
-              class="tm-input"
+              id={`ss-c-${blockId}`}
+              class="ss-input"
               rows={2}
               placeholder={s.addComment}
               value={text}

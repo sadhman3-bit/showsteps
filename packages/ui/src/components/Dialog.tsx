@@ -15,7 +15,7 @@ export interface DialogProps {
 export function Dialog({ title, children, onClose, actions }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   // Unique per dialog: dialogs can be nested (a confirmation inside version history).
-  const titleId = `tm-dialog-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const titleId = `ss-dialog-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   useEffect(() => {
     const el = ref.current;
     if (el && !el.open) el.showModal();
@@ -24,7 +24,7 @@ export function Dialog({ title, children, onClose, actions }: DialogProps) {
   return (
     <dialog
       ref={ref}
-      class="tm-dialog"
+      class="ss-dialog"
       aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
@@ -32,8 +32,8 @@ export function Dialog({ title, children, onClose, actions }: DialogProps) {
       }}
     >
       <h2 id={titleId}>{title}</h2>
-      <div class="tm-dialog__body">{children}</div>
-      <div class="tm-dialog__actions">
+      <div class="ss-dialog__body">{children}</div>
+      <div class="ss-dialog__actions">
         {actions ?? <Button onClick={onClose}>{strings.library.close}</Button>}
       </div>
     </dialog>
@@ -66,16 +66,16 @@ export function PromptDialog(props: {
       actions={
         <>
           <Button onClick={props.onClose}>{strings.library.cancel}</Button>
-          <Button variant="primary" type="submit" form="tm-prompt">
+          <Button variant="primary" type="submit" form="ss-prompt">
             {props.confirm ?? strings.library.save}
           </Button>
         </>
       }
     >
-      <form id="tm-prompt" class="tm-field" onSubmit={submit}>
-        <label for="tm-prompt-input">{props.label}</label>
-        <input id="tm-prompt-input" ref={input} class="tm-input" value={props.initial ?? ''} />
-        {props.hint ? <small class="tm-muted">{props.hint}</small> : null}
+      <form id="ss-prompt" class="ss-field" onSubmit={submit}>
+        <label for="ss-prompt-input">{props.label}</label>
+        <input id="ss-prompt-input" ref={input} class="ss-input" value={props.initial ?? ''} />
+        {props.hint ? <small class="ss-muted">{props.hint}</small> : null}
       </form>
     </Dialog>
   );

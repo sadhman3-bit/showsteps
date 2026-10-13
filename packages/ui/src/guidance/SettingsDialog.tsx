@@ -1,4 +1,4 @@
-import type { InputMode } from '@trailmark/core';
+import type { InputMode } from '@showsteps/core';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { Button } from '../Button.js';
@@ -24,7 +24,7 @@ export interface UserSettings {
 
 export type Theme = 'system' | 'light' | 'dark';
 
-/** Show ABCXYZ's pages in light, dark or the system's colours. */
+/** Show ShowSteps's pages in light, dark or the system's colours. */
 export function applyTheme(theme: Theme | undefined): void {
   if (!theme || theme === 'system') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
@@ -60,24 +60,24 @@ export function SettingsDialog<T extends UserSettings>({
       actions={
         <>
           <Button onClick={onClose}>{strings.library.cancel}</Button>
-          <Button variant="primary" type="submit" form="tm-settings">
+          <Button variant="primary" type="submit" form="ss-settings">
             {s.save}
           </Button>
         </>
       }
     >
-      <form id="tm-settings" class="tm-stack-form" onSubmit={submit}>
-        <label class="tm-field">
+      <form id="ss-settings" class="ss-stack-form" onSubmit={submit}>
+        <label class="ss-field">
           {s.userName}
           <input
-            class="tm-input"
+            class="ss-input"
             value={draft.userName}
             maxLength={100}
             onInput={(e) => setDraft({ ...draft, userName: e.currentTarget.value })}
           />
-          <small class="tm-muted">{s.userNameHint}</small>
+          <small class="ss-muted">{s.userNameHint}</small>
         </label>
-        <label class="tm-check">
+        <label class="ss-check">
           <input
             type="checkbox"
             checked={draft.guidanceEnabled}
@@ -86,10 +86,10 @@ export function SettingsDialog<T extends UserSettings>({
           {s.guidance}
         </label>
         {draft.theme ? (
-          <label class="tm-field">
+          <label class="ss-field">
             {s.theme}
             <select
-              class="tm-input"
+              class="ss-input"
               value={draft.theme}
               onChange={(e) => setDraft({ ...draft, theme: e.currentTarget.value as Theme })}
             >
@@ -102,9 +102,9 @@ export function SettingsDialog<T extends UserSettings>({
           </label>
         ) : null}
         {draft.magnify !== undefined ? (
-          <fieldset class="tm-fieldset">
+          <fieldset class="ss-fieldset">
             <legend>{s.captureHeading}</legend>
-            <label class="tm-check">
+            <label class="ss-check">
               <input
                 type="checkbox"
                 checked={!!draft.liveBlurDefault}
@@ -112,10 +112,10 @@ export function SettingsDialog<T extends UserSettings>({
               />{' '}
               {s.liveBlurDefault}
             </label>
-            <label class="tm-field">
+            <label class="ss-field">
               {s.magnify}
               <select
-                class="tm-input"
+                class="ss-input"
                 value={String(draft.magnify)}
                 onChange={(e) =>
                   setDraft({
@@ -131,10 +131,10 @@ export function SettingsDialog<T extends UserSettings>({
                 ))}
               </select>
             </label>
-            <label class="tm-field">
+            <label class="ss-field">
               {s.quality}
               <select
-                class="tm-input"
+                class="ss-input"
                 value={draft.screenshotQuality ?? 'high'}
                 onChange={(e) =>
                   setDraft({
@@ -153,24 +153,24 @@ export function SettingsDialog<T extends UserSettings>({
           </fieldset>
         ) : null}
         {draft.defaultInputMode ? (
-          <label class="tm-field">
+          <label class="ss-field">
             {s.inputMode}
             <InputModeSelect
               value={draft.defaultInputMode}
               onChange={(mode) => setDraft({ ...draft, defaultInputMode: mode })}
             />
-            <small class="tm-muted">{s.inputModeHint}</small>
+            <small class="ss-muted">{s.inputModeHint}</small>
           </label>
         ) : null}
         {desktop ? (
-          <label class="tm-check">
+          <label class="ss-check">
             <input
               type="checkbox"
               checked={!!draft.desktopApp}
               onChange={(e) => setDraft({ ...draft, desktopApp: e.currentTarget.checked })}
             />{' '}
             {s.desktopApp}
-            <small class="tm-muted tm-block-text">
+            <small class="ss-muted ss-block-text">
               {s.desktopAppHint}{' '}
               {value.desktopApp
                 ? desktop.connected
@@ -181,17 +181,17 @@ export function SettingsDialog<T extends UserSettings>({
           </label>
         ) : null}
         {aiAvailable ? (
-          <label class="tm-check">
+          <label class="ss-check">
             <input
               type="checkbox"
               checked={draft.aiEnabled}
               onChange={(e) => setDraft({ ...draft, aiEnabled: e.currentTarget.checked })}
             />{' '}
             {s.ai}
-            <small class="tm-muted tm-block-text">{s.aiHint}</small>
+            <small class="ss-muted ss-block-text">{s.aiHint}</small>
           </label>
         ) : (
-          <p class="tm-muted">{s.aiUnavailable}</p>
+          <p class="ss-muted">{s.aiUnavailable}</p>
         )}
         {extra}
       </form>

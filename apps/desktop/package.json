@@ -1,10 +1,10 @@
 {
-  "name": "@trailmark/desktop",
-  "productName": "ABCXYZ",
+  "name": "@showsteps/desktop",
+  "productName": "ShowSteps",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "description": "ABCXYZ for Windows: record desktop and web steps, edit, export and guide.",
+  "description": "ShowSteps for Windows: record desktop and web steps, edit, export and guide.",
   "type": "module",
   "main": "dist/main/index.cjs",
   "scripts": {
@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
-    "@trailmark/core": "workspace:*",
-    "@trailmark/ui": "workspace:*",
+    "@showsteps/core": "workspace:*",
+    "@showsteps/ui": "workspace:*",
     "electron": "^44.7.0",
     "electron-builder": "^26.15.3",
     "preact": "^11.0.1",
@@ -26,8 +26,8 @@
     "zod": "^4.6.5"
   },
   "build": {
-    "appId": "app.trailmark.desktop",
-    "productName": "ABCXYZ",
+    "appId": "app.showsteps.desktop",
+    "productName": "ShowSteps",
     "copyright": "MIT licence",
     "directories": {
       "output": "release",
@@ -63,7 +63,7 @@
       "createDesktopShortcut": true,
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
-      "artifactName": "ABCXYZ-Setup-${version}.${ext}"
+      "artifactName": "ShowSteps-Setup-${version}.${ext}"
     }
   }
 }

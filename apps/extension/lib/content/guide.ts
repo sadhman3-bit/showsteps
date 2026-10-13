@@ -9,8 +9,8 @@ import {
   type PageMark,
   type RichText,
   type Step,
-} from '@trailmark/core';
-import { strings } from '@trailmark/ui/strings';
+} from '@showsteps/core';
+import { strings } from '@showsteps/ui/strings';
 import {
   GuideToContentSchema,
   type GuideContentMessage,
@@ -159,7 +159,7 @@ export class GuidePage {
 
   private ensureRoot(): ShadowRoot {
     if (this.root && this.host?.isConnected) return this.root;
-    this.host = document.createElement('trailmark-guide');
+    this.host = document.createElement('showsteps-guide');
     this.root = this.host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = CSS;

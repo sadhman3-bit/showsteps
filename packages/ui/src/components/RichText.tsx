@@ -1,5 +1,5 @@
 import type { ComponentChild } from 'preact';
-import type { RichText as RichTextDoc } from '@trailmark/core';
+import type { RichText as RichTextDoc } from '@showsteps/core';
 
 const SAFE_LINK = /^(https?:|mailto:)/i;
 

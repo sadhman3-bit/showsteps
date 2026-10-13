@@ -1,4 +1,4 @@
-// Trailmark native messaging host. Chrome starts it for the extension (chrome.runtime.connectNative)
+// ShowSteps native messaging host. Chrome starts it for the extension (chrome.runtime.connectNative)
 // and talks over stdio with 4-byte length-prefixed JSON. This host only relays: each message
 // becomes one line on the desktop app's named pipe, and each line from the app becomes one
 // message to Chrome. If the desktop app is not running it says so and exits.
@@ -8,7 +8,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Threading;
 
-namespace Trailmark
+namespace ShowSteps
 {
     internal static class Host
     {
@@ -19,7 +19,7 @@ namespace Trailmark
         {
             var stdin = Console.OpenStandardInput();
             var stdout = Console.OpenStandardOutput();
-            var pipeName = "trailmark-" + Environment.UserName.ToLowerInvariant();
+            var pipeName = "showsteps-" + Environment.UserName.ToLowerInvariant();
             var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
             try
             {

@@ -1,7 +1,7 @@
 // Compiles the two small Windows helpers with the C# compiler that ships with the .NET Framework
 // (present on every Windows 10/11 machine), so building needs no .NET SDK:
 //   resources/bin/uia-helper.exe      UI Automation, screenshots and input
-//   resources/bin/trailmark-host.exe  Chrome native messaging relay to the desktop app
+//   resources/bin/showsteps-host.exe  Chrome native messaging relay to the desktop app
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -45,9 +45,9 @@ execFileSync(
   csc,
   [
     ...common,
-    `/out:${join(out, 'trailmark-host.exe')}`,
+    `/out:${join(out, 'showsteps-host.exe')}`,
     `/reference:${join(fw, 'System.Core.dll')}`,
-    join(here, 'native', 'TrailmarkHost.cs'),
+    join(here, 'native', 'ShowStepsHost.cs'),
   ],
   { stdio: 'inherit' },
 );

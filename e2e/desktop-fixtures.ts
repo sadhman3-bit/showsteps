@@ -63,7 +63,7 @@ interface Hook {
   };
 }
 // Evaluated inside the app (serialised), so each call names the global itself.
-type Global = { __trailmarkDesktop: Hook };
+type Global = { __showstepsDesktop: Hook };
 
 /** The window a test may send input to: an app and (always, in tests) a unique window title. */
 export interface InputTarget {
@@ -95,17 +95,17 @@ export class Desktop {
     if (!existsSync(join(DESKTOP, 'dist', 'main', 'index.cjs'))) {
       throw new Error('The desktop app is not built. Run `pnpm build` first.');
     }
-    const dir = mkdtempSync(join(tmpdir(), 'trailmark-desktop-'));
+    const dir = mkdtempSync(join(tmpdir(), 'showsteps-desktop-'));
     mkdirSync(join(dir, 'downloads'));
     const app = await _electron.launch({
       executablePath: ELECTRON,
       args: [DESKTOP],
       env: {
         ...process.env,
-        TRAILMARK_E2E: '1',
-        TRAILMARK_LIBRARY: join(dir, 'library'),
-        TRAILMARK_USER_DATA: join(dir, 'data'),
-        TRAILMARK_DOWNLOADS: join(dir, 'downloads'),
+        SHOWSTEPS_E2E: '1',
+        SHOWSTEPS_LIBRARY: join(dir, 'library'),
+        SHOWSTEPS_USER_DATA: join(dir, 'data'),
+        SHOWSTEPS_DOWNLOADS: join(dir, 'downloads'),
       },
     });
     // Main-process errors show up in the test output.
@@ -122,14 +122,14 @@ export class Desktop {
   input(actions: InputAction[], target = this.target): Promise<unknown> {
     if (!target) throw new Error('No input target: open the app under test first');
     return this.app.evaluate(
-      (_e, [a, p, t]) => (globalThis as unknown as Global).__trailmarkDesktop.helper.input(a, p, t),
+      (_e, [a, p, t]) => (globalThis as unknown as Global).__showstepsDesktop.helper.input(a, p, t),
       [actions, target.app, target.title] as const,
     );
   }
 
   find(query: Record<string, string>): Promise<UiaElementLite[]> {
     return this.app.evaluate(
-      (_e, q) => (globalThis as unknown as Global).__trailmarkDesktop.helper.find(q),
+      (_e, q) => (globalThis as unknown as Global).__showstepsDesktop.helper.find(q),
       query,
     );
   }
@@ -138,7 +138,7 @@ export class Desktop {
   activate(processName: string, windowTitle?: string): Promise<unknown> {
     return this.app.evaluate(
       (_e, [p, t]) =>
-        (globalThis as unknown as Global).__trailmarkDesktop.helper.call('activate', {
+        (globalThis as unknown as Global).__showstepsDesktop.helper.call('activate', {
           processName: p,
           ...(t ? { windowTitle: t } : {}),
         }),
@@ -160,11 +160,11 @@ export class Desktop {
 
   capture(): Promise<{ status: string; stepCount: number; shared: boolean; lastGuideId?: string }> {
     return this.app.evaluate(
-      () => (globalThis as unknown as Global).__trailmarkDesktop.recorder.current,
+      () => (globalThis as unknown as Global).__showstepsDesktop.recorder.current,
     );
   }
 
-  /** Minimise ABCXYZ's window so the app under test is in front. */
+  /** Minimise ShowSteps's window so the app under test is in front. */
   async minimise(): Promise<void> {
     await this.app.evaluate(({ BrowserWindow }) => {
       for (const w of BrowserWindow.getAllWindows()) if (w.isVisible()) w.minimize();
@@ -173,51 +173,51 @@ export class Desktop {
 
   startCapture(): Promise<void> {
     return this.app.evaluate(() =>
-      (globalThis as unknown as Global).__trailmarkDesktop.startCapture(),
+      (globalThis as unknown as Global).__showstepsDesktop.startCapture(),
     );
   }
 
   finishCapture(): Promise<void> {
     return this.app.evaluate(() =>
-      (globalThis as unknown as Global).__trailmarkDesktop.finishCapture(),
+      (globalThis as unknown as Global).__showstepsDesktop.finishCapture(),
     );
   }
 
   startGuide(id: string): Promise<void> {
     return this.app.evaluate(
-      (_e, g) => (globalThis as unknown as Global).__trailmarkDesktop.startGuide(g),
+      (_e, g) => (globalThis as unknown as Global).__showstepsDesktop.startGuide(g),
       id,
     );
   }
 
   guideActive(): Promise<boolean> {
     return this.app.evaluate(
-      () => (globalThis as unknown as Global).__trailmarkDesktop.guide.active,
+      () => (globalThis as unknown as Global).__showstepsDesktop.guide.active,
     );
   }
 
   extensionConnected(): Promise<boolean> {
     return this.app.evaluate(
-      () => (globalThis as unknown as Global).__trailmarkDesktop.bridge.extensionConnected,
+      () => (globalThis as unknown as Global).__showstepsDesktop.bridge.extensionConnected,
     );
   }
 
   guides(): Promise<{ id: string; title: string }[]> {
     return this.app.evaluate(() =>
-      (globalThis as unknown as Global).__trailmarkDesktop.store().listGuides(),
+      (globalThis as unknown as Global).__showstepsDesktop.store().listGuides(),
     );
   }
 
   guide<T>(id: string): Promise<T> {
     return this.app.evaluate(
-      (_e, g) => (globalThis as unknown as Global).__trailmarkDesktop.store().getGuide(g),
+      (_e, g) => (globalThis as unknown as Global).__showstepsDesktop.store().getGuide(g),
       id,
     ) as Promise<T>;
   }
 
   images(id: string): Promise<string[]> {
     return this.app.evaluate(
-      (_e, g) => (globalThis as unknown as Global).__trailmarkDesktop.store().listImages(g),
+      (_e, g) => (globalThis as unknown as Global).__showstepsDesktop.store().listImages(g),
       id,
     );
   }
@@ -227,7 +227,7 @@ export class Desktop {
     return this.app.evaluate(
       async (_e, [px, py]) =>
         (
-          (await (globalThis as unknown as Global).__trailmarkDesktop.helper.call('windowAt', {
+          (await (globalThis as unknown as Global).__showstepsDesktop.helper.call('windowAt', {
             x: px,
             y: py,
           })) as { processName: string }
@@ -273,7 +273,7 @@ export class Desktop {
    */
   private async unregisterOwnHost(): Promise<void> {
     for (const browser of ['Google\\Chrome', 'Chromium', 'Microsoft\\Edge']) {
-      const key = `HKCU\\Software\\${browser}\\NativeMessagingHosts\\com.trailmark.host`;
+      const key = `HKCU\\Software\\${browser}\\NativeMessagingHosts\\com.showsteps.host`;
       const out = await run('reg', ['query', key, '/ve']).catch(() => undefined);
       if (out?.stdout.toLowerCase().includes(this.dir.toLowerCase()))
         await run('reg', ['delete', key, '/f']).catch(() => undefined);
@@ -297,7 +297,7 @@ export async function openNotepad(
   desktop: Desktop,
 ): Promise<{ editor: UiaElementLite; title: string }> {
   await desktop.minimise();
-  const title = `trailmark-e2e-${randomUUID().slice(0, 8)}`;
+  const title = `showsteps-e2e-${randomUUID().slice(0, 8)}`;
   const file = join(desktop.dir, `${title}.txt`);
   writeFileSync(file, '');
   const proc = spawn('notepad.exe', [file]);
@@ -321,7 +321,7 @@ export async function openNotepad(
   throw new Error('Notepad did not open');
 }
 
-const LOCK = join(tmpdir(), 'trailmark-desktop-e2e.lock');
+const LOCK = join(tmpdir(), 'showsteps-desktop-e2e.lock');
 
 /**
  * Desktop tests use the real screen, mouse and keyboard, and the app allows one instance: they

@@ -8,7 +8,7 @@ import {
   type GuideStore,
   type InputMode,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import {
   clickEvent,
   elementKey,
@@ -78,7 +78,7 @@ export class DesktopRecorder {
     deps.helper.on('event', (ev) => {
       if (this.state.status !== 'recording') return;
       void this.serial(() => this.onEvent(ev)).catch((error: unknown) =>
-        console.error('ABCXYZ: could not record desktop step', error),
+        console.error('ShowSteps: could not record desktop step', error),
       );
     });
   }

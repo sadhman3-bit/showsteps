@@ -7,7 +7,7 @@ import {
   plain,
   type Step,
   type Target,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { describe, expect, it } from 'vitest';
 import { Guidance, frameFor, type GuidanceDeps } from '../lib/guidance';
 import type { GuideToContent, GuidanceState } from '../lib/guideMessages';

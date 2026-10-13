@@ -1,0 +1,16 @@
+/* ShowSteps interface fonts, bundled (SIL Open Font License, see ../assets/fonts/OFL-*.txt). */
+@font-face {
+  font-family: 'Funnel Sans';
+  src: url('../assets/fonts/FunnelSans-Variable.ttf') format('truetype');
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Funnel Display';
+  src: url('../assets/fonts/FunnelDisplay-Variable.ttf') format('truetype');
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}

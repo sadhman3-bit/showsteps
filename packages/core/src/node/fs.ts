@@ -1,5 +1,5 @@
 // Node.js implementation of the FolderStore file-system surface. Imported via
-// "@trailmark/core/node" so browser bundles never pull in node: modules.
+// "@showsteps/core/node" so browser bundles never pull in node: modules.
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import type { FileSystem } from '../storage/folder.js';
 

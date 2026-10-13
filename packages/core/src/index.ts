@@ -91,6 +91,7 @@ export {
 
 // Archives
 export {
+  ARCHIVE_ACCEPT,
   ARCHIVE_EXTENSION,
   exportGuideArchive,
   importGuideArchive,
@@ -115,11 +116,16 @@ export {
   SERIF_FONTS,
   DEFAULT_ACCENT,
   HIGHLIGHT_COLOR,
+  HIGHLIGHT_ALT_COLOR,
   isHexColor,
   textOn,
+  luminance,
+  contrastRatio,
   accentOf,
   fontOf,
 } from './branding.js';
+export { LIGHT, DARK, CHROME, ANNOTATION_COLORS, SPOTLIGHT, chromeTokenCss } from './tokens.js';
+export { rippleSvg, trailSvg, type PatternOptions } from './patterns.js';
 
 // Guidance (Guide Me, Run for me, Discover, notes and pins, comments, analytics)
 export { pageKey, originOf, samePage, relevantGuides } from './guidance/pages.js';
@@ -243,7 +249,9 @@ export {
 export {
   toProcedure,
   procedureJson,
+  LEGACY_PROCEDURE_FORMATS,
   PROCEDURE_FORMAT,
+  isProcedureFormat,
   DEFAULT_ON_FAILURE,
   type Procedure,
   type ProcedureStep,

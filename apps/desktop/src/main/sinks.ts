@@ -1,4 +1,4 @@
-import type { CaptureEvent } from '@trailmark/core';
+import type { CaptureEvent } from '@showsteps/core';
 import type { BridgeServer } from './bridge';
 import type { CaptureSink, DesktopShot } from './recorder';
 

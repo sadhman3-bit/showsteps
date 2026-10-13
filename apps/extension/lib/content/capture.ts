@@ -10,7 +10,7 @@ import {
   isTextEntry,
   toActionable,
   type Target,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import {
   BackgroundToContentSchema,
   IDLE_STATE,
@@ -22,11 +22,11 @@ import {
 import { Controller } from './controller';
 import { LiveBlur } from './liveBlur';
 
-const FRAME_HELLO = 'trailmark:frame-hello';
+const FRAME_HELLO = 'showsteps:frame-hello';
 /** Actions whose result is worth recording as an expectation, and when to look (U6). */
 const OBSERVED = new Set<ContentEvent['kind']>(['click', 'dblclick', 'key', 'select', 'check']);
 const OBSERVE_AFTER_MS = 800;
-const FRAME_HELLO_REQUEST = 'trailmark:frame-hello-request';
+const FRAME_HELLO_REQUEST = 'showsteps:frame-hello-request';
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 const KEY_NAMES: Record<string, string> = {
   ' ': 'Space',
@@ -184,7 +184,7 @@ export class PageRecorder {
       const sendWords = () => {
         if (window !== window.top) return;
         const words = collectPageText(document, {
-          skip: (el) => el.localName.startsWith('trailmark-'),
+          skip: (el) => el.localName.startsWith('showsteps-'),
         });
         void send({ type: 'shot-words', shotId, words });
       };
@@ -429,7 +429,7 @@ export class PageRecorder {
 
   private showOutline(el: Element) {
     if (!this.outline) {
-      this.outline = document.createElement('trailmark-outline');
+      this.outline = document.createElement('showsteps-outline');
       const root = this.outline.attachShadow({ mode: 'open' });
       root.innerHTML =
         '<style>:host{all:initial;position:fixed;pointer-events:none;z-index:2147483646;' +

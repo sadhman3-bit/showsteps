@@ -1,4 +1,4 @@
-import { fitWidth, type PageText } from '@trailmark/core';
+import { fitWidth, type PageText } from '@showsteps/core';
 
 /** Chrome allows two captureVisibleTab calls per second; keep a small margin. */
 export const MIN_SHOT_INTERVAL_MS = 520;

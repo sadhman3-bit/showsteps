@@ -91,7 +91,7 @@ export function setInputMode(guide: Guide, stepId: string, mode: InputMode): Gui
     blocks: guide.blocks.map((b) => {
       if (b.kind !== 'step' || b.id !== stepId) return b;
       const next = { ...b, input: nextInput };
-      // Keep a title the author wrote; refresh one ABCXYZ wrote.
+      // Keep a title the author wrote; refresh one ShowSteps wrote.
       const written = toPlainText(writeStepTitle(b)) === toPlainText(b.human.title);
       return written ? { ...next, human: { ...next.human, title: writeStepTitle(next) } } : next;
     }),

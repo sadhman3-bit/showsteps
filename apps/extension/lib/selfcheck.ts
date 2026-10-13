@@ -1,7 +1,7 @@
 // U7: agent self-check. A dry run of a guide in a new tab: every web step's page is opened and
 // its element looked for and ringed, but nothing is clicked or typed. The report says per step
 // whether the element was found, found among look-alikes (ambiguous) or missing.
-import { guideSteps, planStep, type Guide, type Step } from '@trailmark/core';
+import { guideSteps, planStep, type Guide, type Step } from '@showsteps/core';
 import { frameFor, type GuidanceDeps } from './guidance';
 import { ProbeReplySchema } from './guideMessages';
 

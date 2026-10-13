@@ -1,4 +1,4 @@
-import type { GuideSummary } from '@trailmark/core';
+import type { GuideSummary } from '@showsteps/core';
 import { describe, expect, it } from 'vitest';
 import {
   facets,

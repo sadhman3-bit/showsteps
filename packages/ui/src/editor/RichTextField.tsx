@@ -4,7 +4,7 @@ import {
   toPlainText,
   type RichText,
   type Span,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import DOMPurify from 'dompurify';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { PromptDialog } from '../components/Dialog.js';
@@ -143,10 +143,10 @@ export function RichTextField({
   };
 
   return (
-    <div class={`tm-rich ${cls ?? ''}`}>
+    <div class={`ss-rich ${cls ?? ''}`}>
       <div
         ref={ref}
-        class={`tm-rich__input${multiline ? ' tm-rich__input--multi' : ''}`}
+        class={`ss-rich__input${multiline ? ' ss-rich__input--multi' : ''}`}
         contentEditable
         role="textbox"
         aria-label={label}
@@ -191,7 +191,7 @@ export function RichTextField({
           }
         }}
       />
-      <div class="tm-rich__tools" role="toolbar" aria-label={label}>
+      <div class="ss-rich__tools" role="toolbar" aria-label={label}>
         <button
           type="button"
           aria-label={e.bold}

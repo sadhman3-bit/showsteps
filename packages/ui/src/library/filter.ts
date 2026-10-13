@@ -1,4 +1,4 @@
-import type { AppRef, Folder, GuideSummary } from '@trailmark/core';
+import type { AppRef, Folder, GuideSummary } from '@showsteps/core';
 
 export type SortKey = 'updated' | 'created' | 'title' | 'steps';
 export type Scope = { kind: 'all' } | { kind: 'trash' } | { kind: 'folder'; folderId: string };

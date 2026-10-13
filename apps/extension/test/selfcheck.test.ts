@@ -1,4 +1,4 @@
-import { createGuide, createStep, plain, type Step, type Target } from '@trailmark/core';
+import { createGuide, createStep, plain, type Step, type Target } from '@showsteps/core';
 import { describe, expect, it } from 'vitest';
 import type { GuideToContent } from '../lib/guideMessages';
 import { selfCheck, type SelfCheckDeps } from '../lib/selfcheck';

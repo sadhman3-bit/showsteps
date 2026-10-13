@@ -254,8 +254,8 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
 
   pdf.setTitle(doc.title, { showInWindowTitleBar: true });
   if (doc.description) pdf.setSubject(doc.description);
-  pdf.setCreator('ABCXYZ');
-  pdf.setProducer('ABCXYZ');
+  pdf.setCreator('ShowSteps');
+  pdf.setProducer('ShowSteps');
   pdf.setCreationDate(new Date(input.guide.createdAt));
   pdf.setModificationDate(new Date(input.guide.updatedAt));
 
@@ -449,7 +449,7 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   return pdf.save();
 }
 
-/** The procedure JSON attached to a PDF made by ABCXYZ, if it has one. */
+/** The procedure JSON attached to a PDF made by ShowSteps, if it has one. */
 export async function procedureFromPdf(bytes: Uint8Array): Promise<string | undefined> {
   const pdf = await PDFDocument.load(bytes, { updateMetadata: false });
   const names = pdf.catalog.lookupMaybe(PDFName.of('Names'), PDFDict);

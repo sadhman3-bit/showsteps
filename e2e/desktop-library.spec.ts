@@ -1,5 +1,5 @@
-import { createGuide, createStep, FolderStore, plain, type Guide } from '@trailmark/core';
-import { nodeFileSystem } from '@trailmark/core/node';
+import { createGuide, createStep, FolderStore, plain, type Guide } from '@showsteps/core';
+import { nodeFileSystem } from '@showsteps/core/node';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from './desktop-fixtures';
@@ -31,8 +31,8 @@ test('team library: others’ guides, who edited them, read-only guides and pers
   await win.evaluate(
     (dir) =>
       (
-        window as unknown as { trailmark: { invoke(c: string, v: unknown): Promise<unknown> } }
-      ).trailmark.invoke('settings:set', { sharedPath: dir, active: 'shared', userName: 'Sam' }),
+        window as unknown as { showsteps: { invoke(c: string, v: unknown): Promise<unknown> } }
+      ).showsteps.invoke('settings:set', { sharedPath: dir, active: 'shared', userName: 'Sam' }),
     teamDir,
   );
   await win.reload();

@@ -115,7 +115,7 @@
       '  <div class="field"><span>Internal note</span>' +
       '    <iframe title="Internal note" src="/frames/notes.html" height="140"></iframe></div>' +
       '  <div class="field"><span id="approver-label">Approver</span>' +
-      '    <tm-approver-picker aria-labelledby="approver-label"></tm-approver-picker></div>' +
+      '    <ss-approver-picker aria-labelledby="approver-label"></ss-approver-picker></div>' +
       '  <button type="submit" class="primary">Review invoice</button>' +
       '</form></section>';
     window.demoScramble(view);
@@ -153,7 +153,7 @@
       notesFrame && notesFrame.contentDocument
         ? notesFrame.contentDocument.querySelector('textarea').value
         : '';
-    const picker = form.querySelector('tm-approver-picker');
+    const picker = form.querySelector('ss-approver-picker');
     return {
       supplier: data.get('supplier'),
       invoiceNumber: data.get('invoiceNumber'),

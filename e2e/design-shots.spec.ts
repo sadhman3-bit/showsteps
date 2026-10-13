@@ -13,7 +13,7 @@ type Hook = {
   guidance: { current: { phase: string }; control(a: string): Promise<unknown> };
   recorder: { control(a: string): Promise<unknown> };
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 const OUT = fileURLToPath(
   new URL(`../docs/design/${process.env.DESIGN_OUT ?? 'after'}/`, import.meta.url),
@@ -38,7 +38,7 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   await lib.setViewportSize({ width: 1280, height: 800 });
   await lib.goto(`chrome-extension://${extensionId}/library.html`);
   await both([lib], 'library-empty');
-  await sw.evaluate(() => __trailmark.installSamples());
+  await sw.evaluate(() => __showsteps.installSamples());
   await lib.reload();
   const list = lib.getByRole('list', { name: 'Library' });
   await expect(list.getByRole('button', { name: INVOICE })).toBeVisible();
@@ -69,7 +69,7 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   await panel.waitForTimeout(800);
   await both([panel], 'sidepanel-idle');
   await startCaptureOn(sw, 'http://localhost:5173/');
-  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  const bar = page.locator('showsteps-controller').getByRole('toolbar');
   await expect(bar).toContainText('1 step');
   await page.waitForTimeout(650);
   await page.getByRole('heading', { name: 'Recent invoices' }).click({ delay: 100 });
@@ -80,11 +80,11 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   await panel.waitForTimeout(800);
   await both([panel], 'sidepanel-recording');
   await both([page], 'toolbar');
-  await sw.evaluate(() => __trailmark.recorder.control('cancel'));
+  await sw.evaluate(() => __showsteps.recorder.control('cancel'));
 
   // Guide Me on the demo login page.
   const id = await sw.evaluate(
-    async (t) => (await __trailmark.store.listGuides()).find((g) => g.title === t)!.id,
+    async (t) => (await __showsteps.store.listGuides()).find((g) => g.title === t)!.id,
     INVOICE,
   );
   const guide = await context.newPage();
@@ -96,11 +96,11 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   );
   await sw.evaluate(
     ({ id, tabId }) =>
-      __trailmark.startGuidance({ type: 'guide-start', guideId: id, mode: 'guide', tabId }),
+      __showsteps.startGuidance({ type: 'guide-start', guideId: id, mode: 'guide', tabId }),
     { id, tabId },
   );
-  await expect.poll(() => sw.evaluate(() => __trailmark.guidance.current.phase)).toBe('showing');
+  await expect.poll(() => sw.evaluate(() => __showsteps.guidance.current.phase)).toBe('showing');
   await guide.waitForTimeout(800);
   await both([guide], 'guide-me');
-  await sw.evaluate(() => __trailmark.guidance.control('stop'));
+  await sw.evaluate(() => __showsteps.guidance.control('stop'));
 });

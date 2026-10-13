@@ -1,5 +1,5 @@
 import type { Page, Worker } from '@playwright/test';
-import { validateAgentPack } from '@trailmark/core/export';
+import { validateAgentPack } from '@showsteps/core/export';
 import { strFromU8, unzipSync } from 'fflate';
 import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
@@ -14,14 +14,14 @@ type Hook = {
     getGuide(id: string): Promise<{ variables: { name: string }[] }>;
   };
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 const INVOICE = 'Create a supplier invoice in Ledgerline';
 
 async function openSample(page: Page, sw: Worker, extensionId: string): Promise<string> {
   const id = await sw.evaluate(async (title) => {
-    await __trailmark.installSamples();
-    return (await __trailmark.store.listGuides()).find((g) => g.title === title)!.id;
+    await __showsteps.installSamples();
+    return (await __showsteps.store.listGuides()).find((g) => g.title === title)!.id;
   }, INVOICE);
   await page.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}`);
   await expect(page.getByRole('textbox', { name: 'Guide title' })).toHaveValue(INVOICE);
@@ -37,7 +37,7 @@ test('Agent view, input modes, confirm flags, expectations and the Agent Pack (U
   const id = await openSample(page, sw, extensionId);
 
   // U4: the editor suggests asking for values that change.
-  const invoiceNo = page.locator('.tm-eblock', {
+  const invoiceNo = page.locator('.ss-eblock', {
     has: page.getByRole('textbox', { name: 'Step 7 title' }),
   });
   await expect(invoiceNo).toContainText('Looks like a value that changes.');
@@ -49,7 +49,7 @@ test('Agent view, input modes, confirm flags, expectations and the Agent Pack (U
   await expect(invoiceNo).toContainText('Variable {{invoice_no}}');
   // Passwords are secrets: no value controls.
   await expect(
-    page.locator('.tm-eblock', { has: page.getByRole('textbox', { name: 'Step 3 title' }) }),
+    page.locator('.ss-eblock', { has: page.getByRole('textbox', { name: 'Step 3 title' }) }),
   ).toContainText('Secret: never stored.');
 
   // U1: the Agent view.
@@ -82,7 +82,7 @@ test('Agent view, input modes, confirm flags, expectations and the Agent Pack (U
   await expect(page.getByRole('status').filter({ hasText: /changes saved|Saving/ })).toHaveText(
     'All changes saved',
   );
-  expect((await sw.evaluate((g) => __trailmark.store.getGuide(g), id)).variables).toEqual([
+  expect((await sw.evaluate((g) => __showsteps.store.getGuide(g), id)).variables).toEqual([
     expect.objectContaining({ name: 'invoice_no' }),
   ]);
 

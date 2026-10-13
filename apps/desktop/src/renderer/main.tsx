@@ -1,5 +1,5 @@
-import '@trailmark/ui/tokens.css';
-import '@trailmark/ui/app.css';
+import '@showsteps/ui/tokens.css';
+import '@showsteps/ui/app.css';
 import './desktop.css';
 import { render } from 'preact';
 import { App } from './App';

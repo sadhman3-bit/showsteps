@@ -9,8 +9,8 @@ import {
   type GuideSummary,
   type PageMark,
   type Target,
-} from '@trailmark/core';
-import { Button, strings } from '@trailmark/ui';
+} from '@showsteps/core';
+import { Button, strings } from '@showsteps/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
   getStore,
@@ -173,7 +173,7 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
 
   return (
     <>
-      <label class="tm-switch">
+      <label class="ss-switch">
         <input
           type="checkbox"
           role="switch"
@@ -184,56 +184,56 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
       </label>
 
       {error ? (
-        <p class="tm-error" role="alert">
+        <p class="ss-error" role="alert">
           {error}
         </p>
       ) : null}
 
       {settings?.guidanceEnabled !== false ? (
-        <section aria-labelledby="discover-h" class="tm-recent">
+        <section aria-labelledby="discover-h" class="ss-recent">
           <h2 id="discover-h">{d.heading}</h2>
           {!page ? (
-            <p class="tm-muted">{d.noSite}</p>
+            <p class="ss-muted">{d.noSite}</p>
           ) : relevant.length ? (
             <ul>
               {relevant.slice(0, 8).map((x) => (
-                <li key={x.id} class="tm-discover">
+                <li key={x.id} class="ss-discover">
                   <span>{x.title}</span>
                   <Button onClick={() => void guideMe(x.id)}>{g.guideMe}</Button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p class="tm-muted">{d.none}</p>
+            <p class="ss-muted">{d.none}</p>
           )}
         </section>
       ) : null}
 
       {page ? (
-        <section aria-labelledby="marks-h" class="tm-recent">
+        <section aria-labelledby="marks-h" class="ss-recent">
           <h2 id="marks-h">{m.heading}</h2>
           {here.length ? (
             <ul>
               {here.map((x) => (
-                <li key={x.id} class="tm-mark">
+                <li key={x.id} class="ss-mark">
                   <span>
                     <strong>{x.kind === 'pin' ? m.pin : m.tones[x.tone]}</strong>{' '}
                     {x.kind === 'pin' ? titleOf(x.guideId) : toPlainText(x.text)}
                   </span>
-                  <span class="tm-muted">
+                  <span class="ss-muted">
                     {x.target
                       ? m.attachedTo(
                           x.target.name || x.target.label || x.target.text || x.target.role || '',
                         )
                       : m.onPage}
                   </span>
-                  <span class="tm-mark__actions">
-                    <button type="button" class="tm-link" onClick={() => edit(x)}>
+                  <span class="ss-mark__actions">
+                    <button type="button" class="ss-link" onClick={() => edit(x)}>
                       {m.edit}
                     </button>
                     <button
                       type="button"
-                      class="tm-link"
+                      class="ss-link"
                       onClick={() => void guideRequest({ type: 'mark-delete', id: x.id })}
                     >
                       {m.delete}
@@ -243,24 +243,24 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
               ))}
             </ul>
           ) : (
-            <p class="tm-muted">{m.none}</p>
+            <p class="ss-muted">{m.none}</p>
           )}
           {picking ? (
-            <div class="tm-notice tm-stack" role="status">
+            <div class="ss-notice ss-stack" role="status">
               <span>{m.pickHint}</span>
               <Button variant="ghost" onClick={cancelPick}>
                 {m.cancel}
               </Button>
             </div>
           ) : draft ? (
-            <form class="tm-stack tm-markform" onSubmit={(e) => void save(e)}>
+            <form class="ss-stack ss-markform" onSubmit={(e) => void save(e)}>
               {draft.kind === 'note' ? (
                 <>
-                  <div class="tm-field">
-                    <label for="tm-mark-tone">{m.tone}</label>
+                  <div class="ss-field">
+                    <label for="ss-mark-tone">{m.tone}</label>
                     <select
-                      id="tm-mark-tone"
-                      class="tm-input"
+                      id="ss-mark-tone"
+                      class="ss-input"
                       value={draft.tone}
                       onChange={(e) =>
                         setDraft({ ...draft, tone: e.currentTarget.value as PageMark['tone'] })
@@ -273,21 +273,21 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
                       ))}
                     </select>
                   </div>
-                  <div class="tm-field">
-                    <label for="tm-mark-text">{m.text}</label>
+                  <div class="ss-field">
+                    <label for="ss-mark-text">{m.text}</label>
                     <textarea
-                      id="tm-mark-text"
-                      class="tm-input"
+                      id="ss-mark-text"
+                      class="ss-input"
                       rows={3}
                       value={draft.text}
                       onInput={(e) => setDraft({ ...draft, text: e.currentTarget.value })}
                     />
                   </div>
-                  <div class="tm-field">
-                    <label for="tm-mark-link">{m.link}</label>
+                  <div class="ss-field">
+                    <label for="ss-mark-link">{m.link}</label>
                     <input
-                      id="tm-mark-link"
-                      class="tm-input"
+                      id="ss-mark-link"
+                      class="ss-input"
                       type="url"
                       value={draft.href}
                       onInput={(e) => setDraft({ ...draft, href: e.currentTarget.value })}
@@ -295,11 +295,11 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
                   </div>
                 </>
               ) : null}
-              <div class="tm-field">
-                <label for="tm-mark-guide">{m.guide}</label>
+              <div class="ss-field">
+                <label for="ss-mark-guide">{m.guide}</label>
                 <select
-                  id="tm-mark-guide"
-                  class="tm-input"
+                  id="ss-mark-guide"
+                  class="ss-input"
                   value={draft.guideId}
                   required={draft.kind === 'pin'}
                   onChange={(e) => setDraft({ ...draft, guideId: e.currentTarget.value })}
@@ -314,7 +314,7 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
                     ))}
                 </select>
               </div>
-              <div class="tm-row">
+              <div class="ss-row">
                 <Button variant="primary" type="submit">
                   {m.save}
                 </Button>
@@ -324,7 +324,7 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
               </div>
             </form>
           ) : (
-            <div class="tm-row">
+            <div class="ss-row">
               <Button onClick={() => void pick('note')}>{m.addNote}</Button>
               <Button onClick={() => void pick('pin')}>{m.pinGuide}</Button>
             </div>

@@ -1,4 +1,4 @@
-import type { Annotation } from '@trailmark/core';
+import type { Annotation } from '@showsteps/core';
 
 /** Stroke width that reads well at any screenshot size (image pixels). */
 export function strokeFor(imageWidth: number): number {
@@ -18,7 +18,7 @@ export function AnnotationShape({
   const sw = strokeFor(imageWidth);
   const common = {
     'data-annotation': a.id,
-    class: selected ? 'tm-ann tm-ann--selected' : 'tm-ann',
+    class: selected ? 'ss-ann ss-ann--selected' : 'ss-ann',
   };
   switch (a.kind) {
     case 'rect':

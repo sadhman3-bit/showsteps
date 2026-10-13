@@ -6,7 +6,7 @@
 
 **Given:**
 
-- The Agent Pack for the sample guide "Create a supplier invoice in Ledgerline": `SKILL.md`, `references/procedure.json` and `scripts/replay.spec.ts`, with no screenshots. It was generated from `apps/extension/public/samples/create-invoice.trailmark`.
+- The Agent Pack for the sample guide "Create a supplier invoice in Ledgerline": `SKILL.md`, `references/procedure.json` and `scripts/replay.spec.ts`, with no screenshots. It was generated from `apps/extension/public/samples/create-invoice.showsteps`.
 - The demo app running at <http://localhost:5173>.
 - The test password for `{{password}}`.
 - Advance approval for the CONFIRM step, since the app is a local test app.

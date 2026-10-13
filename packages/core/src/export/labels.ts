@@ -1,5 +1,5 @@
 /**
- * Text that exporters write into documents. UI text lives in `@trailmark/ui` strings; this is
+ * Text that exporters write into documents. UI text lives in `@showsteps/ui` strings; this is
  * the reader-facing wording inside exported files, kept in one place so it can be translated.
  */
 export const EXPORT_LABELS = {
@@ -18,7 +18,7 @@ export const EXPORT_LABELS = {
   page: (n: number, total: number) => `Page ${n} of ${total}`,
   noSteps: 'This guide has no steps yet.',
   /** U3: the visible line in every export that carries the structured procedure. */
-  agentFooter: 'Agent-readable procedure embedded (ABCXYZ schema v1).',
+  agentFooter: 'Agent-readable procedure embedded (ShowSteps schema v1).',
   agentProcedure: 'Agent procedure',
   months: [
     'January',

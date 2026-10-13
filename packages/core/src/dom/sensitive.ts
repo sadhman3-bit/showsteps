@@ -3,7 +3,7 @@ import { tagOf } from './aria.js';
 const SECRET_AUTOCOMPLETE = new Set(['current-password', 'new-password', 'one-time-code']);
 
 /**
- * True for fields whose values ABCXYZ must never record: password inputs, and inputs whose
+ * True for fields whose values ShowSteps must never record: password inputs, and inputs whose
  * `autocomplete` names a password, one-time code or payment-card detail (cc-*).
  */
 export function isSensitiveField(el: Element): boolean {

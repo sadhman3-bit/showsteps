@@ -45,7 +45,7 @@ const rows = fields
 writeFileSync(
   `${dir}submit.html`,
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ABCXYZ store fields</title>
+<title>ShowSteps store fields</title>
 <style>
 :root { --bg: #faf8f5; --surface: #fff; --text: #1f1c18; --muted: #5c554b; --line: #d9d3ca; --accent: #0f6b62; --on-accent: #fff; }
 @media (prefers-color-scheme: dark) { :root { --bg: #161513; --surface: #1f1d1a; --text: #f2eee8; --muted: #b5ada1; --line: #3d3933; --accent: #4fbfb2; --on-accent: #0b1513; } }
@@ -59,8 +59,8 @@ button { font: inherit; border: 0; border-radius: 6px; padding: 4px 14px; backgr
 button.done { opacity: 0.6; }
 code { font-family: Consolas, monospace; }
 </style></head><body>
-<h1>ABCXYZ: Chrome Web Store fields</h1>
-<p>Open <b>chrome.google.com/webstore/devconsole</b>, click <b>New item</b> and upload <code>dist/trailmark-extension-1.0.0-chrome-web-store.zip</code>. Then copy each field below into the matching box.</p>
+<h1>ShowSteps: Chrome Web Store fields</h1>
+<p>Open <b>chrome.google.com/webstore/devconsole</b>, click <b>New item</b> and upload <code>dist/showsteps-extension-1.0.0-chrome-web-store.zip</code>. Then copy each field below into the matching box.</p>
 <h2>Files to upload</h2>
 <ul>
 <li>Store icon: <code>apps/extension/public/icon/128.png</code></li>

@@ -1,8 +1,8 @@
 // Helpers for extension pages (side panel, library) to talk to the background.
-import { IndexedDbStore, type GuideStore } from '@trailmark/core';
+import { IndexedDbStore, type GuideStore } from '@showsteps/core';
 import { BridgeClient, bridgeStore, switchableStore } from './bridge';
 import { readSettings } from './settings';
-import type { StepCheckView } from '@trailmark/ui';
+import type { StepCheckView } from '@showsteps/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   GUIDANCE_IDLE,
@@ -40,7 +40,7 @@ function desktopLibraryOn(): Promise<boolean> {
 }
 
 /**
- * Settings → Delete all ABCXYZ data: stop captures and guides, clear settings, notes and
+ * Settings → Delete all ShowSteps data: stop captures and guides, clear settings, notes and
  * pins, and delete the guide database in this browser.
  */
 export async function deleteAllData(): Promise<void> {

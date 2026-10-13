@@ -1,5 +1,5 @@
-import { FolderStore, type CaptureEvent } from '@trailmark/core';
-import { nodeFileSystem } from '@trailmark/core/node';
+import { FolderStore, type CaptureEvent } from '@showsteps/core';
+import { nodeFileSystem } from '@showsteps/core/node';
 import { EventEmitter } from 'node:events';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -79,7 +79,7 @@ describe('desktop events', () => {
 
 describe('library sink', () => {
   it('turns desktop events into a guide with screenshots and app list', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tm-sink-'));
+    const dir = mkdtempSync(join(tmpdir(), 'ss-sink-'));
     dirs.push(dir);
     const store = new FolderStore(nodeFileSystem, dir, { user: 'Alex' });
     const sink = new LibrarySink(store, 'Notepad');

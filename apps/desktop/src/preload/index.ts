@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 
-// The only door between ABCXYZ's pages and the main process: named channels, no Node.
+// The only door between ShowSteps's pages and the main process: named channels, no Node.
 const INVOKE = new Set([
   'settings:get',
   'settings:set',
@@ -21,7 +21,7 @@ const EVENTS = new Set([
   'overlay',
 ]);
 
-contextBridge.exposeInMainWorld('trailmark', {
+contextBridge.exposeInMainWorld('showsteps', {
   store: (which: string, method: string, args: unknown[]) =>
     ipcRenderer.invoke('store', which, method, args),
   invoke: (channel: string, ...args: unknown[]) => {

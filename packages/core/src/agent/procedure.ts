@@ -7,7 +7,16 @@ import { SCHEMA_VERSION } from '../version.js';
 import type { AppRef, Expectation, Guide, InputMode, Step, Target } from '../schema.js';
 import { fieldLabel, variableName } from './variables.js';
 
-export const PROCEDURE_FORMAT = 'trailmark-procedure';
+export const PROCEDURE_FORMAT = 'showsteps-procedure';
+/** Formats written before the product was named ShowSteps; readers still accept them. */
+export const LEGACY_PROCEDURE_FORMATS = ['trailmark-procedure'] as const;
+
+/** True for a procedure written by this or an earlier version under its former name. */
+export function isProcedureFormat(format: unknown): boolean {
+  return (
+    format === PROCEDURE_FORMAT || (LEGACY_PROCEDURE_FORMATS as readonly unknown[]).includes(format)
+  );
+}
 
 export interface ProcedureVariable {
   name: string;

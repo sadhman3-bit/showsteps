@@ -1,4 +1,4 @@
-import { guideSteps, toPlainText, type Guide, type GuideStore, type Step } from '@trailmark/core';
+import { guideSteps, toPlainText, type Guide, type GuideStore, type Step } from '@showsteps/core';
 import { EventEmitter } from 'node:events';
 import type { HelperEvent, PxRect, UiaElement, UiaHelper } from './helper';
 

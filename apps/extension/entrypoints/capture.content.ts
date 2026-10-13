@@ -7,7 +7,7 @@ export default defineContentScript({
   allFrames: true,
   registration: 'runtime',
   main() {
-    const flag = '__trailmarkCapture';
+    const flag = '__showstepsCapture';
     const scope = globalThis as unknown as Record<string, unknown>;
     if (scope[flag]) return; // already running in this frame (injected twice)
     scope[flag] = true;

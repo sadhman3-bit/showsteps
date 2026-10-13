@@ -8,7 +8,7 @@ type Hook = {
   startCapture(msg: { type: 'start'; tabId: number }): Promise<{ guideId?: string }>;
   store: { getGuide(id: string): Promise<unknown>; listImages(id: string): Promise<string[]> };
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 /** A human-like pause, so screenshots are not skipped by Chrome's 2-per-second limit. */
 const human = (page: Page) => page.waitForTimeout(650);
@@ -18,7 +18,7 @@ async function startOn(sw: Worker, url: string) {
     const [tab] = await chrome.tabs.query({ url: `${u}*` });
     return tab?.id ?? -1;
   }, url);
-  return sw.evaluate((id) => __trailmark.startCapture({ type: 'start', tabId: id }), tabId);
+  return sw.evaluate((id) => __showsteps.startCapture({ type: 'start', tabId: id }), tabId);
 }
 
 type StoredStep = {
@@ -48,8 +48,10 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
 
   const { guideId } = await startOn(serviceWorker, 'http://localhost:5173/');
   expect(guideId).toBeTruthy();
-  const controller = page.locator('trailmark-controller');
-  await expect(controller.getByRole('toolbar', { name: 'ABCXYZ capture controls' })).toBeVisible();
+  const controller = page.locator('showsteps-controller');
+  await expect(
+    controller.getByRole('toolbar', { name: 'ShowSteps capture controls' }),
+  ).toBeVisible();
   await human(page);
 
   // Page 1: login (full page load afterwards)
@@ -122,7 +124,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   await expect(controller).toHaveCount(0);
 
   const guide = (await serviceWorker.evaluate(
-    (id) => __trailmark.store.getGuide(id),
+    (id) => __showsteps.store.getGuide(id),
     guideId!,
   )) as {
     blocks: StoredStep[];
@@ -156,7 +158,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   expect(steps[2]!.input).toEqual({ mode: 'fixed', sensitive: true });
 
   // Every step has a screenshot; most are fresh; Action Boxes lie inside their images.
-  const images = await serviceWorker.evaluate((id) => __trailmark.store.listImages(id), guideId!);
+  const images = await serviceWorker.evaluate((id) => __showsteps.store.listImages(id), guideId!);
   let fresh = 0;
   for (const s of steps) {
     const shot = s.human.screenshot;
@@ -188,7 +190,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
     'iframe[title="Cost centre lookup"]',
   ]);
   expect(byTitle('Note for approver').target?.frames).toEqual(['iframe[title="Internal note"]']);
-  expect(byTitle('Mei Chen').target?.shadowHosts).toEqual(['tm-approver-picker']);
+  expect(byTitle('Mei Chen').target?.shadowHosts).toEqual(['ss-approver-picker']);
 
   // Iframe targets were shifted into the top frame: the iframe sits below the form fields, so
   // its button cannot be at the iframe-local origin.
@@ -202,7 +204,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   const signIn = byTitle('Click **Sign in**');
   const centre = await serviceWorker.evaluate(
     async ({ id, file, box }) => {
-      const store = __trailmark.store as unknown as {
+      const store = __showsteps.store as unknown as {
         getImage(g: string, n: string): Promise<Uint8Array>;
       };
       const bytes = await store.getImage(id, file.replace(/^img\//, ''));
@@ -222,7 +224,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   // The capture toolbar (dark, bottom-right) never appears in a screenshot.
   const corners = await serviceWorker.evaluate(
     async ({ id, files }) => {
-      const store = __trailmark.store as unknown as {
+      const store = __showsteps.store as unknown as {
         getImage(g: string, n: string): Promise<Uint8Array>;
       };
       const out: number[] = [];
@@ -245,7 +247,7 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   const review = byTitle('Review invoice');
   const { png, brightness } = await serviceWorker.evaluate(
     async ({ id, file, box }) => {
-      const store = __trailmark.store as unknown as {
+      const store = __showsteps.store as unknown as {
         getImage(g: string, n: string): Promise<Uint8Array>;
       };
       const bytes = await store.getImage(id, file.replace(/^img\//, ''));

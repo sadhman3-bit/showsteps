@@ -1,5 +1,5 @@
-import { stepNumbers, toPlainText } from '@trailmark/core';
-import type { Guide } from '@trailmark/core';
+import { stepNumbers, toPlainText } from '@showsteps/core';
+import type { Guide } from '@showsteps/core';
 import {
   GuideEditor,
   GuideView,
@@ -15,7 +15,7 @@ import {
   Button,
   Dialog,
   type RunSpeed,
-} from '@trailmark/ui';
+} from '@showsteps/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
   getLocalStore,
@@ -167,7 +167,7 @@ export function LibraryApp() {
       aiAvailable={aiAvailable}
       desktop={{ connected: desktopConnected }}
       extra={
-        <div class="tm-stack-form">
+        <div class="ss-stack-form">
           <Button
             variant="ghost"
             onClick={() => void browser.tabs.create({ url: 'chrome://extensions/shortcuts' })}
@@ -243,7 +243,7 @@ export function LibraryApp() {
     </Dialog>
   ) : null;
   const noticeBar = notice ? (
-    <p class="tm-toast" role="alert">
+    <p class="ss-toast" role="alert">
       {notice}
     </p>
   ) : null;

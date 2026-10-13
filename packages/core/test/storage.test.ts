@@ -81,7 +81,7 @@ const backends: Backend[] = [
   {
     name: 'FolderStore (disk)',
     make: () => {
-      tempDir = mkdtempSync(join(tmpdir(), 'tm-store-'));
+      tempDir = mkdtempSync(join(tmpdir(), 'ss-store-'));
       return new FolderStore(nodeFileSystem, tempDir.replace(/\\/g, '/'), { user: 'Priya Raman' });
     },
     cleanup: () => rmSync(tempDir, { recursive: true, force: true }),
@@ -211,7 +211,7 @@ describe.each(backends)('$name contract', (backend) => {
 describe('FolderStore on disk', () => {
   let dir: string;
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'tm-layout-'));
+    dir = mkdtempSync(join(tmpdir(), 'ss-layout-'));
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

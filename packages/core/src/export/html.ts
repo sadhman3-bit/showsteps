@@ -1,5 +1,5 @@
 import { BRAND_FONTS, HIGHLIGHT_COLOR, accentOf, fontOf, textOn } from '../branding.js';
-import { procedureJson, toProcedure } from '../agent/procedure.js';
+import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
 import { escapeHtml, toHtml, toPlainText } from '../richText.js';
 import {
   dataUri,
@@ -14,7 +14,7 @@ import {
  * script elements, and the page's CSP allows no scripts at all.
  */
 function procedureScript(input: ExportInput): string {
-  return `<script type="application/json" id="trailmark-procedure">${procedureJson(toProcedure(input.guide))}</script>`;
+  return `<script type="application/json" id="${PROCEDURE_FORMAT}">${procedureJson(toProcedure(input.guide))}</script>`;
 }
 
 /** Exported pages run no scripts and load nothing: images are inline. */
@@ -37,7 +37,7 @@ function head(title: string, css: string): string {
     '<meta charset="utf-8">',
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">`,
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<meta name="generator" content="ABCXYZ">',
+    '<meta name="generator" content="ShowSteps">',
     `<title>${escapeHtml(title)}</title>`,
     `<style>${css}</style>`,
     '</head>',

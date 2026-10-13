@@ -6,9 +6,9 @@ const DIR = new URL('../fixtures/demo/', import.meta.url);
 
 export type Snapshot = { window: Window; document: Document; close: () => Promise<void> };
 
-/** Turn <template data-tm-shadow> back into open shadow roots (happy-dom lacks declarative shadow DOM). */
+/** Turn <template data-ss-shadow> back into open shadow roots (happy-dom lacks declarative shadow DOM). */
 function hydrateShadowRoots(root: ParentNode): void {
-  for (const tpl of Array.from(root.querySelectorAll('template[data-tm-shadow]'))) {
+  for (const tpl of Array.from(root.querySelectorAll('template[data-ss-shadow]'))) {
     const host = tpl.parentElement;
     if (!host) continue;
     const html = tpl.innerHTML;
@@ -37,9 +37,9 @@ export function loadSnapshot(name: string, url = 'http://localhost:5173/app/'): 
   return { window, document, close: () => window.happyDOM.close() };
 }
 
-/** Real Chromium layout, recorded in data-tm-rect when the snapshot was taken. */
+/** Real Chromium layout, recorded in data-ss-rect when the snapshot was taken. */
 export function snapshotRect(el: Element): Rect {
-  const [x = 0, y = 0, w = 0, h = 0] = (el.getAttribute('data-tm-rect') ?? '')
+  const [x = 0, y = 0, w = 0, h = 0] = (el.getAttribute('data-ss-rect') ?? '')
     .split(',')
     .map(Number);
   return { x, y, w, h };
@@ -47,7 +47,7 @@ export function snapshotRect(el: Element): Rect {
 
 /** Find a ground-truth element anywhere, including inside shadow roots. */
 export function truth(root: Document | ShadowRoot, key: string): Element {
-  const direct = root.querySelector(`[data-tm-truth="${key}"]`);
+  const direct = root.querySelector(`[data-ss-truth="${key}"]`);
   if (direct) return direct;
   for (const el of Array.from(root.querySelectorAll('*'))) {
     if (el.shadowRoot) {

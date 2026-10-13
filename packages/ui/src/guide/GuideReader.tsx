@@ -1,4 +1,4 @@
-import { stepNumbers, toPlainText, type Guide, type GuideStore, type Step } from '@trailmark/core';
+import { stepNumbers, toPlainText, type Guide, type GuideStore, type Step } from '@showsteps/core';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { brandStyle } from '../brand.js';
@@ -45,24 +45,24 @@ export function GuideReader({
   }, [focusStepId, guide]);
 
   return (
-    <article class="tm-reader" style={brandStyle(guide.branding)} ref={root}>
-      <header class="tm-guide__header">
-        {logo ? <img class="tm-reader__logo" src={logo} alt="" /> : null}
+    <article class="ss-reader" style={brandStyle(guide.branding)} ref={root}>
+      <header class="ss-guide__header">
+        {logo ? <img class="ss-reader__logo" src={logo} alt="" /> : null}
         <h1>{guide.title}</h1>
-        {guide.description ? <p class="tm-guide__desc">{guide.description}</p> : null}
-        <p class="tm-muted">
+        {guide.description ? <p class="ss-guide__desc">{guide.description}</p> : null}
+        <p class="ss-muted">
           {strings.library.steps(numbers.size)} ·{' '}
           {guide.updatedBy
             ? strings.library.editedBy(guide.updatedBy, relativeTime(guide.updatedAt))
             : strings.library.edited(relativeTime(guide.updatedAt))}
         </p>
       </header>
-      {guide.blocks.length === 0 ? <p class="tm-empty">{s.noSteps}</p> : null}
-      <ol class="tm-blocks">
+      {guide.blocks.length === 0 ? <p class="ss-empty">{s.noSteps}</p> : null}
+      <ol class="ss-blocks">
         {guide.blocks.map((b) => {
           if (b.kind === 'heading') {
             return (
-              <li key={b.id} class="tm-block tm-block--heading" id={`block-${b.id}`}>
+              <li key={b.id} class="ss-block ss-block--heading" id={`block-${b.id}`}>
                 <h2>{b.text}</h2>
               </li>
             );
@@ -71,7 +71,7 @@ export function GuideReader({
             return (
               <li
                 key={b.id}
-                class={`tm-block tm-callout tm-callout--${b.tone}`}
+                class={`ss-block ss-callout ss-callout--${b.tone}`}
                 id={`block-${b.id}`}
               >
                 <strong>{s.tone[b.tone]}</strong> {b.text}
@@ -112,24 +112,24 @@ function ReaderStep(props: {
   const title = toPlainText(step.human.title);
   return (
     <li
-      class={`tm-block tm-step${props.focused ? ' tm-step--focused' : ''}`}
+      class={`ss-block ss-step${props.focused ? ' ss-step--focused' : ''}`}
       id={`step-${step.id}`}
     >
-      <div class="tm-step__head">
-        <span class="tm-step__num" aria-label={s.stepLabel(num)}>
+      <div class="ss-step__head">
+        <span class="ss-step__num" aria-label={s.stepLabel(num)}>
           {num}
         </span>
-        <h3 class="tm-step__title">
+        <h3 class="ss-step__title">
           <RichText value={step.human.title} />
         </h3>
         {props.onCopyLink ? (
-          <button type="button" class="tm-link tm-step__link" onClick={props.onCopyLink}>
+          <button type="button" class="ss-link ss-step__link" onClick={props.onCopyLink}>
             {props.copied ? strings.editor.linkCopied : strings.editor.copyLink}
           </button>
         ) : null}
       </div>
       {step.human.description ? (
-        <p class="tm-step__desc">
+        <p class="ss-step__desc">
           <RichText value={step.human.description} />
         </p>
       ) : null}

@@ -18,7 +18,7 @@ test('library: search, rename, folders, tags, filters, duplicate, trash, export 
   const card = (title: string) =>
     cards
       .getByRole('listitem')
-      .filter({ has: lib.locator('.tm-card__title').getByText(title, { exact: true }) });
+      .filter({ has: lib.locator('.ss-card__title').getByText(title, { exact: true }) });
   const menu = async (title: string, item: string) => {
     await card(title).getByLabel(`Actions for this guide: ${title}`).click();
     await card(title).getByRole('menuitem', { name: item }).click();
@@ -78,16 +78,16 @@ test('library: search, rename, folders, tags, filters, duplicate, trash, export 
 
   // List view
   await lib.getByRole('button', { name: 'List view' }).click();
-  await expect(lib.locator('.tm-rows')).toBeVisible();
+  await expect(lib.locator('.ss-rows')).toBeVisible();
   await lib.screenshot({ path: test.info().outputPath('library-list.png') });
   await lib.getByRole('button', { name: 'Grid view' }).click();
 
-  // Export as .trailmark
+  // Export as .showsteps
   const download = lib.waitForEvent('download');
-  await menu('Log in to Ledgerline', 'Export (.trailmark)');
+  await menu('Log in to Ledgerline', 'Export (.showsteps)');
   const file = await download;
-  expect(file.suggestedFilename()).toBe('Log in to Ledgerline.trailmark');
-  const archivePath = test.info().outputPath('guide.trailmark');
+  expect(file.suggestedFilename()).toBe('Log in to Ledgerline.showsteps');
+  const archivePath = test.info().outputPath('guide.showsteps');
   await file.saveAs(archivePath);
   expect(readFileSync(archivePath).subarray(0, 2).toString()).toBe('PK');
 
@@ -129,13 +129,13 @@ test('reader view shows numbered steps with screenshots; the editor offers captu
   const view = await context.newPage();
   await view.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}/view`);
   await expect(view.getByRole('heading', { level: 1, name: 'Sign in · Ledgerline' })).toBeVisible();
-  const steps = view.locator('.tm-step');
+  const steps = view.locator('.ss-step');
   await expect(steps).toHaveCount(4);
   await expect(steps.nth(1)).toContainText('Type alex into Username');
   const img = steps.nth(3).getByRole('img', { name: /Screenshot for step 4: Click Sign in/ });
   await expect(img).toBeVisible();
   await expect(img.locator('image').first()).toHaveAttribute('href', /^blob:/);
-  await expect(steps.nth(3).locator('.tm-shot__box')).toBeVisible();
+  await expect(steps.nth(3).locator('.ss-shot__box')).toBeVisible();
   await expect(steps.nth(2)).toContainText('Enter your password');
   await view.screenshot({ path: test.info().outputPath('guide-view.png'), fullPage: true });
 
@@ -195,15 +195,15 @@ test('sample guides (E10): added from an empty library, with sections, tips and 
 
   await list.getByRole('button', { name: 'Create a supplier invoice in Ledgerline' }).click();
   await lib.getByRole('button', { name: 'Preview' }).click();
-  const reader = lib.locator('.tm-reader');
+  const reader = lib.locator('.ss-reader');
   await expect(reader.getByRole('heading', { level: 2 })).toHaveText([
     'Sign in',
     'Enter the invoice',
     'Send for approval',
   ]);
-  await expect(reader.locator('.tm-callout--warning')).toContainText('cannot be undone');
-  await expect(reader.locator('.tm-step')).toHaveCount(17);
-  await expect(reader.locator('.tm-step').last()).toContainText('Click Submit invoice');
-  await expect(reader.locator('.tm-step svg[role="img"]')).toHaveCount(17);
+  await expect(reader.locator('.ss-callout--warning')).toContainText('cannot be undone');
+  await expect(reader.locator('.ss-step')).toHaveCount(17);
+  await expect(reader.locator('.ss-step').last()).toContainText('Click Submit invoice');
+  await expect(reader.locator('.ss-step svg[role="img"]')).toHaveCount(17);
   await lib.screenshot({ path: test.info().outputPath('sample-invoice.png'), fullPage: true });
 });

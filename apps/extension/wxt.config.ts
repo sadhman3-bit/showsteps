@@ -8,7 +8,7 @@ export default defineConfig({
   manifestVersion: 3,
   outDirTemplate: '{{browser}}-mv{{manifestVersion}}{{modeSuffix}}',
   manifest: ({ mode }) => ({
-    name: 'ABCXYZ',
+    name: 'ShowSteps',
     description: 'Record a process once and get a step-by-step guide. Local-first and private.',
     minimum_chrome_version: '116',
     // Public key only: pins the extension ID ("Load unpacked" from any folder) so the desktop
@@ -32,7 +32,7 @@ export default defineConfig({
           ],
         }
       : {}),
-    action: { default_title: 'Open ABCXYZ' },
+    action: { default_title: 'Open ShowSteps' },
     commands: {
       'toggle-capture': {
         suggested_key: { default: 'Alt+Shift+R' },

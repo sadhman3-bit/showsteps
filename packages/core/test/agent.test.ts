@@ -18,6 +18,7 @@ import {
   type Guide,
   type Procedure,
   type Step,
+  isProcedureFormat,
 } from '../src/index.js';
 import {
   agentPackFiles,
@@ -40,7 +41,7 @@ import { image } from './helpers/exportFixture.js';
 function sample(): Guide {
   const zip = unzipSync(
     readFileSync(
-      new URL('../../../apps/extension/public/samples/create-invoice.trailmark', import.meta.url),
+      new URL('../../../apps/extension/public/samples/create-invoice.showsteps', import.meta.url),
     ),
   );
   return parseGuide(JSON.parse(strFromU8(zip['guide.json']!)));
@@ -128,7 +129,11 @@ describe('input modes and variables (U4)', () => {
 describe('procedure', () => {
   it('describes every step with targets, inputs, sections and notes, and no secrets', () => {
     const p = toProcedure(setInputMode(sample(), byTitle(sample(), 'Type INV-1043').id, 'ask'));
-    expect(p).toMatchObject({ format: 'trailmark-procedure', schemaVersion: 1 });
+    expect(p).toMatchObject({ format: 'showsteps-procedure', schemaVersion: 1 });
+    // Procedures written before the rename are still recognised.
+    expect(isProcedureFormat('showsteps-procedure')).toBe(true);
+    expect(isProcedureFormat('trailmark-procedure')).toBe(true);
+    expect(isProcedureFormat('other')).toBe(false);
     expect(p.steps).toHaveLength(17);
     const pw = p.steps.find((s) => s.instruction === 'Enter your password')!;
     expect(pw.input).toEqual({ mode: 'ask', variable: 'password', sensitive: true });
@@ -282,7 +287,7 @@ describe('Playwright replay (U10)', () => {
     expect(spec).toContain('.fill(value("invoice_no")');
     expect(spec).toContain(`await page.goto("http://localhost:5173/login.html");`);
     expect(spec).toContain('.selectOption("AUD"');
-    expect(spec).toContain("const allowConfirm = process.env.TRAILMARK_ALLOW_CONFIRM === '1';");
+    expect(spec).toContain("const allowConfirm = process.env.SHOWSTEPS_ALLOW_CONFIRM === '1';");
     // The stop comes after step 17's comment and before its click.
     const confirmAt = spec.indexOf('if (!allowConfirm)');
     expect(confirmAt).toBeGreaterThan(spec.indexOf('// 17. Click Submit invoice'));
@@ -296,11 +301,11 @@ describe('embedded procedure in human exports (U3)', () => {
 
   it('HTML: a JSON data block and a visible line', () => {
     const html = guideToHtml(input(sample()));
-    const m = /<script type="application\/json" id="trailmark-procedure">([\s\S]*?)<\/script>/.exec(
+    const m = /<script type="application\/json" id="showsteps-procedure">([\s\S]*?)<\/script>/.exec(
       html,
     );
     expect(procedureOf(m![1]!).steps).toHaveLength(17);
-    expect(html).toContain('Agent-readable procedure embedded (ABCXYZ schema v1).');
+    expect(html).toContain('Agent-readable procedure embedded (ShowSteps schema v1).');
   });
 
   it('Markdown: a collapsed block at the end', () => {
@@ -310,7 +315,7 @@ describe('embedded procedure in human exports (U3)', () => {
         md,
       );
     expect(procedureOf(m![1]!).steps).toHaveLength(17);
-    expect(md).toContain('*Agent-readable procedure embedded (ABCXYZ schema v1).*');
+    expect(md).toContain('*Agent-readable procedure embedded (ShowSteps schema v1).*');
   });
 
   it('Word: a custom XML part', async () => {
@@ -328,7 +333,7 @@ describe('embedded procedure in human exports (U3)', () => {
     const pdf = await getDocument({ data: bytes.slice() }).promise;
     const attachments = (await pdf.getAttachments()) as Map<string, { description: string }>;
     expect(attachments.get('procedure.json')?.description).toBe(
-      'Agent-readable procedure embedded (ABCXYZ schema v1).',
+      'Agent-readable procedure embedded (ShowSteps schema v1).',
     );
     const last = await pdf.getPage(pdf.numPages);
     const text = (await last.getTextContent()).items

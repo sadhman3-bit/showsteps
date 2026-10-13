@@ -61,7 +61,7 @@ export async function rememberedFolder(): Promise<FolderHandle | undefined> {
 export async function pickFolder(): Promise<FolderHandle | undefined> {
   if (!window.showDirectoryPicker) return undefined;
   try {
-    const handle = await window.showDirectoryPicker({ id: 'trailmark-shared', mode: 'readwrite' });
+    const handle = await window.showDirectoryPicker({ id: 'showsteps-shared', mode: 'readwrite' });
     await withStore('readwrite', (s) => s.put(handle, KEY));
     return handle;
   } catch (err) {

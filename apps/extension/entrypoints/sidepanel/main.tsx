@@ -1,8 +1,8 @@
 import { render } from 'preact';
-import '@trailmark/ui/tokens.css';
-import '@trailmark/ui/app.css';
+import '@showsteps/ui/tokens.css';
+import '@showsteps/ui/app.css';
 import './sidepanel.css';
-import { applyTheme } from '@trailmark/ui';
+import { applyTheme } from '@showsteps/ui';
 import { SETTINGS_KEY } from '../../lib/guideMessages';
 import { readSettings } from '../../lib/settings';
 import { SidePanel } from './SidePanel';

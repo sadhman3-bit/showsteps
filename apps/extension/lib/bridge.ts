@@ -1,5 +1,5 @@
-// The extension's side of the desktop bridge: Chrome native messaging to trailmark-host.exe,
-// which relays to the ABCXYZ desktop app. Used by the service worker (capture, guidance) and
+// The extension's side of the desktop bridge: Chrome native messaging to showsteps-host.exe,
+// which relays to the ShowSteps desktop app. Used by the service worker (capture, guidance) and
 // by pages (the library, when guides live in the desktop library).
 import {
   BRIDGE_HOST,
@@ -10,7 +10,7 @@ import {
   type BridgePart,
   type BridgeReply,
   type GuideStore,
-} from '@trailmark/core';
+} from '@showsteps/core';
 
 type Status = 'off' | 'connecting' | 'connected' | 'offline';
 

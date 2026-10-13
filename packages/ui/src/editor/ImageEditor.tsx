@@ -15,7 +15,7 @@ import {
   type Point,
   type Rect,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import {
@@ -422,7 +422,7 @@ export function ImageEditor({
   return (
     <dialog
       ref={dialog}
-      class="tm-imgedit"
+      class="ss-imgedit"
       aria-labelledby={`${uid}-title`}
       onCancel={(e) => {
         e.preventDefault();
@@ -431,9 +431,9 @@ export function ImageEditor({
       onKeyDown={onKeyDown}
       onPaste={(e) => void clipboardImage(e).then((b) => b && replaceWith(b))}
     >
-      <header class="tm-imgedit__bar">
+      <header class="ss-imgedit__bar">
         <h2 id={`${uid}-title`}>{s.title(num)}</h2>
-        <div class="tm-toolbar__spacer" />
+        <div class="ss-toolbar__spacer" />
         <Button
           variant="ghost"
           onClick={undo}
@@ -456,9 +456,9 @@ export function ImageEditor({
         </Button>
       </header>
 
-      <div class="tm-imgedit__body">
+      <div class="ss-imgedit__body">
         <div
-          class="tm-imgedit__tools"
+          class="ss-imgedit__tools"
           role="toolbar"
           aria-label={s.tools}
           aria-orientation="vertical"
@@ -467,7 +467,7 @@ export function ImageEditor({
             <button
               key={t}
               type="button"
-              class="tm-tool"
+              class="ss-tool"
               aria-pressed={tool === t}
               aria-label={s.tool[t]}
               title={`${s.tool[t]} (${Object.keys(TOOL_KEYS)
@@ -480,7 +480,7 @@ export function ImageEditor({
           ))}
         </div>
 
-        <div class="tm-imgedit__canvas">
+        <div class="ss-imgedit__canvas">
           {shot && url ? (
             <svg
               ref={svg}
@@ -502,7 +502,7 @@ export function ImageEditor({
                 <rect
                   key={i}
                   data-blur-rect={i}
-                  class={`tm-imgedit__blur${selected?.kind === 'blur' && selected.index === i ? ' is-selected' : ''}`}
+                  class={`ss-imgedit__blur${selected?.kind === 'blur' && selected.index === i ? ' is-selected' : ''}`}
                   x={r.x}
                   y={r.y}
                   width={r.w}
@@ -525,7 +525,7 @@ export function ImageEditor({
                     const b = annotationBounds(a, W);
                     return (
                       <rect
-                        class="tm-imgedit__sel"
+                        class="ss-imgedit__sel"
                         x={b.x - sw}
                         y={b.y - sw}
                         width={b.w + sw * 2}
@@ -538,10 +538,10 @@ export function ImageEditor({
               {box ? (
                 <g
                   data-box="1"
-                  class={`tm-imgedit__box${selected?.kind === 'box' ? ' is-selected' : ''}`}
+                  class={`ss-imgedit__box${selected?.kind === 'box' ? ' is-selected' : ''}`}
                 >
                   <rect
-                    class="tm-shot__box"
+                    class="ss-shot__box"
                     x={box.x}
                     y={box.y}
                     width={box.w}
@@ -555,7 +555,7 @@ export function ImageEditor({
                         <rect
                           key={c}
                           data-handle={c}
-                          class="tm-imgedit__handle"
+                          class="ss-imgedit__handle"
                           x={(c.includes('w') ? box.x : box.x + box.w) - sw * 2}
                           y={(c.includes('n') ? box.y : box.y + box.h) - sw * 2}
                           width={sw * 4}
@@ -567,7 +567,7 @@ export function ImageEditor({
               ) : null}
               {crop ? (
                 <path
-                  class="tm-imgedit__crop"
+                  class="ss-imgedit__crop"
                   fill-rule="evenodd"
                   d={`M0 0H${W}V${H}H0Z M${crop.x} ${crop.y}h${crop.w}v${crop.h}h${-crop.w}Z`}
                 />
@@ -575,31 +575,31 @@ export function ImageEditor({
               {draft ? <DraftShape draft={draft} color={color} sw={sw} imageWidth={W} /> : null}
             </svg>
           ) : (
-            <p class="tm-empty">{s.noImage}</p>
+            <p class="ss-empty">{s.noImage}</p>
           )}
         </div>
 
-        <aside class="tm-imgedit__panel">
-          <fieldset class="tm-swatches">
+        <aside class="ss-imgedit__panel">
+          <fieldset class="ss-swatches">
             <legend>{s.colour}</legend>
             {PALETTE.map((c) => (
               <button
                 key={c}
                 type="button"
-                class="tm-swatch"
+                class="ss-swatch"
                 style={{ background: c }}
                 aria-label={c}
                 aria-pressed={color === c}
                 onClick={() => recolor(c)}
               />
             ))}
-            <label class="tm-swatch tm-swatch--custom" title={s.customColour}>
-              <span class="tm-sr">{s.customColour}</span>
+            <label class="ss-swatch ss-swatch--custom" title={s.customColour}>
+              <span class="ss-sr">{s.customColour}</span>
               <input type="color" value={color} onInput={(e) => recolor(e.currentTarget.value)} />
             </label>
           </fieldset>
 
-          <label class="tm-check">
+          <label class="ss-check">
             <input
               type="checkbox"
               checked={magnifyOn}
@@ -609,7 +609,7 @@ export function ImageEditor({
             {s.magnify}
           </label>
           {magnifyOn ? (
-            <label class="tm-field">
+            <label class="ss-field">
               <span>
                 {s.zoom}: {zoom}×
               </span>
@@ -628,7 +628,7 @@ export function ImageEditor({
             </label>
           ) : null}
 
-          <div class="tm-stack">
+          <div class="ss-stack">
             <Button onClick={deleteSelected} disabled={!selected}>
               {s.deleteSelected}
             </Button>
@@ -651,7 +651,7 @@ export function ImageEditor({
             </Button>
           </div>
           {notice ? (
-            <p class="tm-error" role="alert">
+            <p class="ss-error" role="alert">
               {notice}
             </p>
           ) : null}
@@ -726,7 +726,7 @@ function DraftShape({
   if (ann) return <AnnotationShape a={ann} imageWidth={imageWidth} />;
   return (
     <rect
-      class={`tm-imgedit__draft tm-imgedit__draft--${draft.tool}`}
+      class={`ss-imgedit__draft ss-imgedit__draft--${draft.tool}`}
       x={r.x}
       y={r.y}
       width={r.w}
@@ -762,11 +762,11 @@ function BulkBlurDialog(props: {
         </>
       }
     >
-      <p class="tm-muted">{props.candidates.length ? s.bulkBlurHint : s.bulkBlurNone}</p>
-      <ul class="tm-checklist">
+      <p class="ss-muted">{props.candidates.length ? s.bulkBlurHint : s.bulkBlurNone}</p>
+      <ul class="ss-checklist">
         {props.candidates.map((c) => (
           <li key={c.id}>
-            <label class="tm-check">
+            <label class="ss-check">
               <input
                 type="checkbox"
                 checked={picked.has(c.id)}

@@ -14,7 +14,7 @@ import {
   TextRun,
 } from 'docx';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { procedureJson, toProcedure } from '../agent/procedure.js';
+import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
 import { accentOf, fontOf } from '../branding.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
@@ -183,7 +183,7 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
     );
 
   const file = new Document({
-    creator: 'ABCXYZ',
+    creator: 'ShowSteps',
     title: doc.title,
     ...(doc.description ? { description: doc.description } : {}),
     styles: {
@@ -243,7 +243,7 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
   );
 }
 
-export const PROCEDURE_XML_NAMESPACE = 'urn:trailmark:procedure:v1';
+export const PROCEDURE_XML_NAMESPACE = 'urn:showsteps:procedure:v1';
 const CUSTOM_XML_REL =
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml';
 const CUSTOM_PROPS_REL =
@@ -259,7 +259,7 @@ export function withProcedurePart(docx: Uint8Array, json: string): Uint8Array {
   const files = unzipSync(docx);
   const id = '{6F1D3C1E-7A2B-4C55-9E21-54524C4D4B31}';
   files['customXml/item1.xml'] = strToU8(
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<procedure xmlns="${PROCEDURE_XML_NAMESPACE}" format="trailmark-procedure" schemaVersion="1">${xmlText(json)}</procedure>`,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<procedure xmlns="${PROCEDURE_XML_NAMESPACE}" format="${PROCEDURE_FORMAT}" schemaVersion="1">${xmlText(json)}</procedure>`,
   );
   files['customXml/itemProps1.xml'] = strToU8(
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ds:datastoreItem ds:itemID="${id}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml"><ds:schemaRefs><ds:schemaRef ds:uri="${PROCEDURE_XML_NAMESPACE}"/></ds:schemaRefs></ds:datastoreItem>`,
@@ -282,13 +282,13 @@ export function withProcedurePart(docx: Uint8Array, json: string): Uint8Array {
   files[relsPath] = strToU8(
     rels.replace(
       '</Relationships>',
-      `<Relationship Id="rIdTrailmarkProcedure" Type="${CUSTOM_XML_REL}" Target="../customXml/item1.xml"/></Relationships>`,
+      `<Relationship Id="rIdShowStepsProcedure" Type="${CUSTOM_XML_REL}" Target="../customXml/item1.xml"/></Relationships>`,
     ),
   );
   return zipSync(files, { level: 6 });
 }
 
-/** The procedure JSON from a Word file made by ABCXYZ, if it has one. */
+/** The procedure JSON from a Word file made by ShowSteps, if it has one. */
 export function procedureFromDocx(docx: Uint8Array): string | undefined {
   const item = unzipSync(docx)['customXml/item1.xml'];
   if (!item) return undefined;

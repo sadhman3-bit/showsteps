@@ -5,8 +5,8 @@ import {
   type GuideStore,
   type Rect,
   type Step,
-} from '@trailmark/core';
-import type { ExportImage, ExportInput } from '@trailmark/core/export';
+} from '@showsteps/core';
+import type { ExportImage, ExportInput } from '@showsteps/core/export';
 import { strokeFor } from '../components/Annotations.js';
 import { blurRadius } from '../guide/Screenshot.js';
 import { mimeFor } from '../hooks.js';

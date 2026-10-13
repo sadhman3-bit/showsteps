@@ -1,4 +1,5 @@
 import {
+  ARCHIVE_ACCEPT,
   ARCHIVE_EXTENSION,
   createId,
   duplicateGuide,
@@ -7,7 +8,7 @@ import {
   type Folder,
   type GuideStore,
   type GuideSummary,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { ConfirmDialog, Dialog, PromptDialog } from '../components/Dialog.js';
@@ -129,17 +130,17 @@ export function Library({
     });
 
   return (
-    <div class="tm-library">
-      <aside class="tm-library__side" aria-label={s.folders}>
-        <h1 class="tm-brand">
+    <div class="ss-library">
+      <aside class="ss-library__side" aria-label={s.folders}>
+        <h1 class="ss-brand">
           <Icon name="trail" size={22} /> {strings.app.name}
         </h1>
         <nav>
-          <ul class="tm-nav">
+          <ul class="ss-nav">
             <li>
               <button
                 type="button"
-                class="tm-nav__item"
+                class="ss-nav__item"
                 aria-current={scope.kind === 'all' ? 'page' : undefined}
                 onClick={() => setScope({ kind: 'all' })}
               >
@@ -150,7 +151,7 @@ export function Library({
               <li key={folder.id}>
                 <button
                   type="button"
-                  class="tm-nav__item"
+                  class="ss-nav__item"
                   style={{ paddingInlineStart: `${12 + depth * 16}px` }}
                   aria-current={
                     scope.kind === 'folder' && scope.folderId === folder.id ? 'page' : undefined
@@ -164,7 +165,7 @@ export function Library({
             <li>
               <button
                 type="button"
-                class="tm-nav__item"
+                class="ss-nav__item"
                 aria-current={inTrash ? 'page' : undefined}
                 onClick={() => setScope({ kind: 'trash' })}
               >
@@ -196,13 +197,13 @@ export function Library({
         ) : null}
       </aside>
 
-      <main class="tm-library__main">
-        <header class="tm-toolbar">
-          <h2 class="tm-toolbar__title">
+      <main class="ss-library__main">
+        <header class="ss-toolbar">
+          <h2 class="ss-toolbar__title">
             {inTrash ? s.trash : (currentFolder?.name ?? s.allGuides)}
           </h2>
           {currentFolder ? (
-            <div class="tm-toolbar__group">
+            <div class="ss-toolbar__group">
               <Button
                 variant="ghost"
                 onClick={() => setModal({ kind: 'rename-folder', folder: currentFolder })}
@@ -217,27 +218,27 @@ export function Library({
               </Button>
             </div>
           ) : null}
-          <div class="tm-toolbar__spacer" />
+          <div class="ss-toolbar__spacer" />
           <Button onClick={() => fileInput.current?.click()}>
             <Icon name="upload" /> {s.import}
           </Button>
           <input
             ref={fileInput}
             type="file"
-            accept={`${ARCHIVE_EXTENSION},application/zip`}
+            accept={ARCHIVE_ACCEPT}
             hidden
             aria-label={s.import}
             onChange={(e) => void onImportFile(e.currentTarget.files?.[0])}
           />
         </header>
 
-        <div class="tm-filters" role="search">
-          <label class="tm-search">
+        <div class="ss-filters" role="search">
+          <label class="ss-search">
             <Icon name="search" />
-            <span class="tm-sr">{s.search}</span>
+            <span class="ss-sr">{s.search}</span>
             <input
               type="search"
-              class="tm-input"
+              class="ss-input"
               placeholder={s.search}
               value={text}
               onInput={(e) => setText(e.currentTarget.value)}
@@ -245,10 +246,10 @@ export function Library({
           </label>
           {!inTrash ? (
             <>
-              <label class="tm-select">
-                <span class="tm-sr">{s.sort}</span>
+              <label class="ss-select">
+                <span class="ss-sr">{s.sort}</span>
                 <select
-                  class="tm-input"
+                  class="ss-input"
                   value={sort}
                   onChange={(e) => setSort(e.currentTarget.value as SortKey)}
                 >
@@ -258,10 +259,10 @@ export function Library({
                   <option value="steps">{s.sortSteps}</option>
                 </select>
               </label>
-              <label class="tm-select">
-                <span class="tm-sr">{s.filterApp}</span>
+              <label class="ss-select">
+                <span class="ss-sr">{s.filterApp}</span>
                 <select
-                  class="tm-input"
+                  class="ss-input"
                   value={app}
                   onChange={(e) => setApp(e.currentTarget.value)}
                 >
@@ -274,10 +275,10 @@ export function Library({
                 </select>
               </label>
               {tags.length ? (
-                <label class="tm-select">
-                  <span class="tm-sr">{s.filterTag}</span>
+                <label class="ss-select">
+                  <span class="ss-sr">{s.filterTag}</span>
                   <select
-                    class="tm-input"
+                    class="ss-input"
                     value={tag}
                     onChange={(e) => setTag(e.currentTarget.value)}
                   >
@@ -292,7 +293,7 @@ export function Library({
               ) : null}
             </>
           ) : null}
-          <div class="tm-segmented" role="group" aria-label={s.gridView + ' / ' + s.listView}>
+          <div class="ss-segmented" role="group" aria-label={s.gridView + ' / ' + s.listView}>
             <button
               type="button"
               aria-pressed={view === 'grid'}
@@ -313,22 +314,22 @@ export function Library({
         </div>
 
         {notice ? (
-          <p class="tm-notice" role="status">
+          <p class="ss-notice" role="status">
             {notice}{' '}
-            <button type="button" class="tm-link" onClick={() => setNotice('')}>
+            <button type="button" class="ss-link" onClick={() => setNotice('')}>
               {s.close}
             </button>
           </p>
         ) : null}
 
         {loaded && shown.length === 0 ? (
-          <p class="tm-empty">{inTrash ? s.emptyTrash : text ? s.emptySearch : s.empty}</p>
+          <p class="ss-empty">{inTrash ? s.emptyTrash : text ? s.emptySearch : s.empty}</p>
         ) : null}
         {loaded && onAddSamples && !guides.some((g) => !g.trashedAt) && !inTrash ? (
           <Button onClick={() => void act(onAddSamples)}>{s.addSamples}</Button>
         ) : null}
 
-        <ul class={view === 'grid' ? 'tm-cards' : 'tm-rows'} aria-label={s.title}>
+        <ul class={view === 'grid' ? 'ss-cards' : 'ss-rows'} aria-label={s.title}>
           {shown.map((g) => (
             <GuideCard
               key={g.id}
@@ -484,34 +485,34 @@ function GuideCard(props: {
         ['trash', s.moveToTrash],
       ];
   return (
-    <li class="tm-card" data-guide-id={g.id}>
+    <li class="ss-card" data-guide-id={g.id}>
       {props.view === 'grid' ? (
-        <div class="tm-card__cover" aria-hidden="true">
+        <div class="ss-card__cover" aria-hidden="true">
           {cover ? <img src={cover} alt="" /> : <Icon name="trail" size={40} />}
         </div>
       ) : null}
-      <div class="tm-card__body">
+      <div class="ss-card__body">
         {trash ? (
-          <span class="tm-card__title">{g.title}</span>
+          <span class="ss-card__title">{g.title}</span>
         ) : (
-          <button type="button" class="tm-card__title tm-link" onClick={props.onOpen}>
+          <button type="button" class="ss-card__title ss-link" onClick={props.onOpen}>
             {g.title}
           </button>
         )}
-        <span class="tm-muted">
+        <span class="ss-muted">
           {s.steps(g.stepCount)} · {when}
         </span>
         {g.tags.length ? (
-          <span class="tm-tags">
+          <span class="ss-tags">
             {g.tags.map((t) => (
-              <span key={t} class="tm-tag">
+              <span key={t} class="ss-tag">
                 {t}
               </span>
             ))}
           </span>
         ) : null}
       </div>
-      <details class="tm-menu">
+      <details class="ss-menu">
         <summary aria-label={`${s.actions}: ${g.title}`}>
           <Icon name="more" />
         </summary>
@@ -558,11 +559,11 @@ function MoveDialog(props: {
         </>
       }
     >
-      <div class="tm-field">
-        <label for="tm-move-to">{s.folders}</label>
+      <div class="ss-field">
+        <label for="ss-move-to">{s.folders}</label>
         <select
-          id="tm-move-to"
-          class="tm-input"
+          id="ss-move-to"
+          class="ss-input"
           value={value}
           onChange={(e) => setValue(e.currentTarget.value)}
         >

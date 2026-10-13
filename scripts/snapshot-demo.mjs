@@ -1,7 +1,7 @@
 // Captures DOM snapshots of the demo app for the matcher tests in packages/core.
 // Each page is loaded twice ("a" and "b"); the demo scrambles IDs and classes on every load,
 // so tests can describe an element in "a" and prove the matcher finds it again in "b".
-// Ground-truth elements carry data-tm-truth; every element carries data-tm-rect (real layout).
+// Ground-truth elements carry data-ss-truth; every element carries data-ss-rect (real layout).
 // Run: pnpm snapshot:demo (sets PLAYWRIGHT_BROWSERS_PATH itself; needs pnpm setup:browsers once).
 process.env.PLAYWRIGHT_BROWSERS_PATH = '0';
 
@@ -13,7 +13,7 @@ const { startDemoApp } = await import('../fixtures/demo-app/server.mjs');
 const OUT = fileURLToPath(new URL('../packages/core/test/fixtures/demo/', import.meta.url));
 mkdirSync(OUT, { recursive: true });
 
-/** Serialises the document (or a frame) with shadow roots as <template data-tm-shadow>. */
+/** Serialises the document (or a frame) with shadow roots as <template data-ss-shadow>. */
 function serialise() {
   const VOID = new Set([
     'area',
@@ -39,7 +39,7 @@ function serialise() {
     if (tag === 'script' || tag === 'link' || tag === 'style') return '';
     const r = node.getBoundingClientRect();
     node.setAttribute(
-      'data-tm-rect',
+      'data-ss-rect',
       [r.x, r.y, r.width, r.height].map((n) => Math.round(n)).join(','),
     );
     const attrs = Array.from(node.attributes)
@@ -48,7 +48,7 @@ function serialise() {
     if (VOID.has(tag)) return `<${tag}${attrs}>`;
     let inner = '';
     if (node.shadowRoot) {
-      inner += `<template data-tm-shadow>${Array.from(node.shadowRoot.childNodes).map(walk).join('')}</template>`;
+      inner += `<template data-ss-shadow>${Array.from(node.shadowRoot.childNodes).map(walk).join('')}</template>`;
     }
     const kids = tag === 'template' ? node.content.childNodes : node.childNodes;
     inner += Array.from(kids).map(walk).join('');
@@ -59,7 +59,7 @@ function serialise() {
 }
 
 async function mark(locator, key) {
-  await locator.evaluate((el, k) => el.setAttribute('data-tm-truth', k), key);
+  await locator.evaluate((el, k) => el.setAttribute('data-ss-truth', k), key);
 }
 
 async function save(target, name) {

@@ -8,13 +8,13 @@ type Block = {
   human?: { title: { spans: { text: string; bold?: boolean }[] } };
   app?: { url: string };
 };
-declare const __trailmark: {
+declare const __showsteps: {
   store: Store;
   recorder: { current: { stepCount: number; status: string } };
 };
 
 const titlesOf = async (sw: Worker, id: string) => {
-  const guide = await sw.evaluate((g) => __trailmark.store.getGuide(g), id);
+  const guide = await sw.evaluate((g) => __showsteps.store.getGuide(g), id);
   return (guide?.blocks ?? [])
     .filter((b) => b.kind === 'step')
     .map((b) => b.human!.title.spans.map((x) => (x.bold ? `**${x.text}**` : x.text)).join(''));
@@ -30,7 +30,7 @@ test('controller: pause, delete last, live blur, keys, right and double clicks',
   await page.getByRole('cell', { name: 'INV-1042' }).waitFor();
   await page.bringToFront();
   const id = await startCaptureOn(serviceWorker, 'http://localhost:5173/');
-  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  const bar = page.locator('showsteps-controller').getByRole('toolbar');
   await expect(bar).toContainText('Recording');
   await expect(bar).toContainText('1 step');
   const pause = () => page.waitForTimeout(650);
@@ -103,11 +103,11 @@ test('cancel discards a new capture', async ({ context, serviceWorker }) => {
   await page.goto('http://localhost:5173/login.html');
   await page.bringToFront();
   const id = await startCaptureOn(serviceWorker, 'http://localhost:5173/');
-  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  const bar = page.locator('showsteps-controller').getByRole('toolbar');
   await bar.getByRole('button', { name: 'Cancel' }).click();
   await bar.getByRole('button', { name: 'Cancel' }).click(); // confirm
   await expect(bar).toHaveCount(0);
-  expect(await serviceWorker.evaluate((g) => __trailmark.store.getGuide(g), id)).toBeUndefined();
+  expect(await serviceWorker.evaluate((g) => __showsteps.store.getGuide(g), id)).toBeUndefined();
 });
 
 test('capture follows the active tab (C6)', async ({ context, serviceWorker }) => {
@@ -123,14 +123,14 @@ test('capture follows the active tab (C6)', async ({ context, serviceWorker }) =
   const second = await context.newPage();
   await second.goto('http://localhost:5173/reports.html');
   await second.bringToFront();
-  await expect(second.locator('trailmark-controller').getByRole('toolbar')).toBeVisible();
+  await expect(second.locator('showsteps-controller').getByRole('toolbar')).toBeVisible();
   await second.waitForTimeout(650);
   await second.getByRole('button', { name: 'Run report' }).click({ delay: 100 });
   await second.waitForTimeout(650);
-  await second.locator('trailmark-controller').getByRole('button', { name: 'Finish' }).click();
-  await expect(second.locator('trailmark-controller')).toHaveCount(0);
+  await second.locator('showsteps-controller').getByRole('button', { name: 'Finish' }).click();
+  await expect(second.locator('showsteps-controller')).toHaveCount(0);
 
-  const guide = await serviceWorker.evaluate((g) => __trailmark.store.getGuide(g), id);
+  const guide = await serviceWorker.evaluate((g) => __showsteps.store.getGuide(g), id);
   const steps = guide!.blocks.filter((b) => b.kind === 'step');
   expect(await titlesOf(serviceWorker, id)).toEqual([
     'Go to **localhost:5173**',
@@ -155,11 +155,11 @@ test('capture more inserts steps at the chosen position (C7)', async ({
   await serviceWorker.evaluate(
     ({ g, t }) =>
       (
-        globalThis as never as { __trailmark: { startCapture(m: object): Promise<unknown> } }
-      ).__trailmark.startCapture({ type: 'start', tabId: t, guideId: g, insertAt: 1 }),
+        globalThis as never as { __showsteps: { startCapture(m: object): Promise<unknown> } }
+      ).__showsteps.startCapture({ type: 'start', tabId: t, guideId: g, insertAt: 1 }),
     { g: id, t: tabId },
   );
-  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  const bar = page.locator('showsteps-controller').getByRole('toolbar');
   await expect(bar).toContainText('0 steps');
   await page.waitForTimeout(650);
   await page.getByTestId('new-invoice').click({ delay: 100 });
@@ -193,7 +193,7 @@ test('side panel lists each step as it is recorded, with its screenshot, and del
   const panel = await opened;
   await page.bringToFront();
   const id = await startCaptureOn(serviceWorker, 'http://localhost:5173/');
-  const bar = page.locator('trailmark-controller').getByRole('toolbar');
+  const bar = page.locator('showsteps-controller').getByRole('toolbar');
   await expect(bar).toContainText('1 step');
   const steps = panel.getByRole('list').getByRole('listitem');
   await expect(steps).toHaveCount(1);
@@ -201,7 +201,7 @@ test('side panel lists each step as it is recorded, with its screenshot, and del
 
   await page.getByRole('heading', { name: 'Recent invoices' }).click({ delay: 100 });
   // The toolbar notes the step just recorded.
-  await expect(page.locator('trailmark-controller .toast')).toContainText('Recent invoices');
+  await expect(page.locator('showsteps-controller .toast')).toContainText('Recent invoices');
   await page.waitForTimeout(650);
   await page.getByRole('cell', { name: 'INV-1042' }).click({ delay: 100 });
   await expect(bar).toContainText('3 steps');
@@ -212,7 +212,7 @@ test('side panel lists each step as it is recorded, with its screenshot, and del
   for (let i = 0; i < 3; i++) await expect(steps.nth(i).getByRole('img')).toBeVisible();
   await panel.screenshot({ path: test.info().outputPath('sidepanel-recording.png') });
   // Each picture's highlight sits on the clicked element.
-  const guide = await serviceWorker.evaluate((g) => __trailmark.store.getGuide(g), id);
+  const guide = await serviceWorker.evaluate((g) => __showsteps.store.getGuide(g), id);
   const shot = (guide?.blocks[2] as { human: { screenshot: { width: number } } }).human.screenshot;
   expect(shot.width).toBeGreaterThan(1000);
 

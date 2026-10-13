@@ -1,131 +1,199 @@
 /*
- * ABCXYZ design tokens. Every colour used by the UI comes from here.
- * Palette: deep teal ("trail") accent on warm neutrals. Contrast pairs meet WCAG AA.
+ * ShowSteps design tokens ("Pink and Ink"). Every colour used by the UI comes from here
+ * (packages/core/src/tokens.ts mirrors them for exports and content scripts; a test keeps the
+ * two in step, and another checks every text pair meets WCAG AA).
  */
+@import './fonts.css';
+
 :root {
   color-scheme: light;
-  --tm-font: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --tm-font-mono: 'Cascadia Code', Consolas, ui-monospace, monospace;
+  --ss-font: 'Funnel Sans', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --ss-font-display: 'Funnel Display', 'Funnel Sans', 'Segoe UI', system-ui, sans-serif;
+  --ss-font-mono: 'Cascadia Code', Consolas, ui-monospace, monospace;
 
-  --tm-bg: #faf8f5;
-  --tm-surface: #ffffff;
-  --tm-surface-2: #f1eee9;
-  --tm-border: #d9d3ca;
-  --tm-text: #1f1c18;
-  --tm-text-muted: #5c554b;
+  --ss-bg: #fff8f9;
+  --ss-surface: #ffffff;
+  --ss-surface-2: #f8edf1;
+  --ss-line: #efe3e8;
+  --ss-input-border: #8f87a6;
+  --ss-text: #14102b;
+  --ss-text-muted: #5e5878;
+  --ss-accent: #d9004c;
+  --ss-accent-hover: #b8003f;
+  --ss-on-accent: #ffffff;
+  --ss-signal: #ff2e6e;
+  --ss-on-signal: #14102b;
+  --ss-focus: #ff2e6e;
+  --ss-tip: #0f7a55;
+  --ss-tip-bg: #e9f6f0;
+  --ss-note: #3346c6;
+  --ss-note-bg: #eef0fc;
+  --ss-warning: #8a5300;
+  --ss-warning-bg: #fbf1e2;
+  --ss-alert: #b3261e;
+  --ss-alert-bg: #fcebea;
+  /* Pink highlighter used under headings and in the logo. */
+  --ss-highlight: rgb(255 46 110 / 0.35);
+  --ss-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235E5878' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --ss-scrim: rgb(17 13 36 / 0.45);
 
-  --tm-accent: #0f6b62;
-  --tm-accent-hover: #0b554e;
-  --tm-on-accent: #ffffff;
-  --tm-focus: #c2410c;
+  /* Controls shown over other apps (capture toolbar, step toast, Guide Me), both themes. */
+  --ss-chrome-bg: #14102b;
+  --ss-chrome-fg: #f5f2ff;
+  --ss-chrome-muted: #a9a3c7;
+  --ss-chrome-line: #2d2750;
+  --ss-chrome-button: #2d2750;
+  --ss-chrome-button-hover: #3a3363;
+  --ss-chrome-signal: #ff2e6e;
+  --ss-chrome-on-signal: #14102b;
+  --ss-chrome-step: #ff4d82;
 
-  --tm-tip: #166534;
-  --tm-note: #1d4ed8;
-  --tm-warning: #92400e;
-  --tm-alert: #b91c1c;
+  /* Type scale (size / line height). */
+  --ss-text-caption: 12px/16px var(--ss-font);
+  --ss-text-small: 13px/18px var(--ss-font);
+  --ss-text-ui: 14px/20px var(--ss-font);
+  --ss-text-body: 15px/24px var(--ss-font);
+  --ss-text-step: 600 17px/24px var(--ss-font);
+  --ss-text-h3: 700 20px/28px var(--ss-font-display);
+  --ss-text-h2: 700 24px/30px var(--ss-font-display);
+  --ss-text-h1: 800 30px/36px var(--ss-font-display);
+  --ss-text-display: 800 40px/44px var(--ss-font-display);
+  --ss-display-tracking: -0.02em;
 
-  /* Dark controls shown over other apps (capture toolbar, Guide Me overlay), in both themes. */
-  --tm-chrome-bg: #1b1a18;
-  --tm-chrome-fg: #f2eee8;
-  --tm-chrome-muted: #b5ada1;
-  --tm-chrome-line: #3d3933;
-  --tm-chrome-hover: #2a2723;
-  --tm-chrome-accent: #4fbfb2;
-  --tm-chrome-on-accent: #0b1513;
-  --tm-chrome-rec: #f87171;
-  --tm-chrome-ring: #fb923c;
+  /* Spacing. */
+  --ss-space-0: 2px;
+  --ss-space-1: 4px;
+  --ss-space-2: 8px;
+  --ss-space-3: 12px;
+  --ss-space-4: 16px;
+  --ss-space-5: 20px;
+  --ss-space-6: 24px;
+  --ss-space-8: 32px;
+  --ss-space-10: 40px;
+  --ss-space-12: 48px;
+  --ss-space-16: 64px;
 
-  --tm-radius: 8px;
-  --tm-radius-sm: 4px;
-  --tm-space-1: 4px;
-  --tm-space-2: 8px;
-  --tm-space-3: 12px;
-  --tm-space-4: 16px;
-  --tm-space-6: 24px;
-  --tm-shadow: 0 1px 2px rgb(31 28 24 / 0.08), 0 4px 12px rgb(31 28 24 / 0.08);
+  /* Radius: chips, inputs, cards and screenshots, dialogs and panels, pills. */
+  --ss-radius-sm: 6px;
+  --ss-radius-input: 10px;
+  --ss-radius: 12px;
+  --ss-radius-lg: 16px;
+  --ss-radius-pill: 999px;
+
+  /* Navy-tinted shadows. */
+  --ss-shadow-sm: 0 1px 2px rgb(20 16 43 / 0.06);
+  --ss-shadow: 0 1px 2px rgb(20 16 43 / 0.05), 0 10px 28px rgb(20 16 43 / 0.08);
+  --ss-shadow-lg: 0 12px 32px rgb(20 16 43 / 0.28);
+
+  /* Motion. */
+  --ss-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ss-fast: 120ms;
+  --ss-slow: 200ms;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --tm-bg: #161513;
-    --tm-surface: #1f1d1a;
-    --tm-surface-2: #2a2723;
-    --tm-border: #3d3933;
-    --tm-text: #f2eee8;
-    --tm-text-muted: #b5ada1;
-    --tm-accent: #4fbfb2;
-    --tm-accent-hover: #6fd3c7;
-    --tm-on-accent: #0b1513;
-    --tm-focus: #fb923c;
-    --tm-tip: #4ade80;
-    --tm-note: #93c5fd;
-    --tm-warning: #fbbf24;
-    --tm-alert: #fca5a5;
-    --tm-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.4);
+    --ss-bg: #110d24;
+    --ss-surface: #1b1636;
+    --ss-surface-2: #241e44;
+    --ss-line: #2d2750;
+    --ss-input-border: #6e6790;
+    --ss-text: #f5f2ff;
+    --ss-text-muted: #a9a3c7;
+    --ss-accent: #ff4d82;
+    --ss-accent-hover: #ff6e98;
+    --ss-on-accent: #110d24;
+    --ss-signal: #ff4d82;
+    --ss-on-signal: #110d24;
+    --ss-focus: #ff4d82;
+    --ss-tip: #5bd6a0;
+    --ss-tip-bg: color-mix(in srgb, #5bd6a0 14%, var(--ss-surface));
+    --ss-note: #9da8ff;
+    --ss-note-bg: color-mix(in srgb, #9da8ff 14%, var(--ss-surface));
+    --ss-warning: #f2b65a;
+    --ss-warning-bg: color-mix(in srgb, #f2b65a 14%, var(--ss-surface));
+    --ss-alert: #ff8a80;
+    --ss-alert-bg: color-mix(in srgb, #ff8a80 14%, var(--ss-surface));
+    --ss-highlight: rgb(255 77 130 / 0.4);
+    --ss-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9A3C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    --ss-scrim: rgb(0 0 0 / 0.6);
+    --ss-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+    --ss-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 28px rgb(0 0 0 / 0.4);
+    --ss-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --tm-bg: #161513;
-  --tm-surface: #1f1d1a;
-  --tm-surface-2: #2a2723;
-  --tm-border: #3d3933;
-  --tm-text: #f2eee8;
-  --tm-text-muted: #b5ada1;
-  --tm-accent: #4fbfb2;
-  --tm-accent-hover: #6fd3c7;
-  --tm-on-accent: #0b1513;
-  --tm-focus: #fb923c;
-  --tm-tip: #4ade80;
-  --tm-note: #93c5fd;
-  --tm-warning: #fbbf24;
-  --tm-alert: #fca5a5;
-  --tm-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.4);
+  --ss-bg: #110d24;
+  --ss-surface: #1b1636;
+  --ss-surface-2: #241e44;
+  --ss-line: #2d2750;
+  --ss-input-border: #6e6790;
+  --ss-text: #f5f2ff;
+  --ss-text-muted: #a9a3c7;
+  --ss-accent: #ff4d82;
+  --ss-accent-hover: #ff6e98;
+  --ss-on-accent: #110d24;
+  --ss-signal: #ff4d82;
+  --ss-on-signal: #110d24;
+  --ss-focus: #ff4d82;
+  --ss-tip: #5bd6a0;
+  --ss-tip-bg: color-mix(in srgb, #5bd6a0 14%, var(--ss-surface));
+  --ss-note: #9da8ff;
+  --ss-note-bg: color-mix(in srgb, #9da8ff 14%, var(--ss-surface));
+  --ss-warning: #f2b65a;
+  --ss-warning-bg: color-mix(in srgb, #f2b65a 14%, var(--ss-surface));
+  --ss-alert: #ff8a80;
+  --ss-alert-bg: color-mix(in srgb, #ff8a80 14%, var(--ss-surface));
+  --ss-highlight: rgb(255 77 130 / 0.4);
+  --ss-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9A3C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --ss-scrim: rgb(0 0 0 / 0.6);
+  --ss-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --ss-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 28px rgb(0 0 0 / 0.4);
+  --ss-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ss-fast: 0ms;
+    --ss-slow: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 body {
   margin: 0;
-  background: var(--tm-bg);
-  color: var(--tm-text);
-  font-family: var(--tm-font);
+  background: var(--ss-bg);
+  color: var(--ss-text);
+  font: var(--ss-text-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--ss-font-display);
+  letter-spacing: var(--ss-display-tracking);
+}
+
+a {
+  color: var(--ss-accent);
 }
 
 :focus-visible {
-  outline: 2px solid var(--tm-focus);
+  outline: 2px solid var(--ss-focus);
   outline-offset: 2px;
 }
 
-.tm-button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tm-space-2);
-  min-height: 36px;
-  padding: 0 var(--tm-space-4);
-  border: 1px solid var(--tm-border);
-  border-radius: var(--tm-radius);
-  background: var(--tm-surface);
-  color: var(--tm-text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.tm-button:hover {
-  background: var(--tm-surface-2);
-}
-
-.tm-button[data-variant='primary'] {
-  border-color: var(--tm-accent);
-  background: var(--tm-accent);
-  color: var(--tm-on-accent);
-}
-
-.tm-button[data-variant='primary']:hover {
-  background: var(--tm-accent-hover);
-}
-
-.tm-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+::selection {
+  background: var(--ss-highlight);
 }

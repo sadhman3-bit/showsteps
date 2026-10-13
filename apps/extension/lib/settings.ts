@@ -1,5 +1,5 @@
 // Settings and page marks (notes and pins), kept in extension storage on this computer.
-import { parseMarks, type PageMark } from '@trailmark/core';
+import { parseMarks, type PageMark } from '@showsteps/core';
 import {
   DEFAULT_SETTINGS,
   MARKS_KEY,

@@ -9,7 +9,7 @@ import {
   type GuideStore,
   type Run,
   type Step,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import type { z } from 'zod';
 import {
   CheckReplySchema,

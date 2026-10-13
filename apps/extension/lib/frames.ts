@@ -1,4 +1,4 @@
-import type { Point } from '@trailmark/core';
+import type { Point } from '@showsteps/core';
 import type { IframeGeometry } from './messages';
 
 export interface FrameDeps {

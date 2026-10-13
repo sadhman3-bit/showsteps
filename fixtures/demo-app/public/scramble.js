@@ -1,5 +1,5 @@
 // Gives elements random IDs and class names on every load, so tests prove
-// ABCXYZ's selectors never depend on them. Labels are re-pointed so they still work.
+// ShowSteps's selectors never depend on them. Labels are re-pointed so they still work.
 (function () {
   'use strict';
   function rnd() {

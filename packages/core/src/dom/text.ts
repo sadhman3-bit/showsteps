@@ -12,7 +12,7 @@ const VALUE_TYPES = new Set(['', 'text', 'email', 'search', 'tel', 'url', 'numbe
 export interface CollectOptions {
   /** Stop after this many words (a very long page keeps what is on screen first). */
   maxWords?: number;
-  /** Elements to leave out, such as ABCXYZ's own on-page UI. */
+  /** Elements to leave out, such as ShowSteps's own on-page UI. */
   skip?: (el: Element) => boolean;
 }
 

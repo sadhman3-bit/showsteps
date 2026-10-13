@@ -1,7 +1,7 @@
 // U8: on-device OCR with tesseract.js. The worker, WebAssembly core and English model are
 // bundled with each app under `ocr/` (scripts/copy-ocr.mjs) and loaded from there: nothing is
 // fetched from the internet, and the engine loads only when a picture needs reading.
-import type { PageText, TextRun } from '@trailmark/core';
+import type { PageText, TextRun } from '@showsteps/core';
 import type { Worker } from 'tesseract.js';
 
 let engine: Promise<Worker> | undefined;

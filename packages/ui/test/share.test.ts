@@ -9,7 +9,7 @@ describe('export file names', () => {
     expect(fileNameFor(title, 'markdown')).toBe('Pay a bill AP AR monthly (Markdown).zip');
     expect(fileNameFor(title, 'html')).toBe('Pay a bill AP AR monthly.html');
     expect(fileNameFor(title, 'embed')).toBe('Pay a bill AP AR monthly.embed.html');
-    expect(fileNameFor(title, 'trailmark')).toBe('Pay a bill AP AR monthly.trailmark');
+    expect(fileNameFor(title, 'showsteps')).toBe('Pay a bill AP AR monthly.showsteps');
     expect(fileNameFor('   ', 'pdf')).toBe('guide.pdf');
   });
 });

@@ -40,13 +40,13 @@ export function migrateRaw(
   target: number = SCHEMA_VERSION,
 ): Record<string, unknown> {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
-    throw new GuideFormatError('This file is not a ABCXYZ guide.');
+    throw new GuideFormatError('This file is not a ShowSteps guide.');
   }
   let raw = input as Record<string, unknown>;
   let version = versionOf(raw);
   if (version > target) {
     throw new GuideFormatError(
-      `This guide was made with a newer version of ABCXYZ (schema ${version}). Update ABCXYZ to open it.`,
+      `This guide was made with a newer version of ShowSteps (schema ${version}). Update ShowSteps to open it.`,
     );
   }
   while (version < target) {

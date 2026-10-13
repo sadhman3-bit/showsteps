@@ -1,4 +1,4 @@
-import { strings } from '@trailmark/ui';
+import { strings } from '@showsteps/ui';
 import { api, usePushed, type CaptureView } from './api';
 
 const c = strings.capture;
@@ -14,15 +14,15 @@ export function Controller() {
   const control = (action: string) => void api().invoke('capture:control', action);
   return (
     <div
-      class={`tm-ctl${paused ? ' is-paused' : ''}`}
+      class={`ss-ctl${paused ? ' is-paused' : ''}`}
       role="toolbar"
       aria-label={strings.desktop.controllerLabel}
     >
-      <span class="tm-ctl__grip" aria-hidden="true">
+      <span class="ss-ctl__grip" aria-hidden="true">
         ⋮⋮
       </span>
-      <span class="tm-ctl__dot" aria-hidden="true" />
-      <span class="tm-ctl__status">
+      <span class="ss-ctl__dot" aria-hidden="true" />
+      <span class="ss-ctl__status">
         <strong>{paused ? c.paused : c.recording}</strong> <span>{c.steps(state.stepCount)}</span>
       </span>
       <button type="button" onClick={() => control(paused ? 'resume' : 'pause')}>

@@ -4,8 +4,10 @@ import { GuideFormatError, parseGuide, serializeGuide } from './migrations.js';
 import type { Guide } from './schema.js';
 import { assertSafeName, type GuideStore } from './storage/types.js';
 
-/** File extension of a ABCXYZ guide archive (a zip of the guide folder). */
-export const ARCHIVE_EXTENSION = '.trailmark';
+/** File extension of a ShowSteps guide archive (a zip of the guide folder). */
+export const ARCHIVE_EXTENSION = '.showsteps';
+/** File types the import picker offers: archives saved before the rename end in .trailmark. */
+export const ARCHIVE_ACCEPT = `${ARCHIVE_EXTENSION},.trailmark,application/zip`;
 const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
 /** Zip a guide and its images: guide.json + img/<name>, the same layout as a library folder. */
@@ -29,7 +31,7 @@ export interface ImportResult {
   renamed: boolean;
 }
 
-/** Read a .trailmark archive into the store. Assigns a fresh id if the guide already exists. */
+/** Read a .showsteps archive into the store. Assigns a fresh id if the guide already exists. */
 export async function importGuideArchive(
   store: GuideStore,
   bytes: Uint8Array,
@@ -40,10 +42,10 @@ export async function importGuideArchive(
   try {
     entries = unzipSync(bytes);
   } catch {
-    throw new GuideFormatError('This file is not a ABCXYZ guide.');
+    throw new GuideFormatError('This file is not a ShowSteps guide.');
   }
   const json = entries['guide.json'];
-  if (!json) throw new GuideFormatError('This file is not a ABCXYZ guide (no guide.json).');
+  if (!json) throw new GuideFormatError('This file is not a ShowSteps guide (no guide.json).');
   let raw: unknown;
   try {
     raw = JSON.parse(strFromU8(json));

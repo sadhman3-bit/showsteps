@@ -1,4 +1,4 @@
-import { fitWidth } from '@trailmark/core';
+import { fitWidth } from '@showsteps/core';
 
 export interface EncodedImage {
   full: Uint8Array;

@@ -1,5 +1,5 @@
-import { guideSteps, type Guide } from '@trailmark/core';
-import { Button, Icon, RichText, strings } from '@trailmark/ui';
+import { guideSteps, type Guide } from '@showsteps/core';
+import { Button, Icon, RichText, strings } from '@showsteps/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { getStore, guideRequest } from '../../lib/client';
 import type { GuideControl, GuidanceState, Speed } from '../../lib/guideMessages';
@@ -73,31 +73,31 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
   }
 
   return (
-    <main class="tm-sidepanel tm-guidance">
-      <h1 class="tm-brand">
+    <main class="ss-sidepanel ss-guidance">
+      <h1 class="ss-brand">
         <Icon name="trail" size={22} /> {run ? g.runForMe : g.guideMe}
       </h1>
-      <p class="tm-guidance__title">{state.title}</p>
+      <p class="ss-guidance__title">{state.title}</p>
 
       {done ? (
-        <section class="tm-notice tm-stack" role="status">
+        <section class="ss-notice ss-stack" role="status">
           <strong>{g.done}</strong>
           <span>{g.doneTitle(state.title ?? '')}</span>
           <Button onClick={() => control('stop')}>{strings.library.close}</Button>
         </section>
       ) : (
-        <section class="tm-guidance__now" aria-live="polite">
-          <p class="tm-muted">{g.stepOf(state.index + 1, state.total)}</p>
+        <section class="ss-guidance__now" aria-live="polite">
+          <p class="ss-muted">{g.stepOf(state.index + 1, state.total)}</p>
           {step ? (
-            <p class="tm-guidance__step">
+            <p class="ss-guidance__step">
               <RichText value={step.human.title} />
             </p>
           ) : null}
-          <p class="tm-guidance__phase" data-phase={state.phase}>
+          <p class="ss-guidance__phase" data-phase={state.phase}>
             {message}
           </p>
-          {reason ? <p class="tm-muted">{reason}</p> : null}
-          <div class="tm-guidance__buttons">
+          {reason ? <p class="ss-muted">{reason}</p> : null}
+          <div class="ss-guidance__buttons">
             {state.phase === 'navigate' ? (
               <Button variant="primary" onClick={openPage}>
                 {g.openPage}
@@ -122,11 +122,11 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
             </Button>
           </div>
           {run ? (
-            <div class="tm-guidance__speed">
+            <div class="ss-guidance__speed">
               <label>
                 {g.speed}{' '}
                 <select
-                  class="tm-input"
+                  class="ss-input"
                   value={state.speed}
                   onChange={(e) =>
                     void guideRequest({
@@ -163,10 +163,10 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
       )}
 
       <section aria-labelledby="steps-h">
-        <h2 id="steps-h" class="tm-guidance__h">
+        <h2 id="steps-h" class="ss-guidance__h">
           {g.stepsHeading}
         </h2>
-        <ol class="tm-guidance__list">
+        <ol class="ss-guidance__list">
           {steps.map((s, i) => (
             <li
               key={s.id}
@@ -176,10 +176,10 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
             >
               <button
                 type="button"
-                class="tm-link"
+                class="ss-link"
                 onClick={() => void guideRequest({ type: 'guide-goto', index: i })}
               >
-                <span class="tm-guidance__n">{i < state.index || done ? '✓' : i + 1}</span>
+                <span class="ss-guidance__n">{i < state.index || done ? '✓' : i + 1}</span>
                 <span>
                   <RichText value={s.human.title} />
                 </span>

@@ -1,83 +1,83 @@
 /* Desktop-only layout. Colours come from tokens.css. */
 
-.tm-desktop {
+.ss-desktop {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-.tm-desktopbar {
+.ss-desktopbar {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--tm-space-3);
+  gap: var(--ss-space-3);
   align-items: center;
-  padding: var(--tm-space-2) var(--tm-space-4);
-  border-bottom: 1px solid var(--tm-border);
-  background: var(--tm-surface);
+  padding: var(--ss-space-2) var(--ss-space-4);
+  border-bottom: 1px solid var(--ss-line);
+  background: var(--ss-surface);
 }
 
-.tm-desktopbar__spacer {
+.ss-desktopbar__spacer {
   flex: 1;
 }
 
-.tm-desktopbar__hint {
+.ss-desktopbar__hint {
   font-size: 0.8125rem;
 }
 
-.tm-desktopbar__rec {
+.ss-desktopbar__rec {
   display: inline-flex;
-  gap: var(--tm-space-2);
+  gap: var(--ss-space-2);
   align-items: center;
   font-weight: 600;
 }
 
-.tm-dot {
+.ss-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--tm-alert);
+  background: var(--ss-alert);
 }
 
-.tm-bridge {
+.ss-bridge {
   font-size: 0.8125rem;
-  color: var(--tm-text-muted);
+  color: var(--ss-text-muted);
 }
 
-.tm-bridge::before {
+.ss-bridge::before {
   content: '';
   display: inline-block;
   width: 8px;
   height: 8px;
   margin-inline-end: 6px;
   border-radius: 50%;
-  background: var(--tm-border);
+  background: var(--ss-line);
 }
 
-.tm-bridge.is-on::before {
-  background: var(--tm-tip);
+.ss-bridge.is-on::before {
+  background: var(--ss-tip);
 }
 
-.tm-desktop__notice,
-.tm-readonly {
-  margin: var(--tm-space-3) var(--tm-space-4) 0;
+.ss-desktop__notice,
+.ss-readonly {
+  margin: var(--ss-space-3) var(--ss-space-4) 0;
 }
 
-.tm-readonly {
+.ss-readonly {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--tm-space-2);
+  gap: var(--ss-space-2);
   align-items: center;
 }
 
-.tm-path {
+.ss-path {
   overflow-wrap: anywhere;
   font-size: 0.8125rem;
 }
 
-.tm-row {
+.ss-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--tm-space-2);
+  gap: var(--ss-space-2);
 }
 
 /* ---------- Capture controller window ---------- */
@@ -88,17 +88,17 @@ body[data-page='overlay'] {
   overflow: hidden;
 }
 
-.tm-ctl {
+.ss-ctl {
   display: flex;
   gap: 6px;
   align-items: center;
   height: 48px;
   margin: 4px;
   padding: 0 8px;
-  border: 1px solid var(--tm-chrome-line);
+  border: 1px solid var(--ss-chrome-line);
   border-radius: 12px;
-  background: var(--tm-chrome-bg);
-  color: var(--tm-chrome-fg);
+  background: var(--ss-chrome-bg);
+  color: var(--ss-chrome-fg);
   font:
     13px/1.2 'Segoe UI Variable',
     'Segoe UI',
@@ -107,83 +107,83 @@ body[data-page='overlay'] {
   user-select: none;
 }
 
-.tm-ctl__grip {
+.ss-ctl__grip {
   padding: 4px 2px;
-  color: var(--tm-chrome-muted);
+  color: var(--ss-chrome-muted);
   cursor: grab;
   -webkit-app-region: drag;
 }
 
-.tm-ctl__dot {
+.ss-ctl__dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--tm-chrome-rec);
+  background: var(--ss-chrome-signal);
 }
 
-.tm-ctl.is-paused .tm-ctl__dot {
-  background: var(--tm-chrome-muted);
+.ss-ctl.is-paused .ss-ctl__dot {
+  background: var(--ss-chrome-muted);
 }
 
-.tm-ctl__status {
+.ss-ctl__status {
   flex: 1;
   white-space: nowrap;
 }
 
-.tm-ctl__status span {
-  color: var(--tm-chrome-muted);
+.ss-ctl__status span {
+  color: var(--ss-chrome-muted);
 }
 
-.tm-ctl button,
-.tm-ovl__card button {
+.ss-ctl button,
+.ss-ovl__card button {
   padding: 5px 9px;
-  border: 1px solid var(--tm-chrome-line);
+  border: 1px solid var(--ss-chrome-line);
   border-radius: 8px;
   background: transparent;
-  color: var(--tm-chrome-fg);
+  color: var(--ss-chrome-fg);
   font: inherit;
   cursor: pointer;
 }
 
-.tm-ctl button:hover,
-.tm-ovl__card button:hover {
-  background: var(--tm-chrome-hover);
+.ss-ctl button:hover,
+.ss-ovl__card button:hover {
+  background: var(--ss-chrome-button-hover);
 }
 
-.tm-ctl button:focus-visible,
-.tm-ovl__card button:focus-visible {
-  outline: 2px solid var(--tm-chrome-ring);
+.ss-ctl button:focus-visible,
+.ss-ovl__card button:focus-visible {
+  outline: 2px solid var(--ss-chrome-signal);
   outline-offset: 2px;
 }
 
-.tm-ctl button.primary,
-.tm-ovl__card button.primary {
-  border-color: var(--tm-chrome-accent);
-  background: var(--tm-chrome-accent);
-  color: var(--tm-chrome-on-accent);
+.ss-ctl button.primary,
+.ss-ovl__card button.primary {
+  border-color: var(--ss-chrome-signal);
+  background: var(--ss-chrome-signal);
+  color: var(--ss-chrome-on-signal);
   font-weight: 600;
 }
 
 /* ---------- Desktop Guide Me overlay ---------- */
 
-.tm-ovl__ring {
+.ss-ovl__ring {
   position: fixed;
-  border: 3px solid var(--tm-chrome-ring);
+  border: 3px solid var(--ss-chrome-signal);
   border-radius: 8px;
   box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--tm-chrome-ring) 30%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--ss-chrome-signal) 30%, transparent),
     0 0 0 100vmax rgb(0 0 0 / 0.25);
   pointer-events: none;
 }
 
-.tm-ovl__card {
+.ss-ovl__card {
   position: fixed;
   width: 340px;
   padding: 12px 14px;
-  border: 1px solid var(--tm-chrome-line);
+  border: 1px solid var(--ss-chrome-line);
   border-radius: 12px;
-  background: var(--tm-chrome-bg);
-  color: var(--tm-chrome-fg);
+  background: var(--ss-chrome-bg);
+  color: var(--ss-chrome-fg);
   box-shadow: 0 8px 28px rgb(0 0 0 / 0.4);
   font:
     14px/1.4 'Segoe UI Variable',
@@ -192,21 +192,21 @@ body[data-page='overlay'] {
     sans-serif;
 }
 
-.tm-ovl__card p {
+.ss-ovl__card p {
   margin: 0 0 6px;
 }
 
-.tm-ovl__count,
-.tm-ovl__note {
-  color: var(--tm-chrome-muted);
+.ss-ovl__count,
+.ss-ovl__note {
+  color: var(--ss-chrome-muted);
   font-size: 12px;
 }
 
-.tm-ovl__title {
+.ss-ovl__title {
   font-size: 15px;
 }
 
-.tm-ovl__row {
+.ss-ovl__row {
   display: flex;
   gap: 6px;
   justify-content: flex-end;

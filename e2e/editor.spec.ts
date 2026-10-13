@@ -18,7 +18,7 @@ type Stored = {
     };
   }[];
 };
-declare const __trailmark: { store: { getGuide(id: string): Promise<Stored | undefined> } };
+declare const __showsteps: { store: { getGuide(id: string): Promise<Stored | undefined> } };
 
 async function openEditor(context: BrowserContext, sw: Worker, extensionId: string) {
   const { id } = await recordShortGuide(context, sw);
@@ -37,19 +37,19 @@ const saved = (page: Page) =>
 
 /** Block labels in order, as the editor shows them (step titles, headings, callout text). */
 async function outline(page: Page): Promise<string[]> {
-  return page.locator('.tm-eblock').evaluateAll((els) =>
+  return page.locator('.ss-eblock').evaluateAll((els) =>
     els.map((el) => {
-      const title = el.querySelector('.tm-eblock__title [role="textbox"]');
+      const title = el.querySelector('.ss-eblock__title [role="textbox"]');
       if (title) return title.textContent ?? '';
-      const heading = el.querySelector<HTMLInputElement>('.tm-eblock__heading');
+      const heading = el.querySelector<HTMLInputElement>('.ss-eblock__heading');
       if (heading) return `# ${heading.value}`;
-      const callout = el.querySelector<HTMLTextAreaElement>('.tm-eblock__callout textarea');
+      const callout = el.querySelector<HTMLTextAreaElement>('.ss-eblock__callout textarea');
       return `! ${callout?.value ?? ''}`;
     }),
   );
 }
 
-const stored = (sw: Worker, id: string) => sw.evaluate((g) => __trailmark.store.getGuide(g), id);
+const stored = (sw: Worker, id: string) => sw.evaluate((g) => __showsteps.store.getGuide(g), id);
 
 test('editor: reorder, headings, callouts, text, selection, merge, split, undo and autosave', async ({
   context,
@@ -59,7 +59,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   test.setTimeout(90_000);
   const { id, page } = await openEditor(context, serviceWorker, extensionId);
   const card = (label: string) =>
-    page.locator('.tm-eblock', { has: page.getByRole('checkbox', { name: `Select ${label}` }) });
+    page.locator('.ss-eblock', { has: page.getByRole('checkbox', { name: `Select ${label}` }) });
   const menu = async (label: string, item: string) => {
     await card(label).getByLabel(`Actions for ${label}`).click();
     await card(label).getByRole('menuitem', { name: item }).click();
@@ -75,7 +75,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   // Reorder by dragging step 4 above step 2 (E2), in compact view so both are on screen
   await page.getByRole('button', { name: 'Compact view' }).click();
   await card('Step 4')
-    .locator('.tm-eblock__handle')
+    .locator('.ss-eblock__handle')
     .dragTo(card('Step 2'), { targetPosition: { x: 40, y: 8 } });
   expect(await outline(page)).toEqual([
     'Go to localhost:5173',
@@ -85,7 +85,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   ]);
 
   // Undo and redo (E6): focus is on the page, not a text field
-  await page.locator('.tm-save').click(); // a non-interactive spot: focus leaves the fields
+  await page.locator('.ss-save').click(); // a non-interactive spot: focus leaves the fields
   await page.keyboard.press('Control+z');
   expect(await outline(page)).toEqual([
     'Go to localhost:5173',
@@ -119,7 +119,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
 
   // Headings drag like steps (E3)
   await card('Heading: Sign in')
-    .locator('.tm-eblock__handle')
+    .locator('.ss-eblock__handle')
     .dragTo(card('Step 1'), { targetPosition: { x: 40, y: 8 } });
   expect((await outline(page))[0]).toBe('# Sign in');
   await page.getByRole('button', { name: 'Compact view' }).click();
@@ -167,7 +167,7 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   await page.getByRole('textbox', { name: 'Step 1 title' }).click();
   await page.keyboard.press('Control+Enter');
   expect((await outline(page)).length).toBe(count + 1);
-  await page.locator('.tm-save').click(); // a non-interactive spot: focus leaves the fields
+  await page.locator('.ss-save').click(); // a non-interactive spot: focus leaves the fields
   await page.keyboard.press('?');
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
   await page.keyboard.press('Escape');
@@ -254,7 +254,7 @@ test('image editor: blur, annotate, magnify, undo, bulk blur and reset', async (
   await expect(dlg).toHaveCount(0);
 
   // The editor card shows the blur and annotations
-  const step3 = page.locator('.tm-eblock', {
+  const step3 = page.locator('.ss-eblock', {
     has: page.getByRole('checkbox', { name: 'Select Step 3' }),
   });
   await expect(step3.locator('[data-blur]')).toHaveCount(1);
@@ -292,7 +292,7 @@ test('image editor: blur, annotate, magnify, undo, bulk blur and reset', async (
   await dlg3.getByRole('button', { name: 'Done' }).click();
   await expect(
     page
-      .locator('.tm-eblock', { has: page.getByRole('checkbox', { name: 'Select Step 3' }) })
+      .locator('.ss-eblock', { has: page.getByRole('checkbox', { name: 'Select Step 3' }) })
       .locator('[data-blur]'),
   ).toHaveCount(0);
 });
@@ -360,7 +360,7 @@ test('preview, step links, branding and image-only steps (E5, E7, E8)', async ({
     return Array.from(new Uint8Array(await blob.arrayBuffer()));
   });
   const chooser = page.waitForEvent('filechooser');
-  await page.locator('.tm-addbar').getByRole('button', { name: 'Add image step' }).click();
+  await page.locator('.ss-addbar').getByRole('button', { name: 'Add image step' }).click();
   await (
     await chooser
   ).setFiles({ name: 'diagram.png', mimeType: 'image/png', buffer: Buffer.from(png) });
@@ -378,26 +378,26 @@ test('preview, step links, branding and image-only steps (E5, E7, E8)', async ({
 
   // Preview shows exactly what readers see, with branding (E7)
   await page.getByRole('button', { name: 'Preview' }).click();
-  const reader = page.locator('.tm-reader');
+  const reader = page.locator('.ss-reader');
   await expect(reader).toHaveCSS('font-family', /Georgia/);
   expect(
-    await reader.evaluate((el) => getComputedStyle(el).getPropertyValue('--tm-accent').trim()),
+    await reader.evaluate((el) => getComputedStyle(el).getPropertyValue('--ss-accent').trim()),
   ).toBe('#aa3355');
-  await expect(reader.locator('.tm-step')).toHaveCount(5);
+  await expect(reader.locator('.ss-step')).toHaveCount(5);
   await page.screenshot({ path: test.info().outputPath('preview-branded.png'), fullPage: true });
 
   // Copy link to a step, then follow it
   await reader
-    .locator('.tm-step')
+    .locator('.ss-step')
     .nth(3)
     .getByRole('button', { name: 'Copy link to this step' })
     .click();
   await expect(
-    reader.locator('.tm-step').nth(3).getByRole('button', { name: 'Link copied' }),
+    reader.locator('.ss-step').nth(3).getByRole('button', { name: 'Link copied' }),
   ).toBeVisible();
   const link = await page.evaluate(() => navigator.clipboard.readText());
   expect(link).toMatch(new RegExp(`library\\.html#/guide/${id}/step/[\\w-]+$`));
   const other = await context.newPage();
   await other.goto(link);
-  await expect(other.locator('.tm-step--focused')).toContainText('Click Sign in');
+  await expect(other.locator('.ss-step--focused')).toContainText('Click Sign in');
 });

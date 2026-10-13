@@ -4,7 +4,7 @@ import {
   type AppContext,
   type CaptureEvent,
   type Target,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import type { PxRect, UiaElement } from './helper';
 
 export const isRemote = isRemoteProcess;

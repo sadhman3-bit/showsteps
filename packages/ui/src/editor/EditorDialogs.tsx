@@ -1,4 +1,4 @@
-import type { Guide, GuideStore, VersionInfo } from '@trailmark/core';
+import type { Guide, GuideStore, VersionInfo } from '@showsteps/core';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { BRAND_FONTS, brandStyle } from '../brand.js';
 import { Button } from '../Button.js';
@@ -46,7 +46,7 @@ export function VersionsDialog(props: {
           </>
         }
       >
-        <div class="tm-version-view">
+        <div class="ss-version-view">
           <GuideReader store={props.store} guide={viewing} />
         </div>
       </Dialog>
@@ -56,20 +56,20 @@ export function VersionsDialog(props: {
   return (
     <Dialog title={v.title} onClose={props.onClose}>
       {versions === null ? null : versions.length === 0 ? (
-        <p class="tm-muted">{v.empty}</p>
+        <p class="ss-muted">{v.empty}</p>
       ) : (
-        <ol class="tm-versions" aria-label={v.title}>
+        <ol class="ss-versions" aria-label={v.title}>
           {versions.map((ver, i) => (
             <li key={ver.n}>
               <div>
                 <strong>{relativeTime(ver.savedAt)}</strong>
-                {i === 0 ? <span class="tm-tag">{v.current}</span> : null}
-                <div class="tm-muted">
+                {i === 0 ? <span class="ss-tag">{v.current}</span> : null}
+                <div class="ss-muted">
                   {ver.title}
                   {ver.savedBy ? ` · ${v.by(ver.savedBy)}` : ''}
                 </div>
               </div>
-              <div class="tm-toolbar__group">
+              <div class="ss-toolbar__group">
                 <Button variant="ghost" onClick={() => void open(ver.n)}>
                   {v.view}
                 </Button>
@@ -117,12 +117,12 @@ export function BrandingDialog(props: {
   };
   return (
     <Dialog title={b.title} onClose={props.onClose}>
-      <p class="tm-muted">{b.hint}</p>
-      <div class="tm-stack">
-        <div class="tm-field">
+      <p class="ss-muted">{b.hint}</p>
+      <div class="ss-stack">
+        <div class="ss-field">
           <span>{b.logo}</span>
-          <div class="tm-toolbar__group">
-            {logo ? <img class="tm-brand-logo" src={logo} alt="" /> : null}
+          <div class="ss-toolbar__group">
+            {logo ? <img class="ss-brand-logo" src={logo} alt="" /> : null}
             <Button onClick={() => file.current?.click()}>{b.chooseLogo}</Button>
             {branding.logo ? (
               <Button variant="ghost" onClick={() => set({ logo: '' })}>
@@ -139,7 +139,7 @@ export function BrandingDialog(props: {
             />
           </div>
         </div>
-        <label class="tm-field">
+        <label class="ss-field">
           <span>{b.accent}</span>
           <input
             type="color"
@@ -147,10 +147,10 @@ export function BrandingDialog(props: {
             onInput={(e) => set({ accent: e.currentTarget.value })}
           />
         </label>
-        <label class="tm-field">
+        <label class="ss-field">
           <span>{b.font}</span>
           <select
-            class="tm-input"
+            class="ss-input"
             value={branding.font ?? ''}
             onChange={(e) => set({ font: e.currentTarget.value })}
           >
@@ -163,11 +163,11 @@ export function BrandingDialog(props: {
           </select>
         </label>
         <div
-          class="tm-brand-preview"
+          class="ss-brand-preview"
           style={brandStyle(props.guide.branding)}
           aria-label={b.preview}
         >
-          <span class="tm-step__num">1</span> {props.guide.title}
+          <span class="ss-step__num">1</span> {props.guide.title}
         </div>
       </div>
     </Dialog>
@@ -177,7 +177,7 @@ export function BrandingDialog(props: {
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog title={strings.shortcuts.title} onClose={onClose}>
-      <table class="tm-shortcuts">
+      <table class="ss-shortcuts">
         <tbody>
           {strings.shortcuts.rows.map(([keys, what]) => (
             <tr key={keys}>

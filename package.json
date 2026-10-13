@@ -1,5 +1,5 @@
 {
-  "name": "trailmark",
+  "name": "showsteps",
   "private": true,
   "version": "1.0.0",
   "description": "Local-first how-to guide recorder",
@@ -22,16 +22,15 @@
     "snapshot:demo": "node scripts/snapshot-demo.mjs",
     "make:icons": "node scripts/make-icons.mjs",
     "make:samples": "node scripts/make-samples.mjs",
-    "rename": "node scripts/rename-product.mjs",
     "store:images": "node scripts/playwright.mjs test --project=store",
     "design:shots": "node scripts/playwright.mjs test --project=design",
-    "release": "pnpm build && pnpm --filter @trailmark/desktop dist && node scripts/release.mjs"
+    "release": "pnpm build && pnpm --filter @showsteps/desktop dist && node scripts/release.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@tesseract.js-data/eng": "1.0.0",
-    "@trailmark/core": "workspace:*",
+    "@showsteps/core": "workspace:*",
     "@types/node": "^22.20.5",
     "eslint": "^10.12.0",
     "fflate": "^0.8.3",

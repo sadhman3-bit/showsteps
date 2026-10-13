@@ -29,7 +29,7 @@ type Hook = {
     listGuides(): Promise<{ id: string; title: string }[]>;
   };
 };
-declare const __trailmark: Hook;
+declare const __showsteps: Hook;
 
 const INVOICE = 'Create a supplier invoice in Ledgerline';
 /** Over the "Sign in" heading, labels and button in step 1's screenshot (image pixels). */
@@ -42,15 +42,15 @@ const titleOf = (b: StoredGuide['blocks'][number]) =>
 async function prepareGuide(sw: Worker): Promise<StoredGuide> {
   return sw.evaluate(
     async ({ title, blur }) => {
-      await __trailmark.installSamples();
-      const summary = (await __trailmark.store.listGuides()).find((g) => g.title === title)!;
-      const guide = await __trailmark.store.getGuide(summary.id);
+      await __showsteps.installSamples();
+      const summary = (await __showsteps.store.listGuides()).find((g) => g.title === title)!;
+      const guide = await __showsteps.store.getGuide(summary.id);
       const first = guide.blocks.find((b) => b.kind === 'step')!;
       const shot = first.human!.screenshot!;
       delete shot.crop;
       delete shot.zoom;
       first.human!.blurs = [blur];
-      await __trailmark.store.saveGuide(guide);
+      await __showsteps.store.saveGuide(guide);
       return guide;
     },
     { title: INVOICE, blur: BLUR },
@@ -171,7 +171,7 @@ test('exports: PDF, Word, Markdown, HTML, embed card, Copy HTML, print and share
 
   // Blurs are burned into exported pixels: the sign-in form is unreadable in step 1.
   const original = await serviceWorker.evaluate(
-    async ({ id, file }) => Array.from(await __trailmark.store.getImage(id, file)),
+    async ({ id, file }) => Array.from(await __showsteps.store.getImage(id, file)),
     { id: guide.id, file: steps[0]!.human!.screenshot!.file.replace(/^img\//, '') },
   );
   const toData = (bytes: Uint8Array | number[], type: string) =>
@@ -274,15 +274,15 @@ test('exports: PDF, Word, Markdown, HTML, embed card, Copy HTML, print and share
   expect(Object.keys(first).sort()).toEqual([
     `${INVOICE}.embed.html`,
     `${INVOICE}.html`,
-    `${INVOICE}.trailmark`,
+    `${INVOICE}.showsteps`,
   ]);
   await page.getByRole('button', { name: 'Close' }).click();
 
   await serviceWorker.evaluate(async (id) => {
-    const g = await __trailmark.store.getGuide(id);
+    const g = await __showsteps.store.getGuide(id);
     const step = g.blocks.find((b) => b.kind === 'step')!;
     step.human!.title = { spans: [{ text: 'Open Ledgerline in Chrome' }] };
-    await __trailmark.store.saveGuide(g);
+    await __showsteps.store.saveGuide(g);
   }, guide.id);
   await page.reload();
   await page.getByRole('button', { name: 'Share' }).click();
@@ -298,9 +298,9 @@ test('exports: PDF, Word, Markdown, HTML, embed card, Copy HTML, print and share
   await dialog.getByRole('button', { name: 'Print…' }).click();
   await expect(page).toHaveURL(/\/print$/);
   await expect(page.getByRole('button', { name: 'Print', exact: true })).toBeVisible();
-  await expect(page.locator('.tm-reader .tm-step')).toHaveCount(17);
+  await expect(page.locator('.ss-reader .ss-step')).toHaveCount(17);
   await page.emulateMedia({ media: 'print' });
-  await expect(page.locator('.tm-print__bar')).toBeHidden();
+  await expect(page.locator('.ss-print__bar')).toBeHidden();
   await page.emulateMedia({ media: 'screen' });
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page).toHaveURL(/\/view$/);

@@ -1,6 +1,6 @@
 // Every message between extension contexts, validated with Zod on receipt.
 import { z } from 'zod';
-import { ExpectationSchema, PageTextSchema, RectSchema, TargetSchema } from '@trailmark/core';
+import { ExpectationSchema, PageTextSchema, RectSchema, TargetSchema } from '@showsteps/core';
 
 const ElementKey = z.string().min(1).max(100);
 const ShotId = z.string().regex(/^[A-Za-z0-9-]{8,64}$/);
@@ -113,7 +113,7 @@ export const PageMessageSchema = z.discriminatedUnion('type', [
     replaceStepId: z.string().min(1).optional(),
   }),
   z.object({ type: z.literal('get-state') }),
-  /** Settings: stop everything and clear ABCXYZ's storage in this browser. */
+  /** Settings: stop everything and clear ShowSteps's storage in this browser. */
   z.object({ type: z.literal('delete-all') }),
   z.object({ type: z.literal('control'), action: ControlActionSchema }),
   /** While recording: remove one recorded step (the side panel's step list). */
@@ -152,7 +152,7 @@ export const IDLE_STATE: CaptureState = { status: 'idle', stepCount: 0, liveBlur
 export const BackgroundToContentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('state'), state: CaptureStateSchema }),
   z.object({ type: z.literal('iframe-geometry'), token: z.string().uuid() }),
-  /** Hide ABCXYZ's on-page UI for a screenshot; the reply comes after it is painted. */
+  /** Hide ShowSteps's on-page UI for a screenshot; the reply comes after it is painted. */
   z.object({ type: z.literal('overlays'), visible: z.boolean() }),
   /** The user left this tab: record any typing not yet committed. */
   z.object({ type: z.literal('flush') }),

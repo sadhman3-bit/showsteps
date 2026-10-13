@@ -38,13 +38,13 @@ Use your own username.
 
 **You’re done when:** The page says “Invoice submitted”.
 
-*Agent-readable procedure embedded (ABCXYZ schema v1).*
+*Agent-readable procedure embedded (ShowSteps schema v1).*
 
 <details><summary>Agent procedure</summary>
 
 ```json
 {
-  "format": "trailmark-procedure",
+  "format": "showsteps-procedure",
   "schemaVersion": 1,
   "title": "Pay a supplier <invoice> & file it",
   "description": "Enter a supplier invoice and send it for approval.",

@@ -4,7 +4,7 @@ import { expect, test } from './fixtures';
 // and the Agent view and reader render without long waits.
 
 type Guide = { id: string; title: string; blocks: { kind: string; id: string }[] };
-declare const __trailmark: {
+declare const __showsteps: {
   installSamples(): Promise<string[]>;
   store: {
     listGuides(): Promise<{ id: string; title: string }[]>;
@@ -24,20 +24,20 @@ test('a 68-step guide opens, edits and renders smoothly', async ({
   test.setTimeout(120_000);
   // Four copies of the 17-step sample in one guide, pictures included.
   const id = await sw.evaluate(async () => {
-    await __trailmark.installSamples();
-    const summary = (await __trailmark.store.listGuides()).find((g) =>
+    await __showsteps.installSamples();
+    const summary = (await __showsteps.store.listGuides()).find((g) =>
       g.title.startsWith('Create a supplier invoice'),
     )!;
-    const g = await __trailmark.store.getGuide(summary.id);
+    const g = await __showsteps.store.getGuide(summary.id);
     const copy: Guide = { ...g, id: crypto.randomUUID(), title: 'Long guide', blocks: [] };
     for (let round = 0; round < 4; round++)
       for (const b of g.blocks)
         copy.blocks.push({ ...structuredClone(b), id: crypto.randomUUID() });
-    for (const name of await __trailmark.store.listImages(g.id)) {
-      const bytes = await __trailmark.store.getImage(g.id, name);
-      if (bytes) await __trailmark.store.putImage(copy.id, name, bytes);
+    for (const name of await __showsteps.store.listImages(g.id)) {
+      const bytes = await __showsteps.store.getImage(g.id, name);
+      if (bytes) await __showsteps.store.putImage(copy.id, name, bytes);
     }
-    await __trailmark.store.saveGuide(copy);
+    await __showsteps.store.saveGuide(copy);
     return copy.id;
   });
 
@@ -81,7 +81,7 @@ test('a 68-step guide opens, edits and renders smoothly', async ({
   const r0 = Date.now();
   await page.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}/view`);
   await expect(page.getByRole('heading', { name: 'Long guide' })).toBeVisible();
-  await expect(page.locator('.tm-step').last()).toBeAttached();
+  await expect(page.locator('.ss-step').last()).toBeAttached();
   const readerMs = Date.now() - r0;
 
   console.log('PERF', JSON.stringify({ openMs, typeMs, longTasks, agentMs, readerMs }));

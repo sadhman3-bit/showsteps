@@ -1,5 +1,5 @@
-import { stepNumbers, toPlainText, type Guide, type GuideSummary } from '@trailmark/core';
-import { Button, Icon, Screenshot, relativeTime, strings } from '@trailmark/ui';
+import { stepNumbers, toPlainText, type Guide, type GuideSummary } from '@showsteps/core';
+import { Button, Icon, Screenshot, relativeTime, strings } from '@showsteps/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   getStore,
@@ -95,18 +95,18 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
   };
 
   return (
-    <main class="tm-sidepanel">
-      <h1 class="tm-brand">
+    <main class="ss-sidepanel">
+      <h1 class="ss-brand">
         <Icon name="trail" size={22} /> {s.title}
       </h1>
       <p>{strings.app.tagline}</p>
 
       {state.lastFinishedGuideId ? (
-        <p class="tm-notice" role="status">
+        <p class="ss-notice" role="status">
           {s.justFinished}{' '}
           <button
             type="button"
-            class="tm-link"
+            class="ss-link"
             onClick={() => openLibrary(state.lastFinishedGuideId)}
           >
             {s.openGuide}
@@ -117,9 +117,9 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
       <RecaptureCard />
 
       {more ? (
-        <p class="tm-notice">
+        <p class="ss-notice">
           {s.captureMoreInto(more.title, more.afterStep)}{' '}
-          <button type="button" class="tm-link" onClick={() => void writeCaptureMore(undefined)}>
+          <button type="button" class="ss-link" onClick={() => void writeCaptureMore(undefined)}>
             {s.captureMoreCancel}
           </button>
         </p>
@@ -128,40 +128,40 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
       <Button variant="primary" onClick={() => void start()} disabled={busy}>
         <Icon name="record" /> {s.start}
       </Button>
-      <p class="tm-muted">{s.shortcutHint(shortcut)}</p>
+      <p class="ss-muted">{s.shortcutHint(shortcut)}</p>
       {error ? (
-        <p class="tm-error" role="alert">
+        <p class="ss-error" role="alert">
           {error}
         </p>
       ) : (
-        <p class="tm-muted">{s.permissionNote}</p>
+        <p class="ss-muted">{s.permissionNote}</p>
       )}
 
       <PagePanel libraryVersion={libraryVersion} />
 
-      <section aria-labelledby="recent-h" class="tm-recent">
+      <section aria-labelledby="recent-h" class="ss-recent">
         <h2 id="recent-h">{s.recent}</h2>
         {recent.length ? (
           <ul>
             {recent.map((g) => (
               <li key={g.id}>
-                <button type="button" class="tm-link" onClick={() => openLibrary(g.id)}>
+                <button type="button" class="ss-link" onClick={() => openLibrary(g.id)}>
                   {g.title}
                 </button>
-                <span class="tm-muted">
+                <span class="ss-muted">
                   {strings.library.steps(g.stepCount)} · {relativeTime(g.updatedAt)}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p class="tm-muted">{s.noGuides}</p>
+          <p class="ss-muted">{s.noGuides}</p>
         )}
         <Button onClick={() => openLibrary()}>
           <Icon name="library" /> {s.openLibrary}
         </Button>
       </section>
-      <p class="tm-sidepanel__note">{s.privacyNote}</p>
+      <p class="ss-sidepanel__note">{s.privacyNote}</p>
     </main>
   );
 }
@@ -171,16 +171,16 @@ function Recording({ state }: { state: CaptureState }) {
   const paused = state.status === 'paused';
   const control = (action: ControlAction) => void request({ type: 'control', action });
   return (
-    <main class="tm-sidepanel tm-sidepanel--recording">
-      <div class="tm-rec-head">
-        <section class="tm-status" aria-live="polite">
-          <span class={`tm-dot${paused ? ' tm-dot--paused' : ''}`} aria-hidden="true" />
+    <main class="ss-sidepanel ss-sidepanel--recording">
+      <div class="ss-rec-head">
+        <section class="ss-status" aria-live="polite">
+          <span class={`ss-dot${paused ? ' ss-dot--paused' : ''}`} aria-hidden="true" />
           <strong>{paused ? c.paused : c.recording}</strong>
-          <span class="tm-muted">{c.steps(state.stepCount)}</span>
+          <span class="ss-muted">{c.steps(state.stepCount)}</span>
         </section>
-        {state.title ? <p class="tm-muted tm-rec-title">{state.title}</p> : null}
+        {state.title ? <p class="ss-muted ss-rec-title">{state.title}</p> : null}
         {confirming ? (
-          <div class="tm-stack">
+          <div class="ss-stack">
             <p>{c.cancelConfirm}</p>
             <Button variant="danger" onClick={() => control('cancel')}>
               {c.cancel}
@@ -188,7 +188,7 @@ function Recording({ state }: { state: CaptureState }) {
             <Button onClick={() => setConfirming(false)}>{c.resume}</Button>
           </div>
         ) : (
-          <div class="tm-rec-controls">
+          <div class="ss-rec-controls">
             <Button variant="primary" onClick={() => control('finish')}>
               {c.finish}
             </Button>
@@ -203,7 +203,7 @@ function Recording({ state }: { state: CaptureState }) {
             </Button>
           </div>
         )}
-        {state.liveBlur ? <p class="tm-muted">{c.liveBlurOn}</p> : null}
+        {state.liveBlur ? <p class="ss-muted">{c.liveBlurOn}</p> : null}
       </div>
       <RecordedSteps state={state} />
     </main>
@@ -250,7 +250,7 @@ function RecordedSteps({ state }: { state: CaptureState }) {
   }, [shown]);
 
   return (
-    <section class="tm-rec-steps" aria-labelledby="rec-steps-h">
+    <section class="ss-rec-steps" aria-labelledby="rec-steps-h">
       <h2 id="rec-steps-h">{c.stepsTitle}</h2>
       {steps.length ? (
         <ol>
@@ -258,13 +258,13 @@ function RecordedSteps({ state }: { state: CaptureState }) {
             const n = numbers.get(step.id) ?? 0;
             const title = toPlainText(step.human.title);
             return (
-              <li key={step.id} class="tm-rec-step" aria-label={`${c.stepLabel(n)}: ${title}`}>
-                <div class="tm-rec-step__head">
-                  <span class="tm-step__num">{n}</span>
-                  <span class="tm-rec-step__title">{title}</span>
+              <li key={step.id} class="ss-rec-step" aria-label={`${c.stepLabel(n)}: ${title}`}>
+                <div class="ss-rec-step__head">
+                  <span class="ss-step__num">{n}</span>
+                  <span class="ss-rec-step__title">{title}</span>
                   <button
                     type="button"
-                    class="tm-rec-step__delete"
+                    class="ss-rec-step__delete"
                     aria-label={c.deleteStep(n)}
                     title={c.deleteStep(n)}
                     onClick={() => void request({ type: 'delete-step', stepId: step.id })}
@@ -275,14 +275,14 @@ function RecordedSteps({ state }: { state: CaptureState }) {
                 {step.human.screenshot && guide ? (
                   <Screenshot store={getStore()} guideId={guide.id} step={step} alt={title} />
                 ) : (
-                  <p class="tm-muted tm-rec-step__wait">{c.pictureComing}</p>
+                  <p class="ss-muted ss-rec-step__wait">{c.pictureComing}</p>
                 )}
               </li>
             );
           })}
         </ol>
       ) : (
-        <p class="tm-muted">{c.noStepsYet}</p>
+        <p class="ss-muted">{c.noStepsYet}</p>
       )}
       <div ref={end} />
     </section>
@@ -303,7 +303,7 @@ function RecaptureCard() {
   }, []);
   if (!req)
     return message ? (
-      <p class="tm-notice" role="status">
+      <p class="ss-notice" role="status">
         {message}
       </p>
     ) : null;
@@ -330,7 +330,7 @@ function RecaptureCard() {
     setMessage(s.recaptureDone);
   };
   return (
-    <section class="tm-notice tm-stack" aria-live="polite">
+    <section class="ss-notice ss-stack" aria-live="polite">
       <p>{s.recaptureFor(req.stepNumber, req.title)}</p>
       <Button variant="primary" onClick={() => void capture()}>
         {s.recaptureGo}
@@ -339,7 +339,7 @@ function RecaptureCard() {
         {s.recaptureCancel}
       </Button>
       {message ? (
-        <p class="tm-error" role="alert">
+        <p class="ss-error" role="alert">
           {message}
         </p>
       ) : null}

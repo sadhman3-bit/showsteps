@@ -1,4 +1,4 @@
-// <tm-approver-picker>: a web component whose controls live in an open shadow root.
+// <ss-approver-picker>: a web component whose controls live in an open shadow root.
 (function () {
   'use strict';
   const APPROVERS = ['Priya Raman', 'Tom Whitlock', 'Mei Chen', 'Lachlan Ward'];
@@ -48,5 +48,5 @@
     }
   }
 
-  customElements.define('tm-approver-picker', ApproverPicker);
+  customElements.define('ss-approver-picker', ApproverPicker);
 })();

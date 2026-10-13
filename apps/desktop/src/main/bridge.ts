@@ -8,15 +8,15 @@ import {
   type BridgeReply,
   type BridgeRequest,
   type GuideStore,
-} from '@trailmark/core';
+} from '@showsteps/core';
 import { EventEmitter } from 'node:events';
 import { createServer, type Server, type Socket } from 'node:net';
 import { userInfo } from 'node:os';
 import { createInterface } from 'node:readline';
 
-/** The pipe trailmark-host.exe connects to (one per Windows user). */
+/** The pipe showsteps-host.exe connects to (one per Windows user). */
 export function pipePath(user = userInfo().username): string {
-  return `\\\\.\\pipe\\trailmark-${user.toLowerCase()}`;
+  return `\\\\.\\pipe\\showsteps-${user.toLowerCase()}`;
 }
 
 interface Client {
@@ -29,7 +29,7 @@ const STORE = new Set<string>(BRIDGE_STORE_METHODS);
 
 /**
  * The desktop end of the extension bridge. Each connection is one extension context (its
- * service worker, the library or the side panel) relayed by trailmark-host.exe. Requests are
+ * service worker, the library or the side panel) relayed by showsteps-host.exe. Requests are
  * answered from the desktop library; events go both ways.
  */
 export class BridgeServer extends EventEmitter<{
