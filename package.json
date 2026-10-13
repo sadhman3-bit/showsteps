@@ -24,6 +24,7 @@
     "make:samples": "node scripts/make-samples.mjs",
     "rename": "node scripts/rename-product.mjs",
     "store:images": "node scripts/playwright.mjs test --project=store",
+    "design:shots": "node scripts/playwright.mjs test --project=design",
     "release": "pnpm build && pnpm --filter @trailmark/desktop dist && node scripts/release.mjs"
   },
   "devDependencies": {

@@ -24,6 +24,7 @@ export default defineConfig({
         /desktop.*.spec.ts/,
         /agent-replay.spec.ts/,
         /store-images.spec.ts/,
+        /design-shots.spec.ts/,
         '**/.replay/**',
       ],
     },
@@ -31,6 +32,8 @@ export default defineConfig({
     { name: 'replay', testMatch: /agent-replay.spec.ts/, dependencies: ['chromium'] },
     // Chrome Web Store images, on demand: `pnpm store:images`.
     { name: 'store', testMatch: /store-images.spec.ts/, use: { ...devices['Desktop Chrome'] } },
+    // Design review screenshots, on demand: `pnpm design:shots`.
+    { name: 'design', testMatch: /design-shots.spec.ts/, use: { ...devices['Desktop Chrome'] } },
     // Windows only: drives the real mouse and keyboard, so it runs on its own (pnpm e2e:desktop).
     { name: 'desktop', testMatch: /desktop.*.spec.ts/ },
   ],

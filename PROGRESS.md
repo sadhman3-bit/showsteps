@@ -168,3 +168,20 @@ Fixes found while testing:
 
 - Extension capture: screenshot encoding takes 1.5–2.5 s per step on a busy machine before the step appears (the step still lands in order). Look at faster encoding in M9's performance pass.
 - Secure Blur reads words only from the top frame of a web page at capture; a picture with iframe text can be re-read with OCR by deleting its word file (no button for that yet).
+
+## Polish (POLISH_PLAN.md)
+
+- [x] P0: finish notification (local tooling, Stop hook in local tooling), branch `polish`, "before" screenshots in `docs/design/before/` (`DESIGN_OUT=before pnpm design:shots`)
+- [ ] P1: rename to ShowSteps
+- [ ] P2: tokens, fonts, components, patterns
+- [ ] P3: logo, wordmark, generated assets
+- [ ] P4: side panel, toolbar, toast
+- [ ] P5: Guide Me and Run for me
+- [ ] P6: editor, agent view, image editor, dialogs, library
+- [ ] P7: reader and exports
+- [ ] P8: desktop app
+- [ ] P9: store images, docs, final QA, POLISH_REPORT.md, notification
+
+### Polish: open issues
+
+- None yet.
