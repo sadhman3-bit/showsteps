@@ -37,4 +37,4 @@ Your data is not sold, not transferred to third parties, not used for advertisin
 
 ## Contact
 
-Questions about this policy: [CONTACT EMAIL — fill in before publishing]
+Questions about this policy: sadhman3@gmail.com
