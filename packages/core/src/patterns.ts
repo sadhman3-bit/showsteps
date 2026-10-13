@@ -38,8 +38,14 @@ export function rippleSvg({ width = 640, height = 280 }: PatternOptions = {}): s
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><rect width="${width}" height="${height}" fill="${PINK}"/>${rings}${arrow}</svg>`;
 }
 
-/** Trail: a smooth pink path through numbered stops on navy; the last stop is pink. */
-export function trailSvg({ width = 640, height = 280 }: PatternOptions = {}): string {
+export interface TrailGeometry {
+  /** The path through the stops, as SVG path data. */
+  d: string;
+  stops: { x: number; y: number }[];
+}
+
+/** The Trail's path and numbered stops for a box, for drawing it elsewhere (PDF). */
+export function trailGeometry(width = 640, height = 280): TrailGeometry {
   const fx = (x: number) => Math.round((x / 640) * width);
   const fy = (y: number) => Math.round((y / 280) * height);
   type Pt = readonly [number, number];
@@ -64,8 +70,14 @@ export function trailSvg({ width = 640, height = 280 }: PatternOptions = {}): st
     const c2y = p2[1] - (p3[1] - p1[1]) / 6;
     d += ` C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0]} ${p2[1]}`;
   }
+  return { d, stops: stops.map(([x, y]) => ({ x, y })) };
+}
+
+/** Trail: a smooth pink path through numbered stops on navy; the last stop is pink. */
+export function trailSvg({ width = 640, height = 280 }: PatternOptions = {}): string {
+  const { d, stops } = trailGeometry(width, height);
   const dots = stops
-    .map(([x, y], i) => {
+    .map(({ x, y }, i) => {
       const last = i === stops.length - 1;
       return `<circle cx="${x}" cy="${y}" r="17" fill="${last ? PINK : WHITE}" stroke="${NAVY}" stroke-width="3"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-family="'Funnel Display','Segoe UI',system-ui,sans-serif" font-weight="800" font-size="17" fill="${NAVY}">${i + 1}</text>`;
     })

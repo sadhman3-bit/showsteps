@@ -136,7 +136,13 @@ export {
   SPOTLIGHT,
   chromeTokenCss,
 } from './tokens.js';
-export { rippleSvg, trailSvg, type PatternOptions } from './patterns.js';
+export {
+  rippleSvg,
+  trailSvg,
+  trailGeometry,
+  type PatternOptions,
+  type TrailGeometry,
+} from './patterns.js';
 export { ringBlendsIn, navyRing, type HighlightChoice } from './highlight.js';
 
 // Guidance (Guide Me, Run for me, Discover, notes and pins, comments, analytics)

@@ -21,6 +21,7 @@
     "setup:browsers": "node scripts/playwright.mjs install chromium",
     "snapshot:demo": "node scripts/snapshot-demo.mjs",
     "brand": "node brand/build.mjs",
+    "export-fonts": "node scripts/export-fonts.mjs",
     "make:samples": "node scripts/make-samples.mjs",
     "store:images": "node scripts/playwright.mjs test --project=store",
     "design:shots": "node scripts/playwright.mjs test --project=design",
@@ -41,6 +42,7 @@
     "pdfjs-dist": "^6.4.299",
     "png-to-ico": "2.1.8",
     "prettier": "^3.9.9",
+    "subset-font": "2.4.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.1",
     "vitest": "^5.0.3"

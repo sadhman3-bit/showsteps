@@ -2,21 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="ShowSteps">
 <title>Pay a supplier &lt;invoice&gt; &amp; file it</title>
-<style>:root{color-scheme:light dark;--accent:#7c3aed;--on-accent:#FFFFFF;--highlight:#FF2E6E;--bg:#FFF8F9;--surface:#FFFFFF;--border:#EFE3E8;--text:#14102B;--muted:#5E5878;--tip:#0F7A55;--note:#3346C6;--warning:#8A5300;--alert:#B3261E;font-family:Georgia, Cambria, serif}
-@media (prefers-color-scheme:dark){:root{--bg:#110D24;--surface:#1B1636;--border:#2D2750;--text:#F5F2FF;--muted:#A9A3C7;--tip:#5BD6A0;--note:#9DA8FF;--warning:#F2B65A;--alert:#FF8A80}}
+<style>
+:root{color-scheme:light dark;--accent:#7c3aed;--on-accent:#FFFFFF;--highlight:#FF2E6E;--bg:#FFF8F9;--surface:#FFFFFF;--border:#EFE3E8;--text:#14102B;--muted:#5E5878;--tip:#0F7A55;--note:#3346C6;--warning:#8A5300;--alert:#B3261E;--tip-bg:#E9F6F0;--note-bg:#EEF0FC;--warning-bg:#FBF1E2;--alert-bg:#FCEBEA;--heading:inherit;font-family:Georgia, Cambria, serif}
+@media (prefers-color-scheme:dark){:root{--bg:#110D24;--surface:#1B1636;--border:#2D2750;--text:#F5F2FF;--muted:#A9A3C7;--tip:#5BD6A0;--note:#9DA8FF;--warning:#F2B65A;--alert:#FF8A80;--tip-bg:color-mix(in srgb,#5BD6A0 14%,#1B1636);--note-bg:color-mix(in srgb,#9DA8FF 14%,#1B1636);--warning-bg:color-mix(in srgb,#F2B65A 14%,#1B1636);--alert-bg:color-mix(in srgb,#FF8A80 14%,#1B1636)}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:inherit}
 img{max-width:100%;height:auto}
-.callout{margin:0;padding:10px 14px;border-left:4px solid var(--tone);border-radius:6px;background:color-mix(in srgb,var(--tone) 10%,var(--surface))}
+h1,h2{font-family:var(--heading);letter-spacing:-.02em}
+.callout{margin:0;padding:12px 16px;border-radius:12px;background:var(--tone-bg);color:var(--text)}
 .callout strong{color:var(--tone)}
-.callout--tip{--tone:var(--tip)}.callout--note{--tone:var(--note)}.callout--warning{--tone:var(--warning)}.callout--alert{--tone:var(--alert)}
-.num{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;text-decoration:none}
-.shot{display:block;border:1px solid var(--border);border-radius:8px}
+.callout--tip{--tone:var(--tip);--tone-bg:var(--tip-bg)}.callout--note{--tone:var(--note);--tone-bg:var(--note-bg)}.callout--warning{--tone:var(--warning);--tone-bg:var(--warning-bg)}.callout--alert{--tone:var(--alert);--tone-bg:var(--alert-bg)}
+.num{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-family:var(--heading);font-weight:700;font-size:15px;text-decoration:none}
+.shot{display:block;border:1px solid var(--border);border-radius:12px;background:#FFFFFF}
 .layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;padding:32px 24px}
 .toc{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;font-size:14px}
 .toc p{margin:0 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted)}
@@ -29,17 +31,24 @@ img{max-width:100%;height:auto}
 header{margin-bottom:24px}
 .logo{display:block;max-height:56px;width:auto;margin-bottom:16px}
 h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+.cover{position:relative;overflow:hidden;margin:0 0 20px;padding:40px 32px;border-radius:16px;background:#14102B;color:#F5F2FF}
+.cover__art{position:absolute;inset:0 0 0 35%}
+.cover__art svg{display:block;width:100%;height:100%}
+.cover::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#14102B 32%,transparent 80%)}
+.cover h1{position:relative;z-index:1;max-width:60%;margin:0;color:#F5F2FF}
+@media (max-width:820px){.cover h1{max-width:none}.cover__art{opacity:.35;left:0}}
+@media print{.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .desc{font-size:17px;margin:0 0 8px}
 .meta{color:var(--muted);margin:0}
 .before{margin:16px 0 0;padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
 .before h2{font-size:15px;margin:0 0 4px}
 .before ul{margin:0;padding-left:20px}
-main>h2{font-size:22px;margin:40px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+main>h2{display:inline-block;font-size:24px;line-height:1.25;margin:40px 0 12px;box-shadow:inset 0 -.35em 0 color-mix(in srgb,var(--highlight) 35%,transparent)}
 main>.callout{margin:16px 0}
-.step{margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);scroll-margin-top:16px}
+.step{margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);scroll-margin-top:16px}
 .step:target{outline:3px solid var(--highlight);outline-offset:2px}
 .step__head{display:flex;gap:12px;align-items:flex-start}
-.step h3{margin:2px 0 0;font-size:17px;font-weight:600}
+.step h3{margin:2px 0 0;font-size:17px;font-weight:400}.step h3 strong{font-weight:600}
 .step__desc{margin:8px 0 0 40px}
 .step figure{margin:12px 0 0 40px}
 .step__nav{display:flex;justify-content:space-between;margin:10px 0 0 40px;font-size:13px;color:var(--muted)}
@@ -63,7 +72,7 @@ main>.callout{margin:16px 0}
 <main>
 <header>
 <img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAD0lEQVR4nGOosXoLRygcAKbKDRmGFMK0AAAAAElFTkSuQmCC" alt="" width="4" height="2">
-<h1>Pay a supplier &lt;invoice&gt; &amp; file it</h1>
+<div class="cover"><div class="cover__art" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 280" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><rect width="640" height="280" fill="#14102B"/><path d="M-40 250 C-21.7 241.7 28.3 223.3 70 200 C111.7 176.7 161.7 111.7 210 110 C258.3 108.3 311.7 193.3 360 190 C408.3 186.7 460.0 93.3 500 90 C540.0 86.7 570.0 175.0 600 170 C630.0 165.0 666.7 78.3 680 60" fill="none" stroke="#FF2E6E" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="70" cy="200" r="17" fill="#FFFFFF" stroke="#14102B" stroke-width="3"/><text x="70" y="206" text-anchor="middle" font-family="'Funnel Display','Segoe UI',system-ui,sans-serif" font-weight="800" font-size="17" fill="#14102B">1</text><circle cx="210" cy="110" r="17" fill="#FFFFFF" stroke="#14102B" stroke-width="3"/><text x="210" y="116" text-anchor="middle" font-family="'Funnel Display','Segoe UI',system-ui,sans-serif" font-weight="800" font-size="17" fill="#14102B">2</text><circle cx="360" cy="190" r="17" fill="#FFFFFF" stroke="#14102B" stroke-width="3"/><text x="360" y="196" text-anchor="middle" font-family="'Funnel Display','Segoe UI',system-ui,sans-serif" font-weight="800" font-size="17" fill="#14102B">3</text><circle cx="500" cy="90" r="17" fill="#FFFFFF" stroke="#14102B" stroke-width="3"/><text x="500" y="96" text-anchor="middle" font-family="'Funnel Display','Segoe UI',system-ui,sans-serif" font-weight="800" font-size="17" fill="#14102B">4</text><circle cx="600" cy="170" r="17" fill="#FF2E6E" stroke="#14102B" stroke-width="3"/><text x="600" y="176" text-anchor="middle" font-family="'Funnel Display','Segoe UI',system-ui,sans-serif" font-weight="800" font-size="17" fill="#14102B">5</text></svg></div><h1>Pay a supplier &lt;invoice&gt; &amp; file it</h1></div>
 <p class="desc">Enter a supplier invoice and send it for approval.</p>
 <p class="meta">4 steps · Updated 9 October 2026</p>
 <section class="before"><h2>Before you start</h2><ul><li>You can sign in to Ledgerline</li><li>You have the invoice PDF</li></ul></section>

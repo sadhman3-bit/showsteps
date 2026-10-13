@@ -16,12 +16,29 @@ import {
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
 import { accentOf, fontOf } from '../branding.js';
+import { LIGHT } from '../tokens.js';
+import { PDF_DISPLAY_800, PDF_SANS_400 } from './fonts.generated.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
 
-const TONES = { tip: '166534', note: '1D4ED8', warning: '92400E', alert: 'B91C1C' };
-const TONE_FILL = { tip: 'ECF7EF', note: 'EAF0FD', warning: 'FDF3E6', alert: 'FDECEC' };
-const MUTED = '5C554B';
+/** Word colours are hex without the #. */
+const word = (hex: string) => hex.slice(1).toUpperCase();
+const TONES = {
+  tip: word(LIGHT.tip),
+  note: word(LIGHT.note),
+  warning: word(LIGHT.warning),
+  alert: word(LIGHT.alert),
+};
+const TONE_FILL = {
+  tip: word(LIGHT.tipBg),
+  note: word(LIGHT.noteBg),
+  warning: word(LIGHT.warningBg),
+  alert: word(LIGHT.alertBg),
+};
+const MUTED = word(LIGHT.textMuted);
+const TEXT = word(LIGHT.text);
+
+const base64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 const INDENT = 540; // twips: step text and pictures sit right of the number
 const MAX_W = 600; // pixels (Word lays images out at 96 per inch)
 const MAX_H = 560;
@@ -78,7 +95,11 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
   const doc = exportDocument(input);
   const L = doc.labels;
   const accent = accentOf(input.guide).slice(1).toUpperCase();
-  const font = fontOf(input.guide) ?? 'Segoe UI';
+  // ShowSteps's own type, embedded in the file, unless the guide's branding picks a font.
+  const branded = fontOf(input.guide);
+  const own = !branded || branded === 'Funnel Sans';
+  const font = own ? 'Funnel Sans' : branded;
+  const headingFont = own ? 'Funnel Display' : branded;
   const children: Paragraph[] = [];
 
   if (input.logo) {
@@ -114,8 +135,12 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
       children.push(
         new Paragraph({
           shading: { type: ShadingType.CLEAR, color: 'auto', fill: TONE_FILL[item.tone] },
+          // Tinted box with the same colour as its border: no coloured stripe on one side.
           border: {
-            left: { style: BorderStyle.SINGLE, size: 24, color: TONES[item.tone], space: 8 },
+            top: { style: BorderStyle.SINGLE, size: 6, color: TONE_FILL[item.tone], space: 6 },
+            bottom: { style: BorderStyle.SINGLE, size: 6, color: TONE_FILL[item.tone], space: 6 },
+            left: { style: BorderStyle.SINGLE, size: 6, color: TONE_FILL[item.tone], space: 8 },
+            right: { style: BorderStyle.SINGLE, size: 6, color: TONE_FILL[item.tone], space: 8 },
           },
           indent: { left: 160, right: 160 },
           spacing: { before: 160, after: 160 },
@@ -184,14 +209,22 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
 
   const file = new Document({
     creator: 'ShowSteps',
+    ...(own
+      ? {
+          fonts: [
+            { name: 'Funnel Sans', data: base64(PDF_SANS_400) as Buffer },
+            { name: 'Funnel Display', data: base64(PDF_DISPLAY_800) as Buffer },
+          ],
+        }
+      : {}),
     title: doc.title,
     ...(doc.description ? { description: doc.description } : {}),
     styles: {
       default: {
         document: { run: { font, size: 21 }, paragraph: { spacing: { after: 80 } } },
-        title: { run: { font, size: 52, bold: true, color: '1F1C18' } },
+        title: { run: { font: headingFont, size: 52, bold: true, color: TEXT } },
         heading1: {
-          run: { font, size: 30, bold: true, color: accent },
+          run: { font: headingFont, size: 32, bold: true, color: TEXT },
           paragraph: { spacing: { before: 360, after: 120 }, keepNext: true },
         },
       },

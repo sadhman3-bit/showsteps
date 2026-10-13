@@ -16,3 +16,4 @@ docs/webstore/submit.html
 POLISH_PLAN.md
 packages/ui/src/brand/art.ts
 brand/*.svg
+packages/core/src/export/fonts.generated.ts

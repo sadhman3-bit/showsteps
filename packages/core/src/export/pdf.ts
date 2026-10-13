@@ -1,4 +1,5 @@
 import {
+  LineCapStyle,
   PDFArray,
   PDFDict,
   PDFDocument,
@@ -16,8 +17,13 @@ import {
 } from 'pdf-lib';
 import { strToU8 } from 'fflate';
 import { procedureJson, toProcedure } from '../agent/procedure.js';
-import { LIGHT } from '../tokens.js';
-import { SERIF_FONTS, accentOf, fontOf, textOn } from '../branding.js';
+import { CHROME, LIGHT } from '../tokens.js';
+import { trailGeometry } from '../patterns.js';
+import { PDF_DISPLAY_800, PDF_SANS_400, PDF_SANS_700 } from './fonts.generated.js';
+import fontkit from '@pdf-lib/fontkit';
+
+const SIGNAL = HIGHLIGHT_COLOR;
+import { HIGHLIGHT_COLOR, SERIF_FONTS, accentOf, fontOf, textOn } from '../branding.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
 
@@ -34,6 +40,44 @@ const TEXT = hex(LIGHT.text);
 const MUTED = hex(LIGHT.textMuted);
 const BORDER = hex(LIGHT.line);
 const TONES = { tip: LIGHT.tip, note: LIGHT.note, warning: LIGHT.warning, alert: LIGHT.alert };
+const TONE_BG = {
+  tip: LIGHT.tipBg,
+  note: LIGHT.noteBg,
+  warning: LIGHT.warningBg,
+  alert: LIGHT.alertBg,
+};
+
+/** The Trail pattern (pink path, numbered stops) in a box whose bottom-left is (x, y). */
+function drawTrail(page: PDFPage, font: PDFFont, x: number, y: number, w: number, h: number) {
+  const { d, stops } = trailGeometry(w, h);
+  // SVG coordinates run down from the top; PDF paths drawn with drawSvgPath do the same.
+  page.drawSvgPath(d, {
+    x,
+    y: y + h,
+    borderColor: hex(SIGNAL),
+    borderWidth: 8,
+    borderLineCap: LineCapStyle.Round,
+  });
+  stops.forEach((p, i) => {
+    const last = i === stops.length - 1;
+    page.drawCircle({
+      x: x + p.x,
+      y: y + h - p.y,
+      size: 13,
+      color: hex(last ? SIGNAL : LIGHT.surface),
+      borderColor: hex(CHROME.bg),
+      borderWidth: 2.5,
+    });
+    const n = String(i + 1);
+    page.drawText(n, {
+      x: x + p.x - font.widthOfTextAtSize(n, 12) / 2,
+      y: y + h - p.y - 4.3,
+      size: 12,
+      font,
+      color: hex(CHROME.bg),
+    });
+  });
+}
 
 function hex(value: string): RGB {
   const n = parseInt(value.slice(1), 16);
@@ -41,18 +85,16 @@ function hex(value: string): RGB {
 }
 
 /** `color` mixed with white: `amount` 0.1 is a 10% tint. */
-function tint(value: string, amount: number): RGB {
-  const n = parseInt(value.slice(1), 16);
-  const mix = (c: number) => (255 - (255 - c) * amount) / 255;
-  return rgb(mix((n >> 16) & 255), mix((n >> 8) & 255), mix(n & 255));
-}
-
 interface Fonts {
   regular: PDFFont;
   bold: PDFFont;
   italic: PDFFont;
   boldItalic: PDFFont;
+  /** Titles, headings and step numbers. */
+  display: PDFFont;
 }
+
+const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
 interface Run {
   text: string;
@@ -85,6 +127,7 @@ const SUBSTITUTES: Record<string, string> = {
 };
 
 const encodable = new WeakMap<PDFFont, Map<string, boolean>>();
+const charSets = new WeakMap<PDFFont, Set<number>>();
 
 function safeText(font: PDFFont, text: string): string {
   let cache = encodable.get(font);
@@ -94,11 +137,14 @@ function safeText(font: PDFFont, text: string): string {
   }
   let out = '';
   for (const ch of text) {
-    let ok = cache.get(ch);
+    // Line breaks are laid out, never drawn.
+    let ok = ch === '\n' ? true : cache.get(ch);
     if (ok === undefined) {
       try {
         font.encodeText(ch);
-        ok = true;
+        // Embedded fonts do not throw for a missing character: check their character set.
+        const set = charSets.get(font);
+        ok = ch === '\n' || !set || set.has(ch.codePointAt(0) ?? 0);
       } catch {
         ok = false;
       }
@@ -235,20 +281,47 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   const accent = hex(accentHex);
   const onAccent = hex(textOn(accentHex));
   const pdf = await PDFDocument.create();
-  const serif = SERIF_FONTS.has(fontOf(input.guide) ?? '');
-  const fonts: Fonts = serif
-    ? {
-        regular: await pdf.embedFont(StandardFonts.TimesRoman),
-        bold: await pdf.embedFont(StandardFonts.TimesRomanBold),
-        italic: await pdf.embedFont(StandardFonts.TimesRomanItalic),
-        boldItalic: await pdf.embedFont(StandardFonts.TimesRomanBoldItalic),
-      }
-    : {
-        regular: await pdf.embedFont(StandardFonts.Helvetica),
-        bold: await pdf.embedFont(StandardFonts.HelveticaBold),
-        italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
-        boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
-      };
+  const branded = fontOf(input.guide);
+  const serif = SERIF_FONTS.has(branded ?? '');
+  const own = !branded || branded === 'Funnel Sans';
+  let fonts: Fonts;
+  if (own) {
+    // ShowSteps's type, embedded (only the characters used). Funnel has no italic: italic
+    // text uses the upright face, as many sans families do in PDFs.
+    pdf.registerFontkit(fontkit);
+    const custom = async (b64: string) => {
+      const font = await pdf.embedFont(bytes(b64), { subset: true });
+      charSets.set(font, new Set(font.getCharacterSet()));
+      return font;
+    };
+    const regular = await custom(PDF_SANS_400);
+    const bold = await custom(PDF_SANS_700);
+    fonts = {
+      regular,
+      bold,
+      italic: regular,
+      boldItalic: bold,
+      display: await custom(PDF_DISPLAY_800),
+    };
+  } else if (serif) {
+    const bold = await pdf.embedFont(StandardFonts.TimesRomanBold);
+    fonts = {
+      regular: await pdf.embedFont(StandardFonts.TimesRoman),
+      bold,
+      italic: await pdf.embedFont(StandardFonts.TimesRomanItalic),
+      boldItalic: await pdf.embedFont(StandardFonts.TimesRomanBoldItalic),
+      display: bold,
+    };
+  } else {
+    const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    fonts = {
+      regular: await pdf.embedFont(StandardFonts.Helvetica),
+      bold,
+      italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
+      boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
+      display: bold,
+    };
+  }
   const plainRuns = (text: string, font = fonts.regular, color = TEXT): Run[] => [
     { text, font, color },
   ];
@@ -262,22 +335,27 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
 
   const w = new Writer(pdf);
 
-  // ---------- Cover ----------
+  // ---------- Cover: the Trail pattern on navy, the title in white ----------
   w.newPage();
-  w.page.drawRectangle({ x: 0, y: PAGE_H - 12, width: PAGE_W, height: 12, color: accent });
-  w.y = TOP - 30;
+  const band = 230;
+  w.page.drawRectangle({
+    x: 0,
+    y: PAGE_H - band,
+    width: PAGE_W,
+    height: band,
+    color: hex(CHROME.bg),
+  });
+  drawTrail(w.page, fonts.display, PAGE_W * 0.42, PAGE_H - band, PAGE_W * 0.58, band);
+  const titleLines = layout(plainRuns(doc.title, fonts.display, hex(CHROME.fg)), 26, PAGE_W * 0.5);
+  w.y = PAGE_H - band / 2 + (titleLines.length * 32) / 2;
+  w.lines(titleLines, MARGIN, 26, 32);
+  w.y = PAGE_H - band - 36;
   if (input.logo) {
     const logo = await embed(pdf, input.logo);
     const size = fit(input.logo, 200, 64);
     w.page.drawImage(logo, { x: MARGIN, y: w.y - size.h, width: size.w, height: size.h });
-    w.y -= size.h + 36;
-  } else {
-    w.y -= 60;
+    w.y -= size.h + 24;
   }
-  w.lines(layout(plainRuns(doc.title, fonts.bold), 28, CONTENT_W), MARGIN, 28, 34);
-  w.y -= 8;
-  w.page.drawRectangle({ x: MARGIN, y: w.y, width: 64, height: 4, color: accent });
-  w.y -= 20;
   if (doc.description) {
     w.lines(layout(plainRuns(doc.description), 13, CONTENT_W), MARGIN, 13);
     w.y -= 8;
@@ -311,16 +389,21 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   if (!doc.items.length) w.lines(layout(plainRuns(L.noSteps), 12, CONTENT_W), MARGIN, 12);
   for (const item of doc.items) {
     if (item.kind === 'heading') {
-      const lines = layout(plainRuns(item.text, fonts.bold, accent), 18, CONTENT_W);
+      const lines = layout(plainRuns(item.text, fonts.display, TEXT), 18, CONTENT_W);
       w.y -= w.y < TOP ? 14 : 0;
       w.ensure(lines.length * 24 + 140); // keep a heading with what follows
-      w.lines(lines, MARGIN, 18, 24);
-      w.page.drawLine({
-        start: { x: MARGIN, y: w.y + 2 },
-        end: { x: MARGIN + CONTENT_W, y: w.y + 2 },
-        thickness: 1.5,
-        color: accent,
+      // Pink highlighter under the lower part of each line, as in the app.
+      lines.forEach((line, i) => {
+        w.page.drawRectangle({
+          x: MARGIN,
+          y: w.y - (i + 1) * 24 + 4,
+          width: line.width,
+          height: 7,
+          color: hex(HIGHLIGHT_COLOR),
+          opacity: 0.35,
+        });
       });
+      w.lines(lines, MARGIN, 18, 24);
       w.y -= 14;
     } else if (item.kind === 'callout') {
       const tone = TONES[item.tone];
@@ -339,9 +422,8 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
         y: w.y - height,
         width: CONTENT_W,
         height,
-        color: tint(tone, 0.1),
+        color: hex(TONE_BG[item.tone]),
       });
-      w.page.drawRectangle({ x: MARGIN, y: w.y - height, width: 4, height, color: hex(tone) });
       w.y -= 8;
       w.lines(lines, MARGIN + 16, 11);
       w.y -= 18;
@@ -360,10 +442,10 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
       const num = String(item.number);
       const numSize = num.length > 2 ? 8.5 : 10.5;
       w.page.drawText(num, {
-        x: MARGIN + 12 - fonts.bold.widthOfTextAtSize(num, numSize) / 2,
+        x: MARGIN + 12 - fonts.display.widthOfTextAtSize(num, numSize) / 2,
         y: top - 9 - numSize * 0.36,
         size: numSize,
-        font: fonts.bold,
+        font: fonts.display,
         color: onAccent,
       });
       w.y -= 2;

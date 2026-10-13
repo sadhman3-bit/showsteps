@@ -239,3 +239,5 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Step title weight:** 500 rather than 600, with bold words at 750: at 600 the whole title already counts as bold, so bold names of buttons and fields would not stand out (and Ctrl+B would remove bold instead of adding it).
 - **Editor menu:** Compact view and (desktop) Read-only sit in the ⋯ menu as checkable items, next to Version history, Secure Blur, Branding and Keyboard shortcuts. The guide title moved into the top bar.
 - **Image editor size:** stays full-window rather than a 720 px dialog: editing a 1280 px screenshot in 720 px would make the tools imprecise.
+- **Export fonts:** `pnpm export-fonts` cuts Funnel to Latin text and one weight each (WOFF2 for HTML, ~11 KB each; TrueType for PDF and Word, ~26 KB each) into `fonts.generated.ts`. Funnel has no italic, so italic runs in PDFs use the upright face. Guides branded with another font keep that font (Times for serif branding in PDFs, Helvetica for other sans).
+- **Word fonts:** Funnel Sans and Funnel Display are embedded in the .docx (Word's font embedding), so the document looks the same on machines without them.

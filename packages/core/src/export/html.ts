@@ -1,4 +1,6 @@
-import { DARK, LIGHT } from '../tokens.js';
+import { CHROME, DARK, LIGHT } from '../tokens.js';
+import { trailSvg } from '../patterns.js';
+import { WEB_DISPLAY_700, WEB_SANS_400, WEB_SANS_600 } from './fonts.generated.js';
 import { BRAND_FONTS, HIGHLIGHT_COLOR, accentOf, fontOf, textOn } from '../branding.js';
 import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
 import { escapeHtml, toHtml, toPlainText } from '../richText.js';
@@ -19,7 +21,7 @@ function procedureScript(input: ExportInput): string {
 }
 
 /** Exported pages run no scripts and load nothing: images are inline. */
-const CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'";
+const CSP = "default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'";
 
 const TONES = {
   light: { tip: LIGHT.tip, note: LIGHT.note, warning: LIGHT.warning, alert: LIGHT.alert },
@@ -27,8 +29,28 @@ const TONES = {
 };
 
 function fontStack(input: ExportInput): string {
-  return BRAND_FONTS[fontOf(input.guide) ?? 'Segoe UI'] ?? 'system-ui, sans-serif';
+  return BRAND_FONTS[fontOf(input.guide) ?? 'Funnel Sans'] ?? 'system-ui, sans-serif';
 }
+
+/** The guide uses ShowSteps's own type (no branding font chosen). */
+function usesFunnel(input: ExportInput): boolean {
+  return (fontOf(input.guide) ?? 'Funnel Sans') === 'Funnel Sans';
+}
+
+const face = (family: string, weight: number, data: string) =>
+  `@font-face{font-family:'${family}';font-weight:${weight};font-style:normal;font-display:swap;src:url(data:font/woff2;base64,${data}) format('woff2')}`;
+
+/** Funnel Sans (400, 600) and Funnel Display (700), embedded so the page needs no network. */
+function fontCss(input: ExportInput): string {
+  if (!usesFunnel(input)) return '';
+  return [
+    face('Funnel Sans', 400, WEB_SANS_400),
+    face('Funnel Sans', 600, WEB_SANS_600),
+    face('Funnel Display', 700, WEB_DISPLAY_700),
+  ].join('\n');
+}
+
+const DISPLAY = "'Funnel Display','Funnel Sans',system-ui,sans-serif";
 
 function head(title: string, css: string): string {
   return [
@@ -51,17 +73,31 @@ function img(src: string, alt: string, width: number, height: number, cls = ''):
 
 function themeCss(input: ExportInput): string {
   const accent = accentOf(input.guide);
-  return `:root{color-scheme:light dark;--accent:${accent};--on-accent:${textOn(accent)};--highlight:${HIGHLIGHT_COLOR};--bg:${LIGHT.bg};--surface:${LIGHT.surface};--border:${LIGHT.line};--text:${LIGHT.text};--muted:${LIGHT.textMuted};--tip:${TONES.light.tip};--note:${TONES.light.note};--warning:${TONES.light.warning};--alert:${TONES.light.alert};font-family:${fontStack(input)}}
-@media (prefers-color-scheme:dark){:root{--bg:${DARK.bg};--surface:${DARK.surface};--border:${DARK.line};--text:${DARK.text};--muted:${DARK.textMuted};--tip:${TONES.dark.tip};--note:${TONES.dark.note};--warning:${TONES.dark.warning};--alert:${TONES.dark.alert}}}
+  const heading = usesFunnel(input) ? DISPLAY : 'inherit';
+  return `${fontCss(input)}
+:root{color-scheme:light dark;--accent:${accent};--on-accent:${textOn(accent)};--highlight:${HIGHLIGHT_COLOR};--bg:${LIGHT.bg};--surface:${LIGHT.surface};--border:${LIGHT.line};--text:${LIGHT.text};--muted:${LIGHT.textMuted};--tip:${TONES.light.tip};--note:${TONES.light.note};--warning:${TONES.light.warning};--alert:${TONES.light.alert};--tip-bg:${LIGHT.tipBg};--note-bg:${LIGHT.noteBg};--warning-bg:${LIGHT.warningBg};--alert-bg:${LIGHT.alertBg};--heading:${heading};font-family:${fontStack(input)}}
+@media (prefers-color-scheme:dark){:root{--bg:${DARK.bg};--surface:${DARK.surface};--border:${DARK.line};--text:${DARK.text};--muted:${DARK.textMuted};--tip:${TONES.dark.tip};--note:${TONES.dark.note};--warning:${TONES.dark.warning};--alert:${TONES.dark.alert};--tip-bg:color-mix(in srgb,${DARK.tip} 14%,${DARK.surface});--note-bg:color-mix(in srgb,${DARK.note} 14%,${DARK.surface});--warning-bg:color-mix(in srgb,${DARK.warning} 14%,${DARK.surface});--alert-bg:color-mix(in srgb,${DARK.alert} 14%,${DARK.surface})}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:inherit}
 img{max-width:100%;height:auto}
-.callout{margin:0;padding:10px 14px;border-left:4px solid var(--tone);border-radius:6px;background:color-mix(in srgb,var(--tone) 10%,var(--surface))}
+h1,h2{font-family:var(--heading);letter-spacing:-.02em}
+.callout{margin:0;padding:12px 16px;border-radius:12px;background:var(--tone-bg);color:var(--text)}
 .callout strong{color:var(--tone)}
-.callout--tip{--tone:var(--tip)}.callout--note{--tone:var(--note)}.callout--warning{--tone:var(--warning)}.callout--alert{--tone:var(--alert)}
-.num{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:14px;text-decoration:none}
-.shot{display:block;border:1px solid var(--border);border-radius:8px}`;
+.callout--tip{--tone:var(--tip);--tone-bg:var(--tip-bg)}.callout--note{--tone:var(--note);--tone-bg:var(--note-bg)}.callout--warning{--tone:var(--warning);--tone-bg:var(--warning-bg)}.callout--alert{--tone:var(--alert);--tone-bg:var(--alert-bg)}
+.num{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-family:var(--heading);font-weight:700;font-size:15px;text-decoration:none}
+.shot{display:block;border:1px solid var(--border);border-radius:12px;background:${LIGHT.surface}}`;
+}
+
+/** The cover band: the Trail pattern on navy with the title in white. */
+function coverCss(): string {
+  return `.cover{position:relative;overflow:hidden;margin:0 0 20px;padding:40px 32px;border-radius:16px;background:${CHROME.bg};color:${CHROME.fg}}
+.cover__art{position:absolute;inset:0 0 0 35%}
+.cover__art svg{display:block;width:100%;height:100%}
+.cover::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,${CHROME.bg} 32%,transparent 80%)}
+.cover h1{position:relative;z-index:1;max-width:60%;margin:0;color:${CHROME.fg}}
+@media (max-width:820px){.cover h1{max-width:none}.cover__art{opacity:.35;left:0}}
+@media print{.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
 }
 
 const PAGE_CSS = `
@@ -76,18 +112,18 @@ const PAGE_CSS = `
 .toc .toc__n{color:var(--muted);min-width:1.6em;text-align:right}
 header{margin-bottom:24px}
 .logo{display:block;max-height:56px;width:auto;margin-bottom:16px}
-h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}\n${coverCss()}
 .desc{font-size:17px;margin:0 0 8px}
 .meta{color:var(--muted);margin:0}
 .before{margin:16px 0 0;padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
 .before h2{font-size:15px;margin:0 0 4px}
 .before ul{margin:0;padding-left:20px}
-main>h2{font-size:22px;margin:40px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--accent)}
+main>h2{display:inline-block;font-size:24px;line-height:1.25;margin:40px 0 12px;box-shadow:inset 0 -.35em 0 color-mix(in srgb,var(--highlight) 35%,transparent)}
 main>.callout{margin:16px 0}
-.step{margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);scroll-margin-top:16px}
+.step{margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);scroll-margin-top:16px}
 .step:target{outline:3px solid var(--highlight);outline-offset:2px}
 .step__head{display:flex;gap:12px;align-items:flex-start}
-.step h3{margin:2px 0 0;font-size:17px;font-weight:600}
+.step h3{margin:2px 0 0;font-size:17px;font-weight:400}.step h3 strong{font-weight:600}
 .step__desc{margin:8px 0 0 40px}
 .step figure{margin:12px 0 0 40px}
 .step__nav{display:flex;justify-content:space-between;margin:10px 0 0 40px;font-size:13px;color:var(--muted)}
@@ -114,7 +150,9 @@ function headerHtml(input: ExportInput, doc: ExportDocument): string {
   const parts = ['<header>'];
   if (input.logo)
     parts.push(img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo'));
-  parts.push(`<h1>${escapeHtml(doc.title)}</h1>`);
+  parts.push(
+    `<div class="cover"><div class="cover__art" aria-hidden="true">${trailSvg()}</div><h1>${escapeHtml(doc.title)}</h1></div>`,
+  );
   if (doc.description) parts.push(`<p class="desc">${multiline(doc.description)}</p>`);
   parts.push(`<p class="meta">${escapeHtml(doc.meta)}</p>`);
   if (doc.preconditions.length) {
@@ -299,12 +337,12 @@ export function guideToClipboardHtml(input: ExportInput): string {
   for (const item of doc.items) {
     if (item.kind === 'heading') {
       out.push(
-        `<h2 style="margin:20px 0 8px;color:${accent}" id="${item.anchor}">${escapeHtml(item.text)}</h2>`,
+        `<h2 style="margin:20px 0 8px;color:${LIGHT.text}" id="${item.anchor}">${escapeHtml(item.text)}</h2>`,
       );
     } else if (item.kind === 'callout') {
       const tone = TONES.light[item.tone];
       out.push(
-        `<p style="margin:10px 0;padding:8px 12px;background:${CLIP_TONE_BG[item.tone]};border-left:4px solid ${tone}"><strong style="color:${tone}">${escapeHtml(item.label)}:</strong> ${multiline(item.text)}</p>`,
+        `<p style="margin:10px 0;padding:10px 14px;border-radius:12px;background:${CLIP_TONE_BG[item.tone]}"><strong style="color:${tone}">${escapeHtml(item.label)}:</strong> ${multiline(item.text)}</p>`,
       );
     } else {
       out.push(

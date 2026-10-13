@@ -1,6 +1,7 @@
 import { XMLValidator } from 'fast-xml-parser';
 import { strFromU8, unzipSync } from 'fflate';
 import mammoth from 'mammoth';
+import { PDFDict, PDFDocument, PDFName } from 'pdf-lib';
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -154,6 +155,9 @@ describe('PDF (X1)', () => {
       expect(text).toContain(t);
     for (const t of ['alex', 'Enter your password', 'New invoice', 'Submit -> done'])
       expect(text).toContain(t);
+    // A line break inside a callout starts a new line (never a stray character).
+    expect(text).toContain('locked out.');
+    expect(text).not.toContain('out.?They');
     expect(body.reduce((n, p) => n + p.images, 0)).toBe(3);
     expect(body.at(-1)!.text).toContain(`Page ${pages.length} of ${pages.length}`);
   });
@@ -192,7 +196,7 @@ describe('Word (X2)', () => {
     expect(xml.match(/<w:pStyle w:val="Heading1"\/>/g)).toHaveLength(2);
     expect(xml).toContain('<w:pStyle w:val="Title"/>');
     expect(xml.match(/<w:numId w:val="\d+"\/>/g)!.length).toBeGreaterThanOrEqual(4);
-    expect(xml).toContain('w:fill="ECF7EF"'); // tip shading
+    expect(xml).toContain('w:fill="E9F6F0"'); // tip shading
     expect(
       Object.keys(files).filter((n) => n.startsWith('word/media/') && !n.endsWith('/')),
     ).toHaveLength(4);
@@ -205,5 +209,39 @@ describe('Word (X2)', () => {
     expect(html.match(/<img /g)).toHaveLength(4);
     expect(html).toContain('alt="The sign-in form"');
     expect(html).toContain('<a href="https://example.com/policy?a=1&amp;b=2">');
+  });
+});
+
+describe('ShowSteps type in exports (no branding font)', () => {
+  const plain = () => {
+    const input = fixtureInput();
+    const { branding: _b, ...guide } = input.guide;
+    return { ...input, guide };
+  };
+
+  it('PDF embeds Funnel Sans and Funnel Display', async () => {
+    const pdf = await PDFDocument.load(await guideToPdf(plain()));
+    const names = pdf.context
+      .enumerateIndirectObjects()
+      .map(([, obj]) => (obj instanceof PDFDict ? obj.get(PDFName.of('BaseFont')) : undefined))
+      .filter((n): n is PDFName => n instanceof PDFName)
+      .map((n) => n.decodeText());
+    expect(names.join()).toMatch(/FunnelSans/);
+    expect(names.join()).toMatch(/FunnelDisplay/);
+  });
+
+  it('Word carries both fonts and uses them for headings and text', async () => {
+    const files = unzipSync(await guideToDocx(plain()));
+    expect(Object.keys(files).filter((n) => /^word\/fonts\/.+\.odttf$/.test(n))).toHaveLength(2);
+    const styles = strFromU8(files['word/styles.xml']!);
+    expect(styles).toContain('Funnel Display');
+    expect(styles).toContain('Funnel Sans');
+  });
+
+  it('HTML embeds the fonts as data and allows only data fonts', () => {
+    const html = guideToHtml(plain());
+    expect(html).toContain('font-src data:');
+    expect(html.match(/@font-face/g)).toHaveLength(3);
+    expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
   });
 });
