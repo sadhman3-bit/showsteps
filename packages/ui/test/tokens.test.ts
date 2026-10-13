@@ -117,6 +117,7 @@ describe('no hard-coded colours', () => {
     'packages/ui/src/tokens.css',
     'packages/core/src/tokens.ts',
     'packages/core/src/patterns.ts',
+    'packages/ui/src/brand/art.ts',
   ]);
   const files: string[] = [];
   const walk = (dir: string) => {

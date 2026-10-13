@@ -14,3 +14,5 @@ apps/extension/public/ocr
 apps/desktop/src/renderer/public/ocr
 docs/webstore/submit.html
 POLISH_PLAN.md
+packages/ui/src/brand/art.ts
+brand/*.svg

@@ -9,6 +9,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  nativeTheme,
   screen,
   session,
   shell,
@@ -54,6 +55,14 @@ const helperExe = join(resources, 'bin', 'uia-helper.exe');
 const hostExe = join(resources, 'bin', 'showsteps-host.exe');
 const renderer = join(__dirname, '..', 'renderer');
 const icon = join(resources, 'icon.png');
+/** Tray icon for the taskbar's colours (a dark taskbar gets the light-ink mark); @2x is automatic. */
+const trayImage = () =>
+  nativeImage.createFromPath(
+    join(
+      resources,
+      nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? 'tray-dark.png' : 'tray.png',
+    ),
+  );
 if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 const settingsFile = () => join(app.getPath('userData'), 'settings.json');
 const shotDir = () => join(app.getPath('temp'), 'showsteps-shots');
@@ -451,7 +460,8 @@ void app.whenReady().then(async () => {
     .listen()
     .catch((error: unknown) => console.error('ShowSteps: bridge unavailable', error));
 
-  tray = new Tray(nativeImage.createFromPath(icon).resize({ width: 16, height: 16 }));
+  tray = new Tray(trayImage());
+  nativeTheme.on('updated', () => tray?.setImage(trayImage()));
   tray.on('click', () => showMain());
   updateTray();
   globalShortcut.register(SHORTCUT, () => {
