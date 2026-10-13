@@ -115,7 +115,8 @@ input.ss-editor__title:hover {
 
 input.ss-editor__title:focus {
   border-color: var(--ss-focus);
-  outline: none;
+  outline: 2px solid var(--ss-focus);
+  outline-offset: 0;
   background: var(--ss-surface);
 }
 
@@ -195,6 +196,11 @@ input.ss-editor__title:focus {
 }
 
 .ss-eblock__handle {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  box-sizing: border-box;
   padding: 2px 4px;
   border-radius: var(--ss-radius-sm);
   color: var(--ss-text-muted);
@@ -317,8 +323,9 @@ input.ss-editor__title:focus {
 }
 
 .ss-rich__input:focus {
-  border-color: var(--ss-accent);
+  border-color: var(--ss-focus);
   background: var(--ss-bg);
+  box-shadow: 0 0 0 1px var(--ss-focus);
 }
 
 .ss-rich__input--multi {

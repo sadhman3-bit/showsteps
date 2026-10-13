@@ -253,21 +253,25 @@
 }
 
 /* Checkbox and radio: 20px, accent when checked. */
+/* The box looks 20px but takes clicks over 24px: a 2px transparent border around it. */
 :where(input[type='checkbox'], input[type='radio']) {
+  --box-line: var(--ss-input-border);
   display: inline-grid;
   flex: none;
   place-content: center;
-  width: 20px;
-  height: 20px;
-  margin: 0;
-  border: 1.5px solid var(--ss-input-border);
-  border-radius: 6px;
-  background: var(--ss-surface);
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin: -2px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--ss-surface) padding-box;
+  box-shadow: inset 0 0 0 1.5px var(--box-line);
   appearance: none;
   cursor: pointer;
   transition:
     background-color var(--ss-fast) var(--ss-ease),
-    border-color var(--ss-fast) var(--ss-ease);
+    box-shadow var(--ss-fast) var(--ss-ease);
 }
 
 :where(input[type='radio']) {
@@ -295,8 +299,8 @@
 }
 
 input:is([type='checkbox'], [type='radio']):checked {
-  border-color: var(--ss-accent);
-  background: var(--ss-accent);
+  --box-line: var(--ss-accent);
+  background: var(--ss-accent) padding-box;
 }
 
 input:is([type='checkbox'], [type='radio']):checked::before {
@@ -304,7 +308,7 @@ input:is([type='checkbox'], [type='radio']):checked::before {
 }
 
 input:is([type='checkbox'], [type='radio']):hover:not(:disabled, :checked) {
-  border-color: var(--ss-text-muted);
+  --box-line: var(--ss-text-muted);
 }
 
 input:is([type='checkbox'], [type='radio']):focus-visible {
@@ -314,7 +318,7 @@ input:is([type='checkbox'], [type='radio']):focus-visible {
 
 /* Toggle: a checkbox with role="switch" and class ss-toggle. */
 input[type='checkbox'].ss-toggle {
-  width: 36px;
+  width: 40px;
   border-radius: var(--ss-radius-pill);
   place-content: center start;
   padding: 0 2px;
@@ -334,7 +338,7 @@ input[type='checkbox'].ss-toggle::before {
 
 input[type='checkbox'].ss-toggle:checked::before {
   background: var(--ss-on-accent);
-  transform: translateX(16px);
+  transform: translateX(18px);
 }
 
 .ss-check {
@@ -751,6 +755,7 @@ kbd,
 .ss-disclosure > summary {
   display: inline-flex;
   align-items: center;
+  min-height: 28px;
   gap: var(--ss-space-1);
   color: var(--ss-text-muted);
   font-weight: 600;

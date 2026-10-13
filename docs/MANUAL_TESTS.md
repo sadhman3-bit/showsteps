@@ -374,3 +374,13 @@ Export a guide you want to keep, then click **Settings → Delete all ShowSteps 
 Run `pnpm release`. On a clean Windows user account, follow the README's **Install** section using only the files in `dist/`.
 
 **Expected:** the extension loads with Load unpacked, the desktop app installs without admin rights, and turning on **Use the ShowSteps desktop app** connects the two (the desktop app shows "Connected to the ShowSteps browser extension").
+
+## Polish (ShowSteps rebrand)
+
+- **MT-P-1 Extension reload:** in `chrome://extensions`, click ↻ on ShowSteps. The toolbar icon shows the ringed "1" with the pink highlighter; the side panel opens on the pink Ripple band with the SHOWSTEPS lockup; existing guides are still in the library.
+- **MT-P-2 Old desktop app:** uninstall Trailmark (or ABCXYZ) in Settings → Apps, then run `ShowSteps-Setup-1.0.0.exe`. The installer and Start-menu icons show the new tile; on first start `Documents\Trailmark\Library` has moved to `Documents\ShowSteps\Library` and `Documents\Trailmark\MOVED_TO_SHOWSTEPS.txt` says so; the unpacked extension folder in `Documents\Trailmark` is untouched.
+- **MT-P-3 Tray icon:** with a light and then a dark taskbar (Settings → Personalisation → Colours), the tray icon stays readable and switches to the light-ink mark on dark.
+- **MT-P-4 Word export:** open an exported .docx in Word on a computer without Funnel installed: headings show in Funnel Display and text in Funnel Sans (embedded), callouts are tinted boxes with no side stripe.
+- **MT-P-5 PDF export:** open an exported PDF in Acrobat or Edge: navy cover band with the pink Trail and the white title; File → Properties → Fonts lists FunnelSans and FunnelDisplay as embedded subsets.
+- **MT-P-6 Pink interface:** record a step on a pink or red page (for example a red "Delete" banner): the highlight ring in the editor and in exports is navy; the image editor's Highlight colour menu can switch it back to pink.
+- **MT-P-7 Screen reader spot check:** with Narrator, tab through the side panel and the editor top bar: every icon button announces its name (Pause, Live Blur, More actions, Undo, Redo, Share).

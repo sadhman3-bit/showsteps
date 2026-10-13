@@ -1,3 +1,5 @@
+<p align="center"><img src="brand/lockup.svg" alt="ShowSteps" width="320"></p>
+
 # ShowSteps
 
 Record a process once and get three things:
@@ -8,17 +10,24 @@ Record a process once and get three things:
 
 ShowSteps works in Chrome and Edge, and in any Windows app through the desktop app. One guide can mix both.
 
+![Recording: the page with the ShowSteps toolbar, and the side panel listing each step with its screenshot](docs/webstore/images/1-record.png)
+
+| The finished guide                                                                           | What an agent reads                                                                           |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| ![A guide with numbered steps and highlighted screenshots](docs/webstore/images/2-guide.png) | ![The Agent view: targets, inputs and checks for each step](docs/webstore/images/3-agent.png) |
+
 **Local-first and free.** No accounts, no servers, no telemetry, no feature gates, no watermarks. Guides stay on your computer or in a folder you choose, such as one synced with OneDrive or SharePoint. Optional AI features use the AI built into Chrome, on your computer, and are off by default. Passwords, one-time codes and card fields are never stored. MIT licence.
 
 ## Install
 
 Release files are in `dist/` (build them with `pnpm release`, see [For developers](#for-developers)):
 
-| File                            | What it is                                                       |
-| ------------------------------- | ---------------------------------------------------------------- |
-| `showsteps-extension-1.0.0.zip` | The browser extension                                            |
-| `ShowSteps-Setup-1.0.0.exe`     | The Windows desktop app (installs for you only; no admin rights) |
-| `SHA256SUMS.txt`                | Checksums to verify the downloads                                |
+| File                                             | What it is                                                       |
+| ------------------------------------------------ | ---------------------------------------------------------------- |
+| `showsteps-extension-1.0.0.zip`                  | The browser extension                                            |
+| `showsteps-extension-1.0.0-chrome-web-store.zip` | The same extension, packaged for the Chrome Web Store            |
+| `ShowSteps-Setup-1.0.0.exe`                      | The Windows desktop app (installs for you only; no admin rights) |
+| `SHA256SUMS.txt`                                 | Checksums to verify the downloads                                |
 
 ### The browser extension (Chrome or Edge)
 
@@ -33,6 +42,13 @@ ShowSteps is not in the Chrome Web Store yet (the submission is prepared in `doc
 Chrome may show a banner about developer-mode extensions when it starts. That is expected for extensions loaded this way. To update, unzip the new version over the same folder, then click **↻** on ShowSteps's card in `chrome://extensions`.
 
 ShowSteps asks for website access the first time you record or start a walkthrough, not when it is installed.
+
+### Moving from an earlier build (Trailmark or ABCXYZ)
+
+ShowSteps was briefly called Trailmark, then ABCXYZ. Your guides carry over:
+
+- **Extension:** keep the same folder or unzip the new version over it, then click **↻** on the card in `chrome://extensions`. Guides stay in the browser's storage; old `.trailmark` exports still import.
+- **Desktop app:** uninstall the old app first (**Settings → Apps → Trailmark** or **ABCXYZ → Uninstall**), then install ShowSteps. On first start it moves `Documents\Trailmark\Library` to `Documents\ShowSteps\Library` and leaves a note where it was. Nothing else in the old folder is touched.
 
 ### The desktop app (Windows 10 or 11)
 
@@ -79,7 +95,7 @@ Desktop apps: press **Ctrl+Alt+R** anywhere to start and finish recording a Wind
 
 ## Privacy
 
-ShowSteps makes no network requests of its own. The extension talks to the desktop app over Windows native messaging on the same computer. Exports are files you choose where to put. The OCR engine and its English model ship inside both apps, so nothing is downloaded at run time.
+ShowSteps makes no network requests of its own: its fonts and icons are bundled, and a test checks that its pages load nothing from the internet. The extension talks to the desktop app over Windows native messaging on the same computer. Exports are files you choose where to put. The OCR engine and its English model ship inside both apps, so nothing is downloaded at run time.
 
 ## For developers
 
@@ -128,7 +144,13 @@ Where to read more:
 - [PARITY.md](PARITY.md): the feature checklist.
 - [docs/DECISIONS.md](docs/DECISIONS.md): the defaults chosen.
 - [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md): checks to do by hand.
+- [AGENTS.md](AGENTS.md): notes for coding agents (GitHub Copilot reads `.github/copilot-instructions.md`, which points there).
+- [docs/design/POLISH_REPORT.md](docs/design/POLISH_REPORT.md): the ShowSteps design, before and after.
+
+Brand files (logo, wordmark, patterns) are in `brand/`; `pnpm brand` regenerates every icon from them.
 
 ## Licence
 
-[MIT](LICENSE)
+ShowSteps is under the [MIT licence](LICENSE). It uses the Funnel Sans and Funnel Display fonts (and, for the logo, Hanken Grotesk and Instrument Serif) under the SIL Open Font License 1.1, and open-source packages under their own licences: see `licenses/NOTICES.txt` in either app (`pnpm notices` regenerates it).
+
+"ShowSteps" and its logo identify this project. The name and logo are not covered by the MIT licence: a fork that changes the software should use its own name.

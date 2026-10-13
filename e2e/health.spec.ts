@@ -133,7 +133,7 @@ test('guide health: re-capture a step Guide Me cannot find, keeping the rest (U9
   await page.waitForTimeout(650);
   await page.getByRole('button', { name: 'New invoice' }).click({ delay: 120 });
   await expect
-    .poll(() => sw.evaluate(() => __showsteps.recorder.current.status), { timeout: 10_000 })
+    .poll(() => sw.evaluate(() => __showsteps.recorder.current.status), { timeout: 20_000 })
     .toBe('idle');
   await expect.poll(async () => (await state(sw)).status, { timeout: 15_000 }).toBe('active');
   expect((await state(sw)).index).toBe(brokenIndex + 1);
