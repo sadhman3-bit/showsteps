@@ -85,6 +85,8 @@ export {
   intersects,
   actionBoxFor,
   autoCrop,
+  focusRect,
+  MIN_CROP_WIDTH,
   fitWidth,
   type AutoCrop,
 } from './geometry.js';

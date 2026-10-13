@@ -54,10 +54,14 @@ export interface AutoCrop {
   zoom: number;
 }
 
+/** Crops are at least this many image pixels wide, so magnified pictures stay sharp. */
+export const MIN_CROP_WIDTH = 720;
+
 /**
  * A crop that magnifies the area around the Action Box while keeping enough context to
- * recognise the screen. Keeps the image's aspect ratio, never zooms past `maxZoom`, and stays
- * inside the image. Returns zoom 1 (no crop) when the box is already large.
+ * recognise the screen: about 2.2× the box, at least MIN_CROP_WIDTH pixels wide, with the whole
+ * box in view. Keeps the image's aspect ratio, never zooms past `maxZoom`, and stays inside the
+ * image. Returns zoom 1 (no crop) when the box is already large.
  */
 export function autoCrop(
   box: Rect,
@@ -68,11 +72,10 @@ export function autoCrop(
   const full: AutoCrop = { crop: { x: 0, y: 0, w: imageWidth, h: imageHeight }, zoom: 1 };
   if (imageWidth <= 0 || imageHeight <= 0 || maxZoom <= 1) return full;
   const aspect = imageWidth / imageHeight;
-  // Room for the box plus generous context on every side.
-  let w = Math.max(box.w * 3, imageWidth / maxZoom);
+  let w = Math.max(box.w * 2.2, MIN_CROP_WIDTH, imageWidth / maxZoom);
   let h = w / aspect;
-  if (h < box.h * 3) {
-    h = box.h * 3;
+  if (h < box.h * 2.2) {
+    h = box.h * 2.2;
     w = h * aspect;
   }
   if (w >= imageWidth * 0.9 || h >= imageHeight * 0.9) return full;
@@ -92,4 +95,36 @@ export function fitWidth(
 ): { width: number; height: number } {
   if (width <= maxWidth) return { width, height };
   return { width: maxWidth, height: Math.max(1, Math.round((height * maxWidth) / width)) };
+}
+
+/**
+ * The part of a picture to show in a small frame of the given aspect (width / height), centred
+ * on the Action Box with about `factor` times its size around it, inside the image. Without a
+ * box, the top of the picture.
+ */
+export function focusRect(
+  box: Rect | undefined,
+  imageWidth: number,
+  imageHeight: number,
+  aspect: number,
+  factor = 2.2,
+): Rect {
+  let w = imageWidth;
+  let h = w / aspect;
+  if (h > imageHeight) {
+    h = imageHeight;
+    w = h * aspect;
+  }
+  if (!box) return roundRect({ x: (imageWidth - w) / 2, y: 0, w, h });
+  // Zoom in only as far as the box with context still fits, and never below a third of the image.
+  const want = Math.max(box.w * factor, box.h * factor * aspect, imageWidth / 3);
+  if (want < w) {
+    w = want;
+    h = w / aspect;
+  }
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  const x = Math.min(Math.max(cx - w / 2, 0), imageWidth - w);
+  const y = Math.min(Math.max(cy - h / 2, 0), imageHeight - h);
+  return roundRect({ x, y, w, h });
 }

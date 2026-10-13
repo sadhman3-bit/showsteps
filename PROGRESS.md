@@ -175,7 +175,7 @@ Fixes found while testing:
 - [x] P1: rename to ShowSteps (`@showsteps/*`, `--ss-`/`ss-`, `.showsteps`, `com.showsteps.host`, `app.showsteps.desktop`; compatibility for `.trailmark` imports, `trailmark-procedure`, the old library folder and the old native host keys)
 - [x] P2: tokens (`--ss-*`, Pink and Ink, light/dark/chrome; TypeScript copy in core/src/tokens.ts), bundled Funnel fonts (OFL), components (Button sizes and variants, IconButton, form controls, checkbox/toggle, segmented, badge, card, callout, dialog, menu, tooltip, toast, empty state, chip, key cap, disclosure), icon set, Ripple and Trail patterns; contrast, token-sync and no-hard-coded-colour tests. Also restyled the on-page toolbar (P4) and Guide Me tooltip and spotlight (P5) early, since they held hard-coded colours
 - [x] P3: logo, wordmark, lockup, tile and patterns in `brand/` (text as paths via opentype.js), `pnpm brand` renders the extension icons (16/32 small mark, 48/128 with the ring ~112 px of 128), desktop icon.png and icon.ico, tray icons (with a dark-taskbar variant) and favicons
-- [ ] P4: side panel, toolbar, toast
+- [x] P4: side panel (Ripple band and lockup, Start card with key cap, recent guides; recording header with pulsing dot, icon buttons, ⋯ menu with confirmed Cancel, signal Finish, shadow on scroll, site chip; step cards with 16:10 thumbnails framed on the Action Box, delete on hover/focus, newest animates in), on-page toolbar (navy pill, 44 px buttons, Undo step) and 1.5 s step toast
 - [ ] P5: Guide Me and Run for me
 - [ ] P6: editor, agent view, image editor, dialogs, library
 - [ ] P7: reader and exports

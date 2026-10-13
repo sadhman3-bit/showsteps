@@ -177,6 +177,7 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
         <input
           type="checkbox"
           role="switch"
+          class="ss-toggle"
           checked={settings?.guidanceEnabled ?? true}
           onChange={(e) => void toggleGuidance(e.currentTarget.checked)}
         />{' '}

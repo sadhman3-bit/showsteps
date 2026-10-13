@@ -16,6 +16,10 @@
       "types": "./dist/strings.d.ts",
       "import": "./dist/strings.js"
     },
+    "./brand": {
+      "types": "./dist/brand/art.d.ts",
+      "import": "./dist/brand/art.js"
+    },
     "./icons": {
       "types": "./dist/components/iconPaths.d.ts",
       "import": "./dist/components/iconPaths.js"

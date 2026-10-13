@@ -235,3 +235,4 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Recording dot:** steady on the page toolbar; it pulses only in the side panel. Any animation in the toolbar kept the recorded page busy and made screenshots and clicks late under load (e2e caught it, even with three pulses).
 - **Brand fonts:** Hanken Grotesk ExtraBold comes from the static Fontsource WOFF (opentype.js cannot pick a weight from a variable font); Instrument Serif Italic is static already. Both live in `brand/fonts` with their OFL licences and are used only to draw paths.
 - **Favicons:** the library, side panel and desktop windows use the small mark. HTML exports get no favicon: exports stay unbranded (section 6.8 of the plan wins over section 3's favicon list).
+- **Side panel empty "Guides for this site":** one muted line, not a pattern band: the band would push Start and the recent guides below the fold in a 400 px panel. The library's empty state has the band.

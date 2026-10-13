@@ -268,7 +268,12 @@
 }
 
 .ss-shot__box {
-  stroke: var(--ss-focus);
+  stroke: var(--ss-shot-ring, var(--ss-signal));
+}
+
+.ss-shot__halo {
+  stroke: var(--ss-shot-ring, var(--ss-signal));
+  stroke-opacity: 0.18;
 }
 
 @media (max-width: 720px) {

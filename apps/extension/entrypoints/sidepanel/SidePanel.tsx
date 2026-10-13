@@ -1,5 +1,17 @@
 import { stepNumbers, toPlainText, type Guide, type GuideSummary } from '@showsteps/core';
-import { Button, Icon, Screenshot, relativeTime, strings } from '@showsteps/ui';
+import {
+  Button,
+  Chip,
+  Dialog,
+  Icon,
+  IconButton,
+  Menu,
+  RipplePattern,
+  Screenshot,
+  relativeTime,
+  strings,
+} from '@showsteps/ui';
+import { LOCKUP_SVG } from '@showsteps/ui/brand';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   getStore,
@@ -8,6 +20,7 @@ import {
   readRecapture,
   writeRecapture,
   request,
+  useActiveTab,
   useBackground,
   useGuidance,
   writeCaptureMore,
@@ -96,10 +109,18 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
 
   return (
     <main class="ss-sidepanel">
-      <h1 class="ss-brand">
-        <Icon name="trail" size={22} /> {s.title}
-      </h1>
-      <p>{strings.app.tagline}</p>
+      <header class="ss-hero">
+        <RipplePattern class="ss-hero__band" />
+        <h1 class="ss-hero__lockup">
+          <span
+            class="ss-lockup"
+            role="img"
+            aria-label={s.title}
+            dangerouslySetInnerHTML={{ __html: LOCKUP_SVG }}
+          />
+        </h1>
+      </header>
+      <p class="ss-hero__tagline">{strings.app.tagline}</p>
 
       {state.lastFinishedGuideId ? (
         <p class="ss-notice" role="status">
@@ -125,27 +146,38 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
         </p>
       ) : null}
 
-      <Button variant="primary" onClick={() => void start()} disabled={busy}>
-        <Icon name="record" /> {s.start}
-      </Button>
-      <p class="ss-muted">{s.shortcutHint(shortcut)}</p>
-      {error ? (
-        <p class="ss-error" role="alert">
-          {error}
+      <div class="ss-startcard">
+        <Button
+          variant="primary"
+          size="lg"
+          class="ss-startcard__go"
+          onClick={() => void start()}
+          disabled={busy}
+          aria-keyshortcuts={shortcut}
+        >
+          <Icon name="capture" size={20} /> {s.start}
+        </Button>
+        <p class="ss-muted ss-startcard__keys">
+          {s.shortcutLabel}: <kbd>{shortcut}</kbd>
         </p>
-      ) : (
-        <p class="ss-muted">{s.permissionNote}</p>
-      )}
+        {error ? (
+          <p class="ss-error" role="alert">
+            {error}
+          </p>
+        ) : (
+          <p class="ss-muted">{s.permissionNote}</p>
+        )}
+      </div>
 
       <PagePanel libraryVersion={libraryVersion} />
 
       <section aria-labelledby="recent-h" class="ss-recent">
         <h2 id="recent-h">{s.recent}</h2>
         {recent.length ? (
-          <ul>
+          <ul class="ss-guidelist">
             {recent.map((g) => (
               <li key={g.id}>
-                <button type="button" class="ss-link" onClick={() => openLibrary(g.id)}>
+                <button type="button" class="ss-guidelist__title" onClick={() => openLibrary(g.id)}>
                   {g.title}
                 </button>
                 <span class="ss-muted">
@@ -166,45 +198,99 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
   );
 }
 
+/** A web page's host name; empty for other pages (the extension's own, chrome:, files). */
+function hostOf(url: string | undefined): string {
+  try {
+    const u = new URL(url ?? '');
+    return /^https?:$/.test(u.protocol) ? u.hostname : '';
+  } catch {
+    return '';
+  }
+}
+
+/** The site being recorded, from the active tab. */
+function SiteChip() {
+  const tab = useActiveTab();
+  const host = hostOf(tab.url);
+  if (!host) return null;
+  const icon =
+    tab.favIconUrl && /^(https?:|data:image\/)/.test(tab.favIconUrl) ? tab.favIconUrl : undefined;
+  return <Chip label={host} icon={icon} title={c.site(host)} />;
+}
+
 function Recording({ state }: { state: CaptureState }) {
   const [confirming, setConfirming] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const head = useRef<HTMLElement>(null);
   const paused = state.status === 'paused';
   const control = (action: ControlAction) => void request({ type: 'control', action });
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(scrollY > 4);
+    addEventListener('scroll', onScroll, { passive: true });
+    // Cards scrolled into view stop below the sticky header, never under it.
+    const root = document.documentElement;
+    const size = new ResizeObserver(() => {
+      root.style.scrollPaddingTop = `${(head.current?.offsetHeight ?? 0) + 12}px`;
+    });
+    if (head.current) size.observe(head.current);
+    return () => {
+      removeEventListener('scroll', onScroll);
+      size.disconnect();
+      root.style.scrollPaddingTop = '';
+    };
+  }, []);
+
   return (
     <main class="ss-sidepanel ss-sidepanel--recording">
-      <div class="ss-rec-head">
-        <section class="ss-status" aria-live="polite">
-          <span class={`ss-dot${paused ? ' ss-dot--paused' : ''}`} aria-hidden="true" />
-          <strong>{paused ? c.paused : c.recording}</strong>
-          <span class="ss-muted">{c.steps(state.stepCount)}</span>
-        </section>
-        {state.title ? <p class="ss-muted ss-rec-title">{state.title}</p> : null}
-        {confirming ? (
-          <div class="ss-stack">
-            <p>{c.cancelConfirm}</p>
-            <Button variant="danger" onClick={() => control('cancel')}>
-              {c.cancel}
-            </Button>
-            <Button onClick={() => setConfirming(false)}>{c.resume}</Button>
-          </div>
-        ) : (
-          <div class="ss-rec-controls">
-            <Button variant="primary" onClick={() => control('finish')}>
-              {c.finish}
-            </Button>
-            <Button onClick={() => control(paused ? 'resume' : 'pause')}>
-              {paused ? c.resume : c.pause}
-            </Button>
-            <Button aria-pressed={state.liveBlur} onClick={() => control('toggle-live-blur')}>
-              {c.liveBlur}
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirming(true)}>
-              {c.cancel}
-            </Button>
-          </div>
-        )}
-        {state.liveBlur ? <p class="ss-muted">{c.liveBlurOn}</p> : null}
-      </div>
+      <header ref={head} class={`ss-rec-head${scrolled ? ' is-scrolled' : ''}`}>
+        <div class="ss-rec-bar">
+          <section class="ss-status" aria-live="polite">
+            <span class={`ss-dot${paused ? ' ss-dot--paused' : ''}`} aria-hidden="true" />
+            <strong>{paused ? c.paused : c.recording}</strong>
+            <span class="ss-muted">{c.steps(state.stepCount)}</span>
+          </section>
+          <IconButton
+            icon={paused ? 'play' : 'pause'}
+            label={paused ? c.resume : c.pause}
+            onClick={() => control(paused ? 'resume' : 'pause')}
+          />
+          <IconButton
+            icon={state.liveBlur ? 'eye-off' : 'blur'}
+            label={c.liveBlur}
+            aria-pressed={state.liveBlur}
+            onClick={() => control('toggle-live-blur')}
+          />
+          <Menu
+            label={c.moreActions}
+            items={[
+              { label: c.cancelRecording, danger: true, onSelect: () => setConfirming(true) },
+            ]}
+          />
+          <Button variant="signal" onClick={() => control('finish')}>
+            <Icon name="finish" /> {c.finish}
+          </Button>
+        </div>
+        {state.title ? <p class="ss-rec-title">{state.title}</p> : null}
+        <SiteChip />
+        {state.liveBlur ? <p class="ss-rec-hint">{c.liveBlurOn}</p> : null}
+      </header>
+      {confirming ? (
+        <Dialog
+          title={c.cancelTitle}
+          onClose={() => setConfirming(false)}
+          actions={
+            <>
+              <Button onClick={() => setConfirming(false)}>{c.keepRecording}</Button>
+              <Button variant="danger" onClick={() => control('cancel')}>
+                {c.discardCapture}
+              </Button>
+            </>
+          }
+        >
+          <p>{c.cancelConfirm}</p>
+        </Dialog>
+      ) : null}
       <RecordedSteps state={state} />
     </main>
   );
@@ -251,7 +337,9 @@ function RecordedSteps({ state }: { state: CaptureState }) {
 
   return (
     <section class="ss-rec-steps" aria-labelledby="rec-steps-h">
-      <h2 id="rec-steps-h">{c.stepsTitle}</h2>
+      <h2 id="rec-steps-h" class="ss-sr">
+        {c.stepsTitle}
+      </h2>
       {steps.length ? (
         <ol>
           {steps.map((step) => {
@@ -262,18 +350,22 @@ function RecordedSteps({ state }: { state: CaptureState }) {
                 <div class="ss-rec-step__head">
                   <span class="ss-step__num">{n}</span>
                   <span class="ss-rec-step__title">{title}</span>
-                  <button
-                    type="button"
+                  <IconButton
+                    icon="trash"
+                    size="sm"
                     class="ss-rec-step__delete"
-                    aria-label={c.deleteStep(n)}
-                    title={c.deleteStep(n)}
+                    label={c.deleteStep(n)}
                     onClick={() => void request({ type: 'delete-step', stepId: step.id })}
-                  >
-                    <Icon name="trash" />
-                  </button>
+                  />
                 </div>
                 {step.human.screenshot && guide ? (
-                  <Screenshot store={getStore()} guideId={guide.id} step={step} alt={title} />
+                  <Screenshot
+                    store={getStore()}
+                    guideId={guide.id}
+                    step={step}
+                    alt={title}
+                    frame={16 / 10}
+                  />
                 ) : (
                   <p class="ss-muted ss-rec-step__wait">{c.pictureComing}</p>
                 )}

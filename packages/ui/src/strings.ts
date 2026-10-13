@@ -12,6 +12,7 @@ export const strings = {
     privacyNote: 'Everything stays on this computer. Nothing is uploaded.',
     start: 'Start capture',
     shortcutHint: (keys: string) => `Shortcut: ${keys}`,
+    shortcutLabel: 'Shortcut',
     permissionNote:
       'ShowSteps will ask to read and change websites so it can record your clicks. It only does so while you record.',
     permissionDenied: 'ShowSteps needs website access to record. Try again and choose Allow.',
@@ -40,6 +41,9 @@ export const strings = {
     resume: 'Resume',
     deleteLast: 'Undo step',
     cancelRecording: 'Cancel recording',
+    keepRecording: 'Keep recording',
+    discardCapture: 'Discard capture',
+    cancelTitle: 'Cancel this recording?',
     moreActions: 'More actions',
     liveBlur: 'Live Blur',
     liveBlurOn: 'Live Blur is on: click things to hide them in screenshots',
@@ -49,6 +53,7 @@ export const strings = {
     drag: 'Drag to move',
     controllerLabel: 'ShowSteps capture controls',
     stepsTitle: 'Recorded steps',
+    site: (host: string) => `Recording on ${host}`,
     noStepsYet:
       'Click, type and choose things on the page. Each action appears here as a step with its screenshot.',
     deleteStep: (n: number) => `Delete step ${n}`,

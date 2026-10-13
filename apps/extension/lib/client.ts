@@ -206,13 +206,22 @@ export function useGuideBroadcast(handler: (msg: GuideBroadcast) => void): void 
 }
 
 /** The active tab of this window, kept current as the person switches or navigates. */
-export function useActiveTab(): { id?: number; url?: string; windowId?: number } {
-  const [tab, setTab] = useState<{ id?: number; url?: string; windowId?: number }>({});
+export interface ActiveTab {
+  id?: number;
+  url?: string;
+  windowId?: number;
+  favIconUrl?: string;
+}
+
+export function useActiveTab(): ActiveTab {
+  const [tab, setTab] = useState<ActiveTab>({});
   useEffect(() => {
     const refresh = () =>
       void browser.tabs
         .query({ active: true, currentWindow: true })
-        .then(([t]) => setTab(t ? { id: t.id, url: t.url, windowId: t.windowId } : {}))
+        .then(([t]) =>
+          setTab(t ? { id: t.id, url: t.url, windowId: t.windowId, favIconUrl: t.favIconUrl } : {}),
+        )
         .catch(() => setTab({}));
     refresh();
     const onUpdated = (_id: number, info: { url?: string; status?: string }) => {

@@ -1,4 +1,4 @@
-import type { GuideStore, Rect, Step } from '@showsteps/core';
+import { focusRect, type GuideStore, type Rect, type Step } from '@showsteps/core';
 import { useId } from 'preact/hooks';
 import { AnnotationShape, strokeFor } from '../components/Annotations.js';
 import { useImageUrl } from '../hooks.js';
@@ -55,16 +55,28 @@ export function ImageLayers({
         </g>
       ))}
       {showActionBox && box ? (
-        <rect
-          class="ss-shot__box"
-          x={box.x}
-          y={box.y}
-          width={box.w}
-          height={box.h}
-          rx={sw * 2}
-          fill="none"
-          stroke-width={sw}
-        />
+        <>
+          <rect
+            class="ss-shot__halo"
+            x={box.x - sw}
+            y={box.y - sw}
+            width={box.w + sw * 2}
+            height={box.h + sw * 2}
+            rx={sw * 3}
+            fill="none"
+            stroke-width={sw * 2.5}
+          />
+          <rect
+            class="ss-shot__box"
+            x={box.x}
+            y={box.y}
+            width={box.w}
+            height={box.h}
+            rx={sw * 2}
+            fill="none"
+            stroke-width={sw}
+          />
+        </>
       ) : null}
       {step.human.annotations.map((a) => (
         <AnnotationShape key={a.id} a={a} imageWidth={W} />
@@ -80,23 +92,32 @@ export function Screenshot({
   step,
   alt,
   magnify = true,
+  frame,
 }: {
   store: GuideStore;
   guideId: string;
   step: Step;
   alt: string;
   magnify?: boolean;
+  /** Show a fixed-aspect part of the picture centred on the Action Box (thumbnails). */
+  frame?: number;
 }) {
   const shot = step.human.screenshot;
   const url = useImageUrl(store, guideId, shot?.file.replace(/^img\//, ''));
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   if (!shot) return null;
-  const view: Rect =
-    magnify && shot.crop && (shot.zoom ?? 1) > 1
+  const view: Rect = frame
+    ? focusRect(step.human.actionBox, shot.width, shot.height, frame)
+    : magnify && shot.crop && (shot.zoom ?? 1) > 1
       ? shot.crop
       : { x: 0, y: 0, w: shot.width, h: shot.height };
+  // Never wider than the picture's own pixels: an enlarged screenshot looks blurry.
+  const maxWidth = frame ? undefined : `${Math.round(view.w / (shot.dpr || 1))}px`;
   return (
-    <figure class="ss-shot" style={{ aspectRatio: `${view.w} / ${view.h}` }}>
+    <figure
+      class={`ss-shot${frame ? ' ss-shot--thumb' : ''}`}
+      style={{ aspectRatio: `${view.w} / ${view.h}`, ...(maxWidth ? { maxWidth } : {}) }}
+    >
       {url ? (
         <svg
           class="ss-shot__svg"
