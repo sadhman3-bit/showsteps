@@ -173,7 +173,7 @@ Fixes found while testing:
 
 - [x] P0: finish notification (local tooling, Stop hook in local tooling), branch `polish`, "before" screenshots in `docs/design/before/` (`DESIGN_OUT=before pnpm design:shots`)
 - [x] P1: rename to ShowSteps (`@showsteps/*`, `--ss-`/`ss-`, `.showsteps`, `com.showsteps.host`, `app.showsteps.desktop`; compatibility for `.trailmark` imports, `trailmark-procedure`, the old library folder and the old native host keys)
-- [ ] P2: tokens, fonts, components, patterns
+- [x] P2: tokens (`--ss-*`, Pink and Ink, light/dark/chrome; TypeScript copy in core/src/tokens.ts), bundled Funnel fonts (OFL), components (Button sizes and variants, IconButton, form controls, checkbox/toggle, segmented, badge, card, callout, dialog, menu, tooltip, toast, empty state, chip, key cap, disclosure), icon set, Ripple and Trail patterns; contrast, token-sync and no-hard-coded-colour tests. Also restyled the on-page toolbar (P4) and Guide Me tooltip and spotlight (P5) early, since they held hard-coded colours
 - [ ] P3: logo, wordmark, generated assets
 - [ ] P4: side panel, toolbar, toast
 - [ ] P5: Guide Me and Run for me
@@ -186,4 +186,4 @@ Fixes found while testing:
 
 ### Polish: open issues
 
-- None yet.
+- `e2e/performance.spec.ts` can miss its time limits when it runs beside another Playwright worker on this machine; it passes when run alone (`node scripts/playwright.mjs test e2e/performance.spec.ts --project=chromium`).

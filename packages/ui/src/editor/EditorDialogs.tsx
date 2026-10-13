@@ -1,4 +1,4 @@
-import type { Guide, GuideStore, VersionInfo } from '@showsteps/core';
+import { DEFAULT_ACCENT, type Guide, type GuideStore, type VersionInfo } from '@showsteps/core';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { BRAND_FONTS, brandStyle } from '../brand.js';
 import { Button } from '../Button.js';
@@ -143,7 +143,7 @@ export function BrandingDialog(props: {
           <span>{b.accent}</span>
           <input
             type="color"
-            value={branding.accent ?? '#0f6b62'}
+            value={branding.accent ?? DEFAULT_ACCENT}
             onInput={(e) => set({ accent: e.currentTarget.value })}
           />
         </label>

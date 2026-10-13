@@ -124,7 +124,16 @@ export {
   accentOf,
   fontOf,
 } from './branding.js';
-export { LIGHT, DARK, CHROME, ANNOTATION_COLORS, SPOTLIGHT, chromeTokenCss } from './tokens.js';
+export {
+  LIGHT,
+  DARK,
+  CHROME,
+  CHROME_EFFECTS,
+  ANNOTATION_COLORS,
+  ANNOTATION_HALO,
+  SPOTLIGHT,
+  chromeTokenCss,
+} from './tokens.js';
 export { rippleSvg, trailSvg, type PatternOptions } from './patterns.js';
 
 // Guidance (Guide Me, Run for me, Discover, notes and pins, comments, analytics)

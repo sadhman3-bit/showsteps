@@ -166,18 +166,21 @@
 
 /* ---------- Form controls ---------- */
 
-.ss-input,
-select,
-textarea,
-input:is(
-  [type='text'],
-  [type='search'],
-  [type='number'],
-  [type='url'],
-  [type='email'],
-  [type='date'],
-  [type='time'],
-  :not([type])
+/* Element styles sit in :where() (no specificity), so any component class overrides them. */
+:where(
+  .ss-input,
+  select,
+  textarea,
+  input:is(
+    [type='text'],
+    [type='search'],
+    [type='number'],
+    [type='url'],
+    [type='email'],
+    [type='date'],
+    [type='time'],
+    :not([type])
+  )
 ) {
   box-sizing: border-box;
   min-height: 40px;
@@ -194,15 +197,13 @@ input:is(
     box-shadow var(--ss-fast) var(--ss-ease);
 }
 
-textarea,
-textarea.ss-input {
+:where(textarea) {
   padding: var(--ss-space-2) var(--ss-space-3);
   line-height: 22px;
   text-overflow: clip;
 }
 
-select,
-select.ss-input {
+:where(select) {
   appearance: none;
   padding-inline-end: 36px;
   background-image: var(--ss-chevron);
@@ -217,17 +218,25 @@ select.ss-input {
   opacity: 1;
 }
 
-:is(.ss-input, select, textarea, input):hover:not(:disabled, [type='checkbox'], [type='radio']) {
+:where(.ss-input, select, textarea, input):hover:not(
+    :disabled,
+    :focus,
+    [type='checkbox'],
+    [type='radio'],
+    [type='color'],
+    [type='file'],
+    [type='range']
+  ) {
   border-color: var(--ss-text-muted);
 }
 
-:is(.ss-input, select, textarea, input):focus-visible:not([type='checkbox'], [type='radio']) {
+:where(.ss-input, select, textarea, input):focus-visible:not([type='checkbox'], [type='radio']) {
   border-color: var(--ss-focus);
   outline: 2px solid var(--ss-focus);
   outline-offset: 0;
 }
 
-:is(.ss-input, select, textarea, input):disabled {
+:where(.ss-input, select, textarea, input):disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -244,8 +253,7 @@ select.ss-input {
 }
 
 /* Checkbox and radio: 20px, accent when checked. */
-input[type='checkbox'],
-input[type='radio'] {
+:where(input[type='checkbox'], input[type='radio']) {
   display: inline-grid;
   flex: none;
   place-content: center;
@@ -262,11 +270,11 @@ input[type='radio'] {
     border-color var(--ss-fast) var(--ss-ease);
 }
 
-input[type='radio'] {
+:where(input[type='radio']) {
   border-radius: 50%;
 }
 
-input[type='checkbox']::before {
+:where(input[type='checkbox'])::before {
   width: 12px;
   height: 12px;
   background: var(--ss-on-accent);
@@ -276,7 +284,7 @@ input[type='checkbox']::before {
   content: '';
 }
 
-input[type='radio']::before {
+:where(input[type='radio'])::before {
   width: 8px;
   height: 8px;
   border-radius: 50%;

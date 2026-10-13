@@ -390,7 +390,7 @@
 }
 
 .ss-imgedit::backdrop {
-  background: rgb(0 0 0 / 0.6);
+  background: var(--ss-scrim);
 }
 
 .ss-imgedit__bar {
@@ -512,18 +512,18 @@
 }
 
 .ss-imgedit__crop {
-  fill: rgb(0 0 0 / 0.45);
+  fill: var(--ss-scrim);
   pointer-events: none;
 }
 
 .ss-imgedit__draft {
-  fill: rgb(15 107 98 / 0.12);
+  fill: color-mix(in srgb, var(--ss-accent) 12%, transparent);
   stroke: var(--ss-accent);
   stroke-dasharray: 6 4;
 }
 
 .ss-imgedit__draft--blur {
-  fill: rgb(0 0 0 / 0.25);
+  fill: color-mix(in srgb, var(--ss-text) 25%, transparent);
 }
 
 .ss-swatches {

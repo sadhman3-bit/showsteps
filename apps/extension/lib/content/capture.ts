@@ -1,4 +1,5 @@
 import {
+  chromeTokenCss,
   collectPageText,
   deepElements,
   expectationsFrom,
@@ -432,8 +433,9 @@ export class PageRecorder {
       this.outline = document.createElement('showsteps-outline');
       const root = this.outline.attachShadow({ mode: 'open' });
       root.innerHTML =
-        '<style>:host{all:initial;position:fixed;pointer-events:none;z-index:2147483646;' +
-        'border:2px dashed #4fbfb2;border-radius:4px;box-sizing:border-box}</style>';
+        `<style>:host{all:initial;${chromeTokenCss()}position:fixed;pointer-events:none;` +
+        'z-index:2147483646;border:2px dashed var(--ss-chrome-signal);border-radius:6px;' +
+        'background:var(--ss-spot-pick);box-sizing:border-box}</style>';
       document.documentElement.append(this.outline);
     }
     const r = el.getBoundingClientRect();

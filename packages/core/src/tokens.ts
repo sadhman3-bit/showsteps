@@ -60,6 +60,9 @@ export const CHROME = {
   step: '#FF4D82',
 } as const;
 
+/** Outline drawn round annotation text and badges so they read on any picture. */
+export const ANNOTATION_HALO = '#FFFFFF';
+
 /** Picture annotation colours offered by the image editor, signal pink first. */
 export const ANNOTATION_COLORS = ['#FF2E6E', '#14102B', '#FFFFFF', '#FFD166'] as const;
 
@@ -67,6 +70,14 @@ export const ANNOTATION_COLORS = ['#FF2E6E', '#14102B', '#FFFFFF', '#FFD166'] as
 export const SPOTLIGHT = {
   backdrop: 'rgb(17 13 36 / 0.45)',
   halo: 'rgb(255 46 110 / 0.18)',
+  /** Run for me's pointer and the picker's fill. */
+  pointer: '#FFFFFF',
+  pick: 'rgb(255 46 110 / 0.12)',
+} as const;
+
+/** Shadow for controls over other apps. */
+export const CHROME_EFFECTS = {
+  shadow: '0 12px 32px rgb(0 0 0 / 0.35)',
 } as const;
 
 const camelToKebab = (s: string) => s.replace(/[A-Z0-9]+/g, (m) => `-${m.toLowerCase()}`);
@@ -77,6 +88,17 @@ const camelToKebab = (s: string) => s.replace(/[A-Z0-9]+/g, (m) => `-${m.toLower
  */
 export function chromeTokenCss(): string {
   const vars = Object.entries(CHROME).map(([k, v]) => `--ss-chrome-${camelToKebab(k)}: ${v};`);
-  vars.push(`--ss-spot-backdrop: ${SPOTLIGHT.backdrop};`, `--ss-spot-halo: ${SPOTLIGHT.halo};`);
+  vars.push(
+    `--ss-spot-backdrop: ${SPOTLIGHT.backdrop};`,
+    `--ss-spot-halo: ${SPOTLIGHT.halo};`,
+    `--ss-spot-pointer: ${SPOTLIGHT.pointer};`,
+    `--ss-spot-pick: ${SPOTLIGHT.pick};`,
+    `--ss-chrome-shadow: ${CHROME_EFFECTS.shadow};`,
+    // Note tones on navy: the dark theme's, which read on it.
+    `--ss-chrome-tip: ${DARK.tip};`,
+    `--ss-chrome-note: ${DARK.note};`,
+    `--ss-chrome-warning: ${DARK.warning};`,
+    `--ss-chrome-alert: ${DARK.alert};`,
+  );
   return vars.join(' ');
 }

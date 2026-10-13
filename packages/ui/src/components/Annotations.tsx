@@ -1,4 +1,8 @@
-import type { Annotation } from '@showsteps/core';
+import { ANNOTATION_HALO, textOn, type Annotation } from '@showsteps/core';
+
+/** Annotation text: the interface font, falling back to the system's. */
+export const ANNOTATION_FONT =
+  "'Funnel Sans', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif";
 
 /** Stroke width that reads well at any screenshot size (image pixels). */
 export function strokeFor(imageWidth: number): number {
@@ -99,8 +103,8 @@ export function AnnotationShape({
           fill={a.color}
           font-size={size}
           font-weight="600"
-          font-family="'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif"
-          stroke="#ffffff"
+          font-family={ANNOTATION_FONT}
+          stroke={ANNOTATION_HALO}
           stroke-width={size / 6}
           paint-order="stroke"
           dominant-baseline="hanging"
@@ -118,16 +122,16 @@ export function AnnotationShape({
             cy={a.at.y}
             r={r}
             fill={a.color}
-            stroke="#ffffff"
+            stroke={ANNOTATION_HALO}
             stroke-width={sw / 1.5}
           />
           <text
             x={a.at.x}
             y={a.at.y}
-            fill="#ffffff"
+            fill={textOn(a.color)}
             font-size={r * 1.15}
             font-weight="700"
-            font-family="'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif"
+            font-family={ANNOTATION_FONT}
             text-anchor="middle"
             dominant-baseline="central"
           >

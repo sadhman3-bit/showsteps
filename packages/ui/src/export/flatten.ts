@@ -1,4 +1,6 @@
 import {
+  ANNOTATION_HALO,
+  textOn,
   HIGHLIGHT_COLOR,
   type Annotation,
   type Guide,
@@ -7,13 +9,12 @@ import {
   type Step,
 } from '@showsteps/core';
 import type { ExportImage, ExportInput } from '@showsteps/core/export';
-import { strokeFor } from '../components/Annotations.js';
+import { ANNOTATION_FONT, strokeFor } from '../components/Annotations.js';
 import { blurRadius } from '../guide/Screenshot.js';
 import { mimeFor } from '../hooks.js';
 
 /** Widest picture written into exports; larger screenshots are scaled down. */
 const MAX_EXPORT_WIDTH = 1600;
-const ANNOTATION_FONT = "'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif";
 
 type Ctx = OffscreenCanvasRenderingContext2D;
 
@@ -78,7 +79,7 @@ function drawAnnotation(ctx: Ctx, a: Annotation, imageWidth: number): void {
       const size = a.size ?? sw * 7;
       ctx.font = `600 ${size}px ${ANNOTATION_FONT}`;
       ctx.textBaseline = 'hanging';
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = ANNOTATION_HALO;
       ctx.lineWidth = size / 6;
       ctx.strokeText(a.text, a.at.x, a.at.y);
       ctx.fillText(a.text, a.at.x, a.at.y);
@@ -89,10 +90,10 @@ function drawAnnotation(ctx: Ctx, a: Annotation, imageWidth: number): void {
       ctx.beginPath();
       ctx.arc(a.at.x, a.at.y, r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = ANNOTATION_HALO;
       ctx.lineWidth = sw / 1.5;
       ctx.stroke();
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = textOn(a.color);
       ctx.font = `700 ${r * 1.15}px ${ANNOTATION_FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

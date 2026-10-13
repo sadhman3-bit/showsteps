@@ -1,4 +1,6 @@
 import {
+  ANNOTATION_COLORS,
+  HIGHLIGHT_COLOR,
   History,
   bulkBlurCandidates,
   clampRect,
@@ -69,15 +71,7 @@ const TOOL_ICONS: Record<Tool, string> = {
   pen: '✎',
   badge: '①',
 };
-export const PALETTE = [
-  '#e8590c',
-  '#d6336c',
-  '#1971c2',
-  '#0f6b62',
-  '#f2b84b',
-  '#111111',
-  '#ffffff',
-];
+export const PALETTE: string[] = [...ANNOTATION_COLORS];
 
 type Selection =
   { kind: 'ann'; id: string } | { kind: 'blur'; index: number } | { kind: 'box' } | null;
@@ -123,7 +117,7 @@ export function ImageEditor({
   const history = useRef(new History<Step>(withOriginal(step)));
   const [work, setWork] = useState<Step>(history.current.current);
   const [tool, setTool] = useState<Tool>(initialTool);
-  const [color, setColor] = useState<string>(PALETTE[0] ?? '#e8590c');
+  const [color, setColor] = useState<string>(PALETTE[0] ?? HIGHLIGHT_COLOR);
   const [selected, setSelected] = useState<Selection>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [zoom, setZoom] = useState(

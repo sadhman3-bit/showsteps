@@ -1,3 +1,4 @@
+import { DARK, LIGHT } from '../tokens.js';
 import { BRAND_FONTS, HIGHLIGHT_COLOR, accentOf, fontOf, textOn } from '../branding.js';
 import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
 import { escapeHtml, toHtml, toPlainText } from '../richText.js';
@@ -21,8 +22,8 @@ function procedureScript(input: ExportInput): string {
 const CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'";
 
 const TONES = {
-  light: { tip: '#166534', note: '#1d4ed8', warning: '#92400e', alert: '#b91c1c' },
-  dark: { tip: '#4ade80', note: '#93c5fd', warning: '#fbbf24', alert: '#fca5a5' },
+  light: { tip: LIGHT.tip, note: LIGHT.note, warning: LIGHT.warning, alert: LIGHT.alert },
+  dark: { tip: DARK.tip, note: DARK.note, warning: DARK.warning, alert: DARK.alert },
 };
 
 function fontStack(input: ExportInput): string {
@@ -50,8 +51,8 @@ function img(src: string, alt: string, width: number, height: number, cls = ''):
 
 function themeCss(input: ExportInput): string {
   const accent = accentOf(input.guide);
-  return `:root{color-scheme:light dark;--accent:${accent};--on-accent:${textOn(accent)};--highlight:${HIGHLIGHT_COLOR};--bg:#faf8f5;--surface:#ffffff;--border:#d9d3ca;--text:#1f1c18;--muted:#5c554b;--tip:${TONES.light.tip};--note:${TONES.light.note};--warning:${TONES.light.warning};--alert:${TONES.light.alert};font-family:${fontStack(input)}}
-@media (prefers-color-scheme:dark){:root{--bg:#161513;--surface:#1f1d1a;--border:#3d3933;--text:#f2eee8;--muted:#b5ada1;--tip:${TONES.dark.tip};--note:${TONES.dark.note};--warning:${TONES.dark.warning};--alert:${TONES.dark.alert}}}
+  return `:root{color-scheme:light dark;--accent:${accent};--on-accent:${textOn(accent)};--highlight:${HIGHLIGHT_COLOR};--bg:${LIGHT.bg};--surface:${LIGHT.surface};--border:${LIGHT.line};--text:${LIGHT.text};--muted:${LIGHT.textMuted};--tip:${TONES.light.tip};--note:${TONES.light.note};--warning:${TONES.light.warning};--alert:${TONES.light.alert};font-family:${fontStack(input)}}
+@media (prefers-color-scheme:dark){:root{--bg:${DARK.bg};--surface:${DARK.surface};--border:${DARK.line};--text:${DARK.text};--muted:${DARK.textMuted};--tip:${TONES.dark.tip};--note:${TONES.dark.note};--warning:${TONES.dark.warning};--alert:${TONES.dark.alert}}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}
 a{color:inherit}
@@ -95,7 +96,7 @@ main>.callout{margin:16px 0}
 .done{margin:32px 0 0;padding:12px 16px;border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
 .agent-note{margin:32px 0 0;color:var(--muted);font-size:12px}
 @media (max-width:820px){.layout{display:block;padding:16px}.toc{position:static;max-height:none;margin-bottom:24px}.step__desc,.step figure,.step__nav{margin-left:0}}
-@media print{:root{--bg:#fff;--surface:#fff;--text:#000}.layout{display:block;padding:0;max-width:none}.toc,.step__nav{display:none}.step{break-inside:avoid;border:0;padding:0;margin:16px 0}.step:target{outline:0}main>h2{break-after:avoid}.shot{max-height:16cm;width:auto}a{text-decoration:none}}`;
+@media print{:root{--bg:${LIGHT.surface};--surface:${LIGHT.surface};--text:${LIGHT.text}}.layout{display:block;padding:0;max-width:none}.toc,.step__nav{display:none}.step{break-inside:avoid;border:0;padding:0;margin:16px 0}.step:target{outline:0}main>h2{break-after:avoid}.shot{max-height:16cm;width:auto}a{text-decoration:none}}`;
 
 function titleHtml(item: Extract<ExportItem, { kind: 'step' }>): string {
   return toHtml(item.title) || escapeHtml(item.titleText);
@@ -266,7 +267,12 @@ export function guideToEmbedHtml(input: ExportInput): string {
 /** Width of pictures in pasted documents, in CSS pixels (fits Word and email bodies). */
 const CLIP_WIDTH = 600;
 
-const CLIP_TONE_BG = { tip: '#ecf7ef', note: '#eaf0fd', warning: '#fdf3e6', alert: '#fdecec' };
+const CLIP_TONE_BG = {
+  tip: LIGHT.tipBg,
+  note: LIGHT.noteBg,
+  warning: LIGHT.warningBg,
+  alert: LIGHT.alertBg,
+};
 
 /**
  * X5: HTML for the clipboard. Inline styles only and plain structure, because Word, Outlook,
@@ -277,7 +283,7 @@ export function guideToClipboardHtml(input: ExportInput): string {
   const L = doc.labels;
   const accent = accentOf(input.guide);
   const font = fontStack(input).replace(/"/g, "'");
-  const out: string[] = [`<div style="font-family:${font};color:#1f1c18;line-height:1.5">`];
+  const out: string[] = [`<div style="font-family:${font};color:${LIGHT.text};line-height:1.5">`];
   if (input.logo) {
     const h = 48;
     const w = Math.round((input.logo.width / input.logo.height) * h);
@@ -285,7 +291,7 @@ export function guideToClipboardHtml(input: ExportInput): string {
   }
   out.push(`<h1 style="margin:0 0 6px">${escapeHtml(doc.title)}</h1>`);
   if (doc.description) out.push(`<p style="margin:0 0 6px">${multiline(doc.description)}</p>`);
-  out.push(`<p style="margin:0 0 12px;color:#5c554b">${escapeHtml(doc.meta)}</p>`);
+  out.push(`<p style="margin:0 0 12px;color:${LIGHT.textMuted}">${escapeHtml(doc.meta)}</p>`);
   if (doc.preconditions.length) {
     out.push(`<p style="margin:12px 0 4px"><strong>${escapeHtml(L.before)}</strong></p>`);
     out.push(`<ul>${doc.preconditions.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`);

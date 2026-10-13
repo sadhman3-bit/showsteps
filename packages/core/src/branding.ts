@@ -44,8 +44,10 @@ export function contrastRatio(a: string, b: string): number {
 }
 
 /** Ink navy or white text, whichever has the higher contrast on `hex`. */
-export function textOn(hex: string): '#FFFFFF' | '#14102B' {
-  return contrastRatio(hex, '#FFFFFF') >= contrastRatio(hex, LIGHT.text) ? '#FFFFFF' : '#14102B';
+export function textOn(hex: string): typeof LIGHT.onAccent | typeof LIGHT.text {
+  return contrastRatio(hex, LIGHT.onAccent) >= contrastRatio(hex, LIGHT.text)
+    ? LIGHT.onAccent
+    : LIGHT.text;
 }
 
 /** The guide's accent colour, or ShowSteps's. */

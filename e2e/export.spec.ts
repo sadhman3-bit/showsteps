@@ -205,7 +205,7 @@ test('exports: PDF, Word, Markdown, HTML, embed card, Copy HTML, print and share
   expect(loaded).toBe(true);
   await reader.emulateMedia({ colorScheme: 'dark' });
   const darkBg = await reader.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(darkBg).toBe('rgb(22, 21, 19)');
+  expect(darkBg).toBe('rgb(17, 13, 36)');
   await reader.emulateMedia({ colorScheme: 'light', media: 'print' });
   await expect(reader.getByRole('navigation', { name: 'Contents' })).toBeHidden();
   await reader.emulateMedia({ media: 'screen' });

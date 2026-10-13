@@ -229,10 +229,10 @@ test('image editor: blur, annotate, magnify, undo, bulk blur and reset', async (
   await expect(canvas.locator('[data-annotation]')).toHaveCount(5);
 
   // Colour applies to new shapes
-  await dlg.getByRole('button', { name: '#1971c2' }).click();
+  await dlg.getByRole('button', { name: '#14102B' }).click();
   await dlg.getByRole('button', { name: 'Ellipse' }).click();
   await drag(0.5, 0.1, 0.6, 0.2);
-  await expect(canvas.locator('ellipse')).toHaveAttribute('stroke', '#1971c2');
+  await expect(canvas.locator('ellipse')).toHaveAttribute('stroke', '#14102B');
 
   // Undo and redo inside the image editor
   await page.keyboard.press('Control+z');

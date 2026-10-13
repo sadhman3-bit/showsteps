@@ -10,7 +10,9 @@ import {
   type RichText,
   type Step,
 } from '@showsteps/core';
+import { iconSvg } from '@showsteps/ui/icons';
 import { strings } from '@showsteps/ui/strings';
+import { CHROME_BASE_CSS } from './chromeStyle';
 import {
   GuideToContentSchema,
   type GuideContentMessage,
@@ -35,50 +37,61 @@ function isVisible(el: Element): boolean {
   return getComputedStyle(el).visibility !== 'hidden';
 }
 
-const CSS = `
-:host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: 2147483646;
-  font: 14px/1.4 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
-  --bg: #1b1a18; --fg: #f2eee8; --muted: #b5ada1; --line: #3d3933; --accent: #4fbfb2;
-  --on-accent: #0b1513; --ring: #fb923c; --tip: #4ade80; --warning: #fbbf24; --link: #93c5fd; }
-[hidden] { display: none !important; }
-.ring { position: fixed; border: 3px solid var(--ring); border-radius: 8px;
-  box-shadow: 0 0 0 4px rgb(251 146 60 / 0.3), 0 0 0 100vmax rgb(0 0 0 / 0.28);
-  transition: all 120ms ease-out; }
-.tip { position: fixed; max-width: 340px; min-width: 220px; pointer-events: auto; background: var(--bg);
-  color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.4); }
-.count { color: var(--muted); font-size: 12px; margin: 0 0 4px; }
-.title { margin: 0 0 6px; font-size: 15px; }
-.title strong { color: var(--accent); }
-.note { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
-.row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-button { font: inherit; font-size: 13px; color: var(--fg); background: transparent; border: 1px solid var(--line);
-  border-radius: 8px; padding: 5px 10px; cursor: pointer; }
-button:hover { background: #2a2723; }
-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
-.x { position: absolute; top: 6px; right: 6px; border: 0; padding: 2px 7px; color: var(--muted); }
+const CSS = `${CHROME_BASE_CSS}
+:host { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; }
+.ring { position: fixed; border: 3px solid var(--ss-chrome-signal); border-radius: 12px;
+  box-shadow: 0 0 0 6px var(--ss-spot-halo), 0 0 0 100vmax var(--ss-spot-backdrop);
+  transition: all 120ms cubic-bezier(.2,.8,.2,1); }
+.tip { position: fixed; width: 340px; max-width: calc(100vw - 24px); pointer-events: auto; overflow: hidden;
+  background: var(--ss-chrome-bg); color: var(--ss-chrome-fg); border: 1px solid var(--ss-chrome-line);
+  border-radius: 12px; padding: 14px 16px 16px; box-shadow: var(--ss-chrome-shadow);
+  animation: rise 200ms cubic-bezier(.2,.8,.2,1); }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } }
+.tip.confirm { border-color: var(--ss-chrome-alert); }
+.count { color: var(--ss-chrome-step); font-size: 12px; line-height: 16px; font-weight: 700;
+  letter-spacing: .02em; margin: 0 28px 6px 0; }
+.title { margin: 0 0 8px; font-size: 14px; line-height: 20px; font-weight: 600; }
+.title strong { font-weight: 800; }
+.title a { color: var(--ss-chrome-step); }
+.note { margin: 0 0 10px; color: var(--ss-chrome-muted); font-size: 13px; line-height: 18px; }
+.confirm .note { color: var(--ss-chrome-alert); }
+.row { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.row .grow { flex: 1; }
+button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px;
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--ss-chrome-fg); background: transparent;
+  border: 0; border-radius: 999px; cursor: pointer; transition: background-color 120ms cubic-bezier(.2,.8,.2,1); }
+button:hover { background: var(--ss-chrome-button); }
+button:focus-visible { outline: 2px solid var(--ss-chrome-signal); outline-offset: 2px; }
+button.primary { background: var(--ss-chrome-signal); color: var(--ss-chrome-on-signal); padding: 0 16px; }
+button.primary:hover { background: var(--ss-chrome-step); }
+.x { position: absolute; top: 8px; right: 8px; width: 32px; min-height: 32px; padding: 0; justify-content: center;
+  color: var(--ss-chrome-muted); }
+.progress { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--ss-chrome-signal);
+  transition: width 200ms cubic-bezier(.2,.8,.2,1); }
 .cursor { position: fixed; width: 22px; height: 22px; margin: -3px 0 0 -3px; transition-property: left, top;
-  transition-timing-function: ease-in-out; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.5)); }
+  transition-timing-function: ease-in-out; filter: drop-shadow(0 2px 3px var(--ss-spot-backdrop)); }
 .cursor::after { content: ''; position: absolute; inset: 0; clip-path: polygon(0 0, 0 80%, 25% 60%, 45% 100%, 58% 94%, 40% 56%, 72% 56%);
-  background: #fff; outline: none; }
+  background: var(--ss-spot-pointer); outline: none; }
 .cursor.clicking::before { content: ''; position: absolute; left: -14px; top: -14px; width: 30px; height: 30px;
-  border-radius: 50%; border: 3px solid var(--ring); animation: ripple 400ms ease-out forwards; }
+  border-radius: 50%; border: 3px solid var(--ss-chrome-signal); animation: ripple 400ms ease-out forwards; }
 @keyframes ripple { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
-.badge { position: fixed; width: 22px; height: 22px; padding: 0; border-radius: 50%; pointer-events: auto;
-  border: 2px solid #fff; color: #111; font-weight: 700; font-size: 12px; line-height: 18px; text-align: center;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35); background: var(--tip); }
-.badge.warning { background: var(--warning); }
-.badge.link { background: var(--link); }
-.badge.pin { background: var(--accent); color: var(--on-accent); }
-.pop { position: fixed; max-width: 300px; pointer-events: auto; background: var(--bg); color: var(--fg);
-  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; box-shadow: 0 8px 28px rgb(0 0 0 / 0.4); }
+.badge { position: fixed; width: 24px; height: 24px; padding: 0; min-height: 0; justify-content: center;
+  border-radius: 50%; pointer-events: auto; border: 2px solid var(--ss-chrome-bg); color: var(--ss-chrome-bg);
+  font-weight: 800; font-size: 12px; line-height: 20px; box-shadow: var(--ss-chrome-shadow); background: var(--ss-chrome-tip); }
+.badge:hover { background: var(--ss-chrome-tip); filter: brightness(1.08); }
+.badge.warning, .badge.warning:hover { background: var(--ss-chrome-warning); }
+.badge.link, .badge.link:hover { background: var(--ss-chrome-note); }
+.badge.pin, .badge.pin:hover { background: var(--ss-chrome-signal); color: var(--ss-chrome-on-signal); }
+.pop { position: fixed; max-width: 300px; pointer-events: auto; background: var(--ss-chrome-bg); color: var(--ss-chrome-fg);
+  border: 1px solid var(--ss-chrome-line); border-radius: 12px; padding: 12px 14px; box-shadow: var(--ss-chrome-shadow); }
 .pop p { margin: 0 0 8px; }
-.pop a { color: var(--link); }
-.kind { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-.pick { position: fixed; border: 2px dashed var(--ring); background: rgb(251 146 60 / 0.12); border-radius: 4px; }
-.banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); pointer-events: auto; background: var(--bg);
-  color: var(--fg); border: 1px solid var(--ring); border-radius: 10px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; }
+.pop a { color: var(--ss-chrome-step); }
+.kind { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--ss-chrome-muted); }
+.pick { position: fixed; border: 2px dashed var(--ss-chrome-signal); background: var(--ss-spot-pick); border-radius: 6px; }
+.banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); pointer-events: auto;
+  background: var(--ss-chrome-bg); color: var(--ss-chrome-fg); border: 1px solid var(--ss-chrome-line);
+  border-radius: 999px; padding: 6px 6px 6px 16px; display: flex; gap: 10px; align-items: center;
+  box-shadow: var(--ss-chrome-shadow); }
 @media (prefers-reduced-motion: reduce) { .ring, .cursor { transition: none; } .cursor.clicking::before { animation: none; } }
 `;
 
@@ -329,8 +342,9 @@ export class GuidePage {
   }
 
   private tooltip(msg: Extract<GuideToContent, { type: 'guide-show' }>): HTMLElement {
+    const confirm = msg.phase === 'confirm';
     const tip = el('div', {
-      class: 'tip',
+      class: confirm ? 'tip confirm' : 'tip',
       role: 'dialog',
       'aria-label': g.stepOf(msg.number, msg.total),
     });
@@ -352,26 +366,33 @@ export class GuidePage {
     if (msg.phase !== 'showing') {
       tip.append(el('p', { class: 'note' }, g.phase[msg.phase]));
     }
-    const close = el(
-      'button',
-      { class: 'x', type: 'button', 'aria-label': g.close, title: g.close },
-      '×',
-    );
+    const close = el('button', {
+      class: 'x',
+      type: 'button',
+      'aria-label': g.close,
+      title: g.close,
+    });
+    close.innerHTML = iconSvg('x', 18);
     close.addEventListener('click', () => this.control('stop'));
     const row = el('div', { class: 'row' });
-    const button = (label: string, action: GuideControl, primary = false) => {
-      const b = el('button', { type: 'button', ...(primary ? { class: 'primary' } : {}) }, label);
+    const button = (label: string, action: GuideControl, cls = '') => {
+      const b = el('button', { type: 'button', ...(cls ? { class: cls } : {}) }, label);
       b.addEventListener('click', () => this.control(action));
       row.append(b);
     };
-    if (msg.phase === 'confirm') {
+    if (confirm) {
       button(g.confirmSelf, 'pause');
-      button(g.confirmDo, 'confirm', true);
+      row.append(el('span', { class: 'grow' }));
+      button(g.confirmDo, 'confirm', 'primary');
     } else {
       if (msg.number > 1) button(g.back, 'back');
-      button(g.didIt, 'next', true);
+      button(g.skip, 'skip');
+      row.append(el('span', { class: 'grow' }));
+      button(g.didIt, 'next', 'primary');
     }
-    tip.append(close, row);
+    const progress = el('div', { class: 'progress', 'aria-hidden': 'true' });
+    progress.style.width = `${Math.round((msg.number / msg.total) * 100)}%`;
+    tip.append(close, row, progress);
     return tip;
   }
 

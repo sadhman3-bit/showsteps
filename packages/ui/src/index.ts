@@ -1,8 +1,12 @@
-export { Button } from './Button.js';
-export type { ButtonProps } from './Button.js';
+export { Button, IconButton } from './Button.js';
+export type { ButtonProps, IconButtonProps } from './Button.js';
+export { EmptyState } from './components/EmptyState.js';
+export { Chip } from './components/Chip.js';
+export { Menu, type MenuItem } from './components/Menu.js';
+export { RipplePattern, TrailPattern } from './patterns/Patterns.js';
 export { strings } from './strings.js';
 export type { Strings } from './strings.js';
-export { Icon, type IconName } from './components/Icon.js';
+export { Icon, ICON_NAMES, type IconName } from './components/Icon.js';
 export { Dialog, PromptDialog, ConfirmDialog } from './components/Dialog.js';
 export { InputModeSelect } from './components/InputModeSelect.js';
 export { applyTheme, type Theme } from './guidance/SettingsDialog.js';

@@ -16,7 +16,12 @@
       "types": "./dist/strings.d.ts",
       "import": "./dist/strings.js"
     },
-    "./app.css": "./src/app.css"
+    "./icons": {
+      "types": "./dist/components/iconPaths.d.ts",
+      "import": "./dist/components/iconPaths.js"
+    },
+    "./app.css": "./src/app.css",
+    "./assets/*": "./assets/*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

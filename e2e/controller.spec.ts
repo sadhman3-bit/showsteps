@@ -55,7 +55,7 @@ test('controller: pause, delete last, live blur, keys, right and double clicks',
   await expect(bar).toContainText('4 steps');
 
   // Delete last step (C2)
-  await bar.getByRole('button', { name: 'Delete last step' }).click();
+  await bar.getByRole('button', { name: 'Undo step' }).click();
   await expect(bar).toContainText('3 steps');
 
   // Live Blur: clicks blur elements instead of recording or activating them (C5)

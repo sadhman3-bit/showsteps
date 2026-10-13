@@ -391,14 +391,6 @@
 }
 
 @media print {
-  :root {
-    color-scheme: light;
-    --ss-bg: #ffffff;
-    --ss-surface: #ffffff;
-    --ss-surface-2: #ffffff;
-    --ss-text: #000000;
-  }
-
   .ss-print__bar {
     display: none;
   }

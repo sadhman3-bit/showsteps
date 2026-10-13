@@ -16,6 +16,7 @@ import {
 } from 'pdf-lib';
 import { strToU8 } from 'fflate';
 import { procedureJson, toProcedure } from '../agent/procedure.js';
+import { LIGHT } from '../tokens.js';
 import { SERIF_FONTS, accentOf, fontOf, textOn } from '../branding.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
@@ -29,10 +30,10 @@ const BOTTOM = MARGIN + 28; // room for the footer
 const INDENT = 36; // step text and pictures sit right of the number
 const MAX_IMAGE_H = 430;
 
-const TEXT = hex('#1f1c18');
-const MUTED = hex('#5c554b');
-const BORDER = hex('#d9d3ca');
-const TONES = { tip: '#166534', note: '#1d4ed8', warning: '#92400e', alert: '#b91c1c' };
+const TEXT = hex(LIGHT.text);
+const MUTED = hex(LIGHT.textMuted);
+const BORDER = hex(LIGHT.line);
+const TONES = { tip: LIGHT.tip, note: LIGHT.note, warning: LIGHT.warning, alert: LIGHT.alert };
 
 function hex(value: string): RGB {
   const n = parseInt(value.slice(1), 16);

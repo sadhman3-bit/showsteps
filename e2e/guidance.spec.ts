@@ -215,7 +215,7 @@ test('Run for me: does the flow, waits for the password and stops at the confirm
   // Approve in the on-page card.
   const tip = page.locator('showsteps-guide').getByRole('dialog');
   await expect(tip).toContainText('Click Submit invoice');
-  await tip.getByRole('button', { name: 'Do it', exact: true }).click();
+  await tip.getByRole('button', { name: 'Confirm and continue', exact: true }).click();
   await expect.poll(async () => (await state(sw)).status, { timeout: 30_000 }).toBe('done');
   await expect(page.getByRole('heading', { name: 'Invoice submitted' })).toBeVisible();
   await expect(page.getByText('INV-1043').first()).toBeVisible();

@@ -1,44 +1,52 @@
+import { iconSvg } from '@showsteps/ui/icons';
 import { strings } from '@showsteps/ui/strings';
+import { CHROME_BASE_CSS } from './chromeStyle';
 import type { CaptureState, ControlAction } from '../messages';
 
 const s = strings.capture;
 
 // Self-contained styles: the page's CSS cannot reach into the shadow root and ours cannot leak out.
-const CSS = `
-:host { all: initial; position: fixed; right: 16px; bottom: 16px; z-index: 2147483647;
-  --bg: #1b1a18; --fg: #f2eee8; --muted: #b5ada1; --line: #3d3933; --accent: #4fbfb2;
-  --on-accent: #0b1513; --rec: #f87171; --focus: #fb923c; }
-.bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 12px;
-  background: var(--bg); color: var(--fg); border: 1px solid var(--line);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); font: 13px/1.2 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
-  user-select: none; }
-.grip { cursor: grab; padding: 4px 2px; color: var(--muted); touch-action: none; }
+const CSS = `${CHROME_BASE_CSS}
+:host { position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; }
+.bar { display: flex; align-items: center; gap: 4px; height: 56px; padding: 0 6px 0 4px;
+  border-radius: 999px; background: var(--ss-chrome-bg); border: 1px solid var(--ss-chrome-line);
+  box-shadow: var(--ss-chrome-shadow); user-select: none; }
+.grip { display: grid; place-items: center; width: 24px; height: 44px; cursor: grab;
+  color: var(--ss-chrome-muted); touch-action: none; border-radius: 999px; }
 .grip:active { cursor: grabbing; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rec); }
-.paused .dot { background: var(--muted); }
-.status { font-weight: 600; }
-.count { color: var(--muted); min-width: 4.5em; }
-button { font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line);
-  border-radius: 8px; padding: 5px 9px; cursor: pointer; }
-button:hover { background: #2a2723; }
-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-button[aria-pressed='true'] { background: #2f3f3c; border-color: var(--accent); color: var(--accent); }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
-button.danger { border-color: var(--rec); color: var(--rec); }
-.above { position: absolute; right: 0; bottom: calc(100% + 6px); display: flex; flex-direction: column;
-  align-items: flex-end; gap: 6px; pointer-events: none; }
-.hint, .toast { background: var(--bg); color: var(--fg); border: 1px solid var(--accent); border-radius: 8px;
-  padding: 6px 10px; font-size: 12px; }
-.hint { white-space: nowrap; }
-.toast { display: flex; align-items: center; gap: 8px; max-width: 340px; border-color: var(--line);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); transition: opacity 0.2s; }
-.toast[hidden] { display: none; }
-.toast .num { display: grid; place-items: center; flex: none; min-width: 20px; height: 20px; border-radius: 10px;
-  background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 11px; padding: 0 4px; }
+.lead { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 2px; white-space: nowrap; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ss-chrome-signal); }
+/* A steady dot: any animation here keeps the recorded page busy, and screenshots and clicks
+   then come late (seen in e2e). The side panel's dot pulses instead. */
+.paused .dot { background: var(--ss-chrome-muted); }
+.status { font-weight: 700; }
+.count { color: var(--ss-chrome-muted); min-width: 4.5em; font-variant-numeric: tabular-nums; }
+.sep { width: 1px; height: 24px; margin: 0 4px; background: var(--ss-chrome-line); }
+button { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px;
+  font: inherit; font-weight: 600; color: var(--ss-chrome-fg); background: transparent; border: 0;
+  border-radius: 999px; cursor: pointer; white-space: nowrap;
+  transition: background-color 120ms cubic-bezier(.2,.8,.2,1); }
+button:hover { background: var(--ss-chrome-button); }
+button:focus-visible { outline: 2px solid var(--ss-chrome-signal); outline-offset: 2px; }
+button.icon-only { width: 44px; padding: 0; justify-content: center; }
+button[aria-pressed='true'] { background: var(--ss-chrome-button); color: var(--ss-chrome-step); }
+button.signal { background: var(--ss-chrome-signal); color: var(--ss-chrome-on-signal); padding: 0 18px; }
+button.signal:hover { background: var(--ss-chrome-step); }
+button.danger { color: var(--ss-chrome-step); }
+.above { position: absolute; right: 0; bottom: calc(100% + 8px); display: flex; flex-direction: column;
+  align-items: flex-end; gap: 8px; pointer-events: none; }
+.hint, .toast { background: var(--ss-chrome-bg); color: var(--ss-chrome-fg); border: 1px solid var(--ss-chrome-line);
+  border-radius: 999px; box-shadow: var(--ss-chrome-shadow); }
+.hint { padding: 8px 14px; font-size: 13px; white-space: nowrap; }
+.toast { display: flex; align-items: center; gap: 10px; max-width: 380px; padding: 6px 16px 6px 6px;
+  font-weight: 600; }
+.toast .num { display: grid; place-items: center; flex: none; min-width: 28px; height: 28px; padding: 0 6px;
+  border-radius: 999px; background: var(--ss-chrome-signal); color: var(--ss-chrome-on-signal);
+  font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
 .toast .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 .main { display: contents; }
 .confirm { display: none; }
+.confirm .msg { padding: 0 8px 0 4px; max-width: 280px; white-space: normal; font-size: 13px; line-height: 17px; }
 .confirming .main { display: none; }
 .confirming .confirm { display: contents; }
 `;
@@ -69,19 +77,22 @@ export class Controller {
     this.bar.setAttribute('role', 'toolbar');
     this.bar.setAttribute('aria-label', s.controllerLabel);
     this.bar.innerHTML = `
-      <span class="grip" title="${s.drag}" aria-hidden="true">⋮⋮</span>
+      <span class="grip" title="${s.drag}" aria-hidden="true">${iconSvg('drag', 18)}</span>
       <span class="main">
-        <span class="dot" aria-hidden="true"></span>
-        <span class="status" data-el="status" role="status"></span>
-        <span class="count" data-el="count"></span>
-        <button type="button" data-act="pause" data-el="pause"></button>
-        <button type="button" data-act="delete-last">${s.deleteLast}</button>
-        <button type="button" data-act="toggle-live-blur" data-el="blur">${s.liveBlur}</button>
-        <button type="button" class="primary" data-act="finish">${s.finish}</button>
-        <button type="button" data-act="ask-cancel">${s.cancel}</button>
+        <span class="lead">
+          <span class="dot" aria-hidden="true"></span>
+          <span class="status" data-el="status" role="status"></span>
+          <span class="count" data-el="count"></span>
+        </span>
+        <button type="button" class="icon-only" data-act="pause" data-el="pause"></button>
+        <button type="button" data-act="delete-last">${iconSvg('undo', 18)}${s.deleteLast}</button>
+        <button type="button" data-act="toggle-live-blur" data-el="blur">${iconSvg('blur', 18)}${s.liveBlur}</button>
+        <button type="button" class="signal" data-act="finish">${iconSvg('finish', 18)}${s.finish}</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="icon-only" data-act="ask-cancel" aria-label="${s.cancelRecording}" title="${s.cancelRecording}">${iconSvg('x', 18)}</button>
       </span>
       <span class="confirm">
-        <span>${s.cancelConfirm}</span>
+        <span class="msg">${s.cancelConfirm}</span>
         <button type="button" class="danger" data-act="cancel">${s.cancel}</button>
         <button type="button" data-act="keep">${s.resume}</button>
       </span>
@@ -164,7 +175,10 @@ export class Controller {
     if (status) status.textContent = paused ? s.paused : s.recording;
     if (count) count.textContent = s.steps(state.stepCount);
     if (pause) {
-      pause.textContent = paused ? s.resume : s.pause;
+      const label = paused ? s.resume : s.pause;
+      pause.innerHTML = iconSvg(paused ? 'play' : 'pause', 18);
+      pause.setAttribute('aria-label', label);
+      pause.title = label;
       pause.dataset.act = paused ? 'resume' : 'pause';
     }
     blur?.setAttribute('aria-pressed', String(state.liveBlur));
@@ -189,7 +203,7 @@ export class Controller {
     toast.title = s.justRecorded(last.number, last.title);
     toast.hidden = false;
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (toast.hidden = true), 3000);
+    this.toastTimer = setTimeout(() => (toast.hidden = true), 1500);
   }
 
   /**

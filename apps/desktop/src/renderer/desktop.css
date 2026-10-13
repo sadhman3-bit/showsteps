@@ -171,8 +171,8 @@ body[data-page='overlay'] {
   border: 3px solid var(--ss-chrome-signal);
   border-radius: 8px;
   box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--ss-chrome-signal) 30%, transparent),
-    0 0 0 100vmax rgb(0 0 0 / 0.25);
+    0 0 0 6px var(--ss-spot-halo),
+    0 0 0 100vmax var(--ss-spot-backdrop);
   pointer-events: none;
 }
 
@@ -184,7 +184,7 @@ body[data-page='overlay'] {
   border-radius: 12px;
   background: var(--ss-chrome-bg);
   color: var(--ss-chrome-fg);
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.4);
+  box-shadow: var(--ss-shadow-lg);
   font:
     14px/1.4 'Segoe UI Variable',
     'Segoe UI',
