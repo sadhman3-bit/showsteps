@@ -137,6 +137,7 @@ export {
   chromeTokenCss,
 } from './tokens.js';
 export { rippleSvg, trailSvg, type PatternOptions } from './patterns.js';
+export { ringBlendsIn, navyRing, type HighlightChoice } from './highlight.js';
 
 // Guidance (Guide Me, Run for me, Discover, notes and pins, comments, analytics)
 export { pageKey, originOf, samePage, relevantGuides } from './guidance/pages.js';

@@ -6,7 +6,7 @@ export function EmptyState(props: { title: string; text: string; children?: Comp
   return (
     <section class="ss-emptystate">
       <div class="ss-emptystate__band">
-        <RipplePattern />
+        <RipplePattern wide />
       </div>
       <div class="ss-emptystate__body">
         <h2>{props.title}</h2>

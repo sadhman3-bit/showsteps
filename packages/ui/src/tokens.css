@@ -55,7 +55,8 @@
   --ss-text-small: 13px/18px var(--ss-font);
   --ss-text-ui: 14px/20px var(--ss-font);
   --ss-text-body: 15px/24px var(--ss-font);
-  --ss-text-step: 600 17px/24px var(--ss-font);
+  /* Step titles: 500, so bold words (names of buttons and fields) still stand out. */
+  --ss-text-step: 500 17px/24px var(--ss-font);
   --ss-text-h3: 700 20px/28px var(--ss-font-display);
   --ss-text-h2: 700 24px/30px var(--ss-font-display);
   --ss-text-h1: 800 30px/36px var(--ss-font-display);

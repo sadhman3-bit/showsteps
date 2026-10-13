@@ -82,7 +82,8 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
 
   const editor = await context.newPage();
   await editor.goto(`chrome-extension://${extensionId}/library.html#/guide/${guideId}`);
-  await editor.getByRole('button', { name: 'Secure Blur' }).click();
+  await editor.getByRole('button', { name: 'More actions' }).click();
+  await editor.getByRole('menuitem', { name: 'Secure Blur' }).click();
   const dialog = editor.getByRole('dialog', { name: 'Secure Blur' });
   const region = dialog.getByRole('region', { name: 'Secure Blur' });
   await expect(region).toBeVisible();
@@ -117,7 +118,8 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
     .toBe(planted.values.length - 1);
 
   // A second run only offers what is still unblurred.
-  await editor.getByRole('button', { name: 'Secure Blur' }).click();
+  await editor.getByRole('button', { name: 'More actions' }).click();
+  await editor.getByRole('menuitem', { name: 'Secure Blur' }).click();
   await expect(region.getByRole('checkbox')).toHaveCount(1);
   await expect(region.getByText('Email', { exact: true })).toBeVisible();
 });
@@ -143,7 +145,8 @@ test('OCR reads the screenshots that have no word positions, offline (U8, E11 fo
 
   const editor = await context.newPage();
   await editor.goto(`chrome-extension://${extensionId}/library.html#/guide/${guideId}`);
-  await editor.getByRole('button', { name: 'Secure Blur' }).click();
+  await editor.getByRole('button', { name: 'More actions' }).click();
+  await editor.getByRole('menuitem', { name: 'Secure Blur' }).click();
   const dialog = editor.getByRole('dialog', { name: 'Secure Blur' });
   await expect(dialog.getByRole('status')).toContainText(/Reading the text|Looking through/);
   const region = dialog.getByRole('region', { name: 'Secure Blur' });

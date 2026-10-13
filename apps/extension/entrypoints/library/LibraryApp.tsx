@@ -332,6 +332,7 @@ export function LibraryApp() {
         onAddSamples={() => installSamples(store)}
         onInsights={() => go('#/insights')}
         onSettings={() => setShowSettings(true)}
+        onStartCapture={openSidePanel}
       />
       {settingsDialog}
     </>

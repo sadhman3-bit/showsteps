@@ -142,7 +142,7 @@ test('reader view shows numbered steps with screenshots; the editor offers captu
   // Edit → capture more after step 1 (the focused block) hands over to the side panel.
   await view.getByRole('button', { name: 'Edit' }).click();
   await view.getByRole('textbox', { name: 'Step 1 title' }).click();
-  await view.getByRole('button', { name: 'Capture more steps' }).click();
+  await view.getByRole('button', { name: 'Record more' }).click();
   const pending = await serviceWorker.evaluate(
     async () => (await chrome.storage.session.get('captureMore')).captureMore,
   );
@@ -185,7 +185,7 @@ test('sample guides (E10): added from an empty library, with sections, tips and 
 }) => {
   const lib = await context.newPage();
   await lib.goto(`chrome-extension://${extensionId}/library.html`);
-  await expect(lib.getByText('No guides here yet.')).toBeVisible();
+  await expect(lib.getByRole('heading', { name: 'Record your first guide' })).toBeVisible();
   await lib.getByRole('button', { name: 'Add the sample guides' }).click();
   const list = lib.getByRole('list', { name: 'Library' });
   await expect(list.getByRole('listitem')).toHaveCount(2);

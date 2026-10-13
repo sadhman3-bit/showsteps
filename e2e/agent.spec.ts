@@ -79,8 +79,8 @@ test('Agent view, input modes, confirm flags, expectations and the Agent Pack (U
   });
   await expect(strategies).toContainText('iframe iframe[title="Cost centre lookup"]');
   await page.screenshot({ path: test.info().outputPath('agent-view.png'), fullPage: true });
-  await expect(page.getByRole('status').filter({ hasText: /changes saved|Saving/ })).toHaveText(
-    'All changes saved',
+  await expect(page.getByRole('status').filter({ hasText: /^(Saved|Saving…)$/ })).toHaveText(
+    'Saved',
   );
   expect((await sw.evaluate((g) => __showsteps.store.getGuide(g), id)).variables).toEqual([
     expect.objectContaining({ name: 'invoice_no' }),

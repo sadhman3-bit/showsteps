@@ -19,11 +19,17 @@ export interface PatternOptions {
 /** Ripple: navy rings spreading from a click near the lower left, on signal pink. */
 export function rippleSvg({ width = 640, height = 280 }: PatternOptions = {}): string {
   const radii = [36, 76, 118, 162, 208, 256, 306, 358, 412, 468, 526, 586, 648];
-  const cx = Math.round(width * 0.16);
+  // Wider boxes get more rings at the same scale (the gaps keep growing by about 4).
+  const cx = Math.min(Math.round(width * 0.16), 110);
   const cy = Math.round(height * 0.8);
+  const reach = Math.hypot(width - cx, cy);
+  while ((radii.at(-1) ?? 0) < reach) {
+    const n = radii.length;
+    radii.push((radii[n - 1] ?? 0) + ((radii[n - 1] ?? 0) - (radii[n - 2] ?? 0)) + 4);
+  }
   const rings = radii
     .map((r, i) => {
-      const w = 12 - (8 * i) / (radii.length - 1);
+      const w = 12 - (8 * Math.min(i, 12)) / 12;
       return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${NAVY}" stroke-width="${w.toFixed(2)}"/>`;
     })
     .join('');

@@ -236,3 +236,6 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Brand fonts:** Hanken Grotesk ExtraBold comes from the static Fontsource WOFF (opentype.js cannot pick a weight from a variable font); Instrument Serif Italic is static already. Both live in `brand/fonts` with their OFL licences and are used only to draw paths.
 - **Favicons:** the library, side panel and desktop windows use the small mark. HTML exports get no favicon: exports stay unbranded (section 6.8 of the plan wins over section 3's favicon list).
 - **Side panel empty "Guides for this site":** one muted line, not a pattern band: the band would push Start and the recent guides below the fold in a 400 px panel. The library's empty state has the band.
+- **Step title weight:** 500 rather than 600, with bold words at 750: at 600 the whole title already counts as bold, so bold names of buttons and fields would not stand out (and Ctrl+B would remove bold instead of adding it).
+- **Editor menu:** Compact view and (desktop) Read-only sit in the ⋯ menu as checkable items, next to Version history, Secure Blur, Branding and Keyboard shortcuts. The guide title moved into the top bar.
+- **Image editor size:** stays full-window rather than a 720 px dialog: editing a 1280 px screenshot in 720 px would make the tools imprecise.

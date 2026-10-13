@@ -1,17 +1,23 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { IconButton } from '../Button.js';
+import { Icon } from './Icon.js';
 import type { IconName } from './iconPaths.js';
 
 export interface MenuItem {
   label: string;
   onSelect: () => void;
   icon?: IconName;
+  /** A toggle: shown with a check mark when on. */
+  checked?: boolean;
   danger?: boolean;
   disabled?: boolean;
 }
 
-/** A "⋯" button with a list of actions. Esc or a click outside closes it. */
+/**
+ * A "⋯" button with a list of actions. Esc or a click outside closes it; arrow keys move
+ * between items.
+ */
 export function Menu(props: {
   label: string;
   items: MenuItem[];
@@ -22,21 +28,30 @@ export function Menu(props: {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
+    const items = () =>
+      Array.from(ref.current?.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]') ?? []);
     const outside = (e: Event) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    const esc = (e: KeyboardEvent) => {
+    const keys = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.stopPropagation();
         setOpen(false);
         ref.current?.querySelector<HTMLButtonElement>('.ss-iconbtn')?.focus();
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const list = items();
+        const at = list.indexOf(document.activeElement as HTMLButtonElement);
+        const next = (at + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
+        list[next]?.focus();
       }
     };
     document.addEventListener('pointerdown', outside);
-    document.addEventListener('keydown', esc);
-    ref.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    document.addEventListener('keydown', keys, true);
+    items()[0]?.focus();
     return () => {
       document.removeEventListener('pointerdown', outside);
-      document.removeEventListener('keydown', esc);
+      document.removeEventListener('keydown', keys, true);
     };
   }, [open]);
   return (
@@ -54,7 +69,8 @@ export function Menu(props: {
             <button
               key={item.label}
               type="button"
-              role="menuitem"
+              role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+              aria-checked={item.checked}
               class={item.danger ? 'is-danger' : undefined}
               disabled={item.disabled}
               onClick={() => {
@@ -62,6 +78,13 @@ export function Menu(props: {
                 item.onSelect();
               }}
             >
+              {item.checked !== undefined ? (
+                <span class="ss-popmenu__check">
+                  {item.checked ? <Icon name="check" size={16} /> : null}
+                </span>
+              ) : item.icon ? (
+                <Icon name={item.icon} size={16} />
+              ) : null}
               {item.label}
             </button>
           ))}

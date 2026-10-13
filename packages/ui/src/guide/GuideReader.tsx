@@ -1,7 +1,9 @@
+import { IconButton } from '../Button.js';
 import { stepNumbers, toPlainText, type Guide, type GuideStore, type Step } from '@showsteps/core';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { brandStyle } from '../brand.js';
+import { Icon, type IconName } from '../components/Icon.js';
 import { RichText } from '../components/RichText.js';
 import { useImageUrl } from '../hooks.js';
 import { strings } from '../strings.js';
@@ -74,7 +76,10 @@ export function GuideReader({
                 class={`ss-block ss-callout ss-callout--${b.tone}`}
                 id={`block-${b.id}`}
               >
-                <strong>{s.tone[b.tone]}</strong> {b.text}
+                <Icon name={CALLOUT_ICON[b.tone]} size={20} />
+                <div>
+                  <strong class="ss-callout__title">{s.tone[b.tone]}</strong> {b.text}
+                </div>
               </li>
             );
           }
@@ -97,6 +102,14 @@ export function GuideReader({
     </article>
   );
 }
+
+/** The icon shown in each kind of callout. */
+export const CALLOUT_ICON: Record<'tip' | 'note' | 'warning' | 'alert', IconName> = {
+  tip: 'tip',
+  note: 'info',
+  warning: 'warning',
+  alert: 'alert',
+};
 
 function ReaderStep(props: {
   store: GuideStore;
@@ -123,9 +136,13 @@ function ReaderStep(props: {
           <RichText value={step.human.title} />
         </h3>
         {props.onCopyLink ? (
-          <button type="button" class="ss-link ss-step__link" onClick={props.onCopyLink}>
-            {props.copied ? strings.editor.linkCopied : strings.editor.copyLink}
-          </button>
+          <IconButton
+            icon={props.copied ? 'check' : 'copy-link'}
+            size="sm"
+            class={`ss-step__link${props.copied ? ' is-copied' : ''}`}
+            label={props.copied ? strings.editor.linkCopied : strings.editor.copyLink}
+            onClick={props.onCopyLink}
+          />
         ) : null}
       </div>
       {step.human.description ? (

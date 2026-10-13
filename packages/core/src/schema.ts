@@ -197,6 +197,8 @@ export const StepSchema = z
       altText: z.string().optional(),
       screenshot: ScreenshotSchema.optional(),
       actionBox: RectSchema.optional(),
+      /** Highlight ring colour: from the picture (default), signal pink or navy. */
+      highlight: z.enum(['auto', 'signal', 'navy']).optional(),
       annotations: z.array(AnnotationSchema),
       blurs: z.array(RectSchema),
       /** The screenshot and Action Box as captured, kept when the image is first edited. */

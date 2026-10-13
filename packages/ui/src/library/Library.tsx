@@ -12,11 +12,22 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { ConfirmDialog, Dialog, PromptDialog } from '../components/Dialog.js';
+import { LOCKUP_SVG, MARK_SVG } from '../brand/art.js';
+import { Chip } from '../components/Chip.js';
+import { EmptyState } from '../components/EmptyState.js';
 import { Icon } from '../components/Icon.js';
 import { downloadBytes, safeFileName, useImageUrl, usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
 import { relativeTime } from '../time.js';
-import { facets, filterGuides, folderTree, parseTags, type Scope, type SortKey } from './filter.js';
+import {
+  appLabel,
+  facets,
+  filterGuides,
+  folderTree,
+  parseTags,
+  type Scope,
+  type SortKey,
+} from './filter.js';
 
 const s = strings.library;
 
@@ -31,6 +42,8 @@ export interface LibraryProps {
   onInsights?: () => void;
   /** Open settings. */
   onSettings?: () => void;
+  /** Offered when the library is empty: start recording (opens the side panel). */
+  onStartCapture?: () => void;
 }
 
 type Modal =
@@ -50,6 +63,7 @@ export function Library({
   onAddSamples,
   onInsights,
   onSettings,
+  onStartCapture,
 }: LibraryProps) {
   const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -133,7 +147,12 @@ export function Library({
     <div class="ss-library">
       <aside class="ss-library__side" aria-label={s.folders}>
         <h1 class="ss-brand">
-          <Icon name="trail" size={22} /> {strings.app.name}
+          <span
+            class="ss-lockup"
+            role="img"
+            aria-label={strings.app.name}
+            dangerouslySetInnerHTML={{ __html: LOCKUP_SVG }}
+          />
         </h1>
         <nav>
           <ul class="ss-nav">
@@ -192,7 +211,7 @@ export function Library({
         ) : null}
         {onSettings ? (
           <Button variant="ghost" onClick={onSettings}>
-            {strings.settings.button}
+            <Icon name="settings" /> {strings.settings.button}
           </Button>
         ) : null}
       </aside>
@@ -322,11 +341,23 @@ export function Library({
           </p>
         ) : null}
 
-        {loaded && shown.length === 0 ? (
+        {loaded && !inTrash && !guides.some((g) => !g.trashedAt) ? (
+          <EmptyState title={s.firstGuide} text={s.firstGuideText}>
+            <div class="ss-row">
+              {onStartCapture ? (
+                <Button variant="primary" size="lg" onClick={onStartCapture}>
+                  <Icon name="capture" size={20} /> {strings.sidePanel.start}
+                </Button>
+              ) : null}
+              {onAddSamples ? (
+                <Button size="lg" onClick={() => void act(onAddSamples)}>
+                  {s.addSamples}
+                </Button>
+              ) : null}
+            </div>
+          </EmptyState>
+        ) : loaded && shown.length === 0 ? (
           <p class="ss-empty">{inTrash ? s.emptyTrash : text ? s.emptySearch : s.empty}</p>
-        ) : null}
-        {loaded && onAddSamples && !guides.some((g) => !g.trashedAt) && !inTrash ? (
-          <Button onClick={() => void act(onAddSamples)}>{s.addSamples}</Button>
         ) : null}
 
         <ul class={view === 'grid' ? 'ss-cards' : 'ss-rows'} aria-label={s.title}>
@@ -488,7 +519,11 @@ function GuideCard(props: {
     <li class="ss-card" data-guide-id={g.id}>
       {props.view === 'grid' ? (
         <div class="ss-card__cover" aria-hidden="true">
-          {cover ? <img src={cover} alt="" /> : <Icon name="trail" size={40} />}
+          {cover ? (
+            <img src={cover} alt="" />
+          ) : (
+            <span class="ss-card__mark" dangerouslySetInnerHTML={{ __html: MARK_SVG }} />
+          )}
         </div>
       ) : null}
       <div class="ss-card__body">
@@ -499,8 +534,10 @@ function GuideCard(props: {
             {g.title}
           </button>
         )}
-        <span class="ss-muted">
-          {s.steps(g.stepCount)} · {when}
+        <span class="ss-card__meta">
+          <span>{s.steps(g.stepCount)}</span>
+          {g.apps[0] ? <Chip label={appLabel(g.apps[0])} /> : null}
+          <span>{when}</span>
         </span>
         {g.tags.length ? (
           <span class="ss-tags">

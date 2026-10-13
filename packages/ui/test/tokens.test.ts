@@ -141,7 +141,7 @@ describe('no hard-coded colours', () => {
       text.split('\n').forEach((line, i) => {
         if (
           /#[0-9a-f]{6}\b|#[0-9a-f]{3}\b(?![-\w])|rgba?\(\s*\d/i.test(line) &&
-          !/^\s*(\/\/|\*)/.test(line)
+          !/^\s*(\/\/|\/?\*)/.test(line)
         )
           offenders.push(`${rel}:${i + 1}: ${line.trim().slice(0, 100)}`);
       });

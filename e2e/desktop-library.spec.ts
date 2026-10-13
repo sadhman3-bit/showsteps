@@ -116,7 +116,8 @@ test('Secure Blur reads an uploaded picture with the bundled OCR in the desktop 
 
   const win = await desktop.app.firstWindow();
   await win.evaluate((id) => (location.hash = `#/guide/${id}`), guide.id);
-  await win.getByRole('button', { name: 'Secure Blur' }).click();
+  await win.getByRole('button', { name: 'More actions' }).click();
+  await win.getByRole('menuitem', { name: 'Secure Blur' }).click();
   const region = win.getByRole('dialog', { name: 'Secure Blur' }).getByRole('region', {
     name: 'Secure Blur',
   });

@@ -14,6 +14,7 @@ import {
   type Annotation,
   type Guide,
   type GuideStore,
+  type HighlightChoice,
   type Point,
   type Rect,
   type Step,
@@ -27,7 +28,9 @@ import {
   strokeFor,
 } from '../components/Annotations.js';
 import { ConfirmDialog, Dialog, PromptDialog } from '../components/Dialog.js';
+import { Icon, type IconName } from '../components/Icon.js';
 import { ImageLayers } from '../guide/Screenshot.js';
+import { NAVY_RING_STYLE, useNavyRing } from '../guide/ringTone.js';
 import { useImageUrl } from '../hooks.js';
 import { strings } from '../strings.js';
 import { clipboardImage, encodeImage } from './imageio.js';
@@ -59,17 +62,17 @@ const TOOL_KEYS: Record<string, Tool> = {
   p: 'pen',
   n: 'badge',
 };
-const TOOL_ICONS: Record<Tool, string> = {
-  select: '↖',
-  actionBox: '▢',
-  crop: '⌗',
-  blur: '░',
-  arrow: '↗',
-  rect: '□',
-  ellipse: '◯',
-  text: 'T',
-  pen: '✎',
-  badge: '①',
+const TOOL_ICONS: Record<Tool, IconName> = {
+  select: 'cursor',
+  actionBox: 'target',
+  crop: 'crop',
+  blur: 'blur',
+  arrow: 'arrow',
+  rect: 'square',
+  ellipse: 'circle',
+  text: 'type',
+  pen: 'pen',
+  badge: 'badge',
 };
 export const PALETTE: string[] = [...ANNOTATION_COLORS];
 
@@ -409,6 +412,7 @@ export function ImageEditor({
 
   const draft = drag?.kind === 'draft' ? drag : null;
   const box = work.human.actionBox;
+  const navy = useNavyRing(url, work);
   const crop = shot?.crop && (shot.zoom ?? 1) > 1 ? shot.crop : null;
   const magnifyOn = !!crop;
   const candidates = useMemo(() => bulkBlurCandidates(guide, step.id), [guide, step.id]);
@@ -469,7 +473,7 @@ export function ImageEditor({
                 ?.toUpperCase()})`}
               onClick={() => setTool(t)}
             >
-              {TOOL_ICONS[t]}
+              <Icon name={TOOL_ICONS[t]} size={20} />
             </button>
           ))}
         </div>
@@ -478,6 +482,7 @@ export function ImageEditor({
           {shot && url ? (
             <svg
               ref={svg}
+              style={navy ? NAVY_RING_STYLE : undefined}
               viewBox={`0 0 ${W} ${H}`}
               role="img"
               aria-label={s.canvasLabel}
@@ -592,6 +597,23 @@ export function ImageEditor({
               <input type="color" value={color} onInput={(e) => recolor(e.currentTarget.value)} />
             </label>
           </fieldset>
+
+          <label class="ss-field">
+            <span class="ss-label">{s.highlight}</span>
+            <select
+              value={work.human.highlight ?? 'auto'}
+              disabled={!box}
+              onChange={(e) => {
+                const v = e.currentTarget.value as HighlightChoice;
+                const { highlight: _h, ...rest } = work.human;
+                commit({ ...work, human: v === 'auto' ? rest : { ...rest, highlight: v } });
+              }}
+            >
+              <option value="auto">{s.highlightAuto}</option>
+              <option value="signal">{s.highlightPink}</option>
+              <option value="navy">{s.highlightNavy}</option>
+            </select>
+          </label>
 
           <label class="ss-check">
             <input

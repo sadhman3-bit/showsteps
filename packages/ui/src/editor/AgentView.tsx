@@ -9,7 +9,8 @@ import {
   type Target,
 } from '@showsteps/core';
 import { useState } from 'preact/hooks';
-import { Button } from '../Button.js';
+import { Button, IconButton } from '../Button.js';
+import { Icon } from '../components/Icon.js';
 import { InputModeSelect } from '../components/InputModeSelect.js';
 import { strings } from '../strings.js';
 import { TextField } from './TextField.js';
@@ -122,10 +123,14 @@ export function AgentView(props: {
           </span>
         </section>
       ) : null}
-      <section class="ss-agent__warnings" aria-label={a.warningsTitle(warnings.length)}>
+      <section
+        class={`ss-callout ss-agent__warnings ss-callout--${warnings.length ? 'warning' : 'tip'}`}
+        aria-label={a.warningsTitle(warnings.length)}
+      >
+        <Icon name={warnings.length ? 'warning' : 'check'} size={20} />
         {warnings.length ? (
-          <>
-            <h3>{a.warningsTitle(warnings.length)}</h3>
+          <div>
+            <h3 class="ss-callout__title">{a.warningsTitle(warnings.length)}</h3>
             <ul>
               {warnings.map((w) => (
                 <li key={`${w.stepId}-${w.kind}`}>
@@ -133,7 +138,7 @@ export function AgentView(props: {
                 </li>
               ))}
             </ul>
-          </>
+          </div>
         ) : (
           <p role="status">{a.noWarnings}</p>
         )}
@@ -211,14 +216,17 @@ function AgentStep(props: {
                 <span class="ss-muted"> · shadow {t.shadowHosts.join(' → ')}</span>
               ) : null}
               {t.selectors.length ? (
-                <details>
-                  <summary>{a.strategies}</summary>
+                <details class="ss-disclosure">
+                  <summary>
+                    {a.strategies} <Icon name="chevron-down" size={16} />
+                  </summary>
                   <ul class="ss-agent__selectors">
                     {[...t.selectors]
                       .sort((x, y) => y.score - x.score)
                       .map((sel) => (
                         <li key={`${sel.type}:${sel.value}`}>
-                          <code>{sel.type}</code> <code>{sel.value}</code>{' '}
+                          <span class="ss-chip">{sel.type}</span>{' '}
+                          <code class="ss-mono">{sel.value}</code>{' '}
                           <span class="ss-muted">{Math.round(sel.score * 100)}%</span>
                         </li>
                       ))}
@@ -248,14 +256,13 @@ function AgentStep(props: {
             <ul class="ss-agent__expect">
               {expect.map((e, i) => (
                 <li key={`${i}-${JSON.stringify(e)}`}>
-                  {expectationText(e)}{' '}
-                  <Button
-                    variant="ghost"
-                    aria-label={a.removeExpect(expectationText(e))}
+                  <span>{expectationText(e)}</span>
+                  <IconButton
+                    icon="x"
+                    size="sm"
+                    label={a.removeExpect(expectationText(e))}
                     onClick={() => setExpect(expect.filter((_, k) => k !== i))}
-                  >
-                    ×
-                  </Button>
+                  />
                 </li>
               ))}
             </ul>
@@ -279,11 +286,13 @@ function AgentStep(props: {
                 value={text}
                 onInput={(ev) => setText(ev.currentTarget.value)}
               />
-              <Button type="submit">{a.addText}</Button>
+              <Button type="submit" size="sm">
+                {a.addText}
+              </Button>
             </form>
           ) : (
-            <Button variant="ghost" onClick={() => setAdding(true)}>
-              {a.addText}
+            <Button size="sm" class="ss-agent__add" onClick={() => setAdding(true)}>
+              <Icon name="plus" size={16} /> {a.addText}
             </Button>
           )}
         </dd>

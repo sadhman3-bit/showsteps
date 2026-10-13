@@ -31,9 +31,7 @@ async function openEditor(context: BrowserContext, sw: Worker, extensionId: stri
 }
 
 const saved = (page: Page) =>
-  expect(page.getByRole('status').filter({ hasText: /changes saved|Saving/ })).toHaveText(
-    'All changes saved',
-  );
+  expect(page.getByRole('status').filter({ hasText: /^(Saved|Saving…)$/ })).toHaveText('Saved');
 
 /** Block labels in order, as the editor shows them (step titles, headings, callout text). */
 async function outline(page: Page): Promise<string[]> {
@@ -73,7 +71,8 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   ]);
 
   // Reorder by dragging step 4 above step 2 (E2), in compact view so both are on screen
-  await page.getByRole('button', { name: 'Compact view' }).click();
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Compact view' }).click();
   await card('Step 4')
     .locator('.ss-eblock__handle')
     .dragTo(card('Step 2'), { targetPosition: { x: 40, y: 8 } });
@@ -122,7 +121,8 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
     .locator('.ss-eblock__handle')
     .dragTo(card('Step 1'), { targetPosition: { x: 40, y: 8 } });
   expect((await outline(page))[0]).toBe('# Sign in');
-  await page.getByRole('button', { name: 'Compact view' }).click();
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Compact view' }).click();
 
   // Edit text: guide title and a step title with bold (E1)
   await page.getByRole('textbox', { name: 'Guide title' }).fill('Sign in to Ledgerline');
@@ -310,7 +310,8 @@ test('version history: restore an earlier version (E9)', async ({
   await page.keyboard.type(' quickly');
   await saved(page);
 
-  await page.getByRole('button', { name: 'Version history' }).click();
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Version history' }).click();
   const dlg = page.getByRole('dialog', { name: 'Version history' });
   const versions = dlg.getByRole('list', { name: 'Version history' }).getByRole('listitem');
   await expect(versions).toHaveCount(2);
@@ -333,7 +334,8 @@ test('version history: restore an earlier version (E9)', async ({
   await saved(page);
 
   // The edited guide was kept as a version too.
-  await page.getByRole('button', { name: 'Version history' }).click();
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Version history' }).click();
   await expect(
     page.getByRole('dialog', { name: 'Version history' }).getByText('Renamed guide').first(),
   ).toBeVisible();
@@ -369,7 +371,8 @@ test('preview, step links, branding and image-only steps (E5, E7, E8)', async ({
   await page.keyboard.type('Check the totals match the diagram');
 
   // Branding (E8)
-  await page.getByRole('button', { name: 'Branding' }).click();
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Branding' }).click();
   const brand = page.getByRole('dialog', { name: 'Branding' });
   await brand.getByLabel('Accent colour').fill('#aa3355');
   await brand.getByLabel('Font').selectOption('Georgia');

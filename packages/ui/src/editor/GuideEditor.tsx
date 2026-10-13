@@ -28,9 +28,10 @@ import {
   type Step,
 } from '@showsteps/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { Button } from '../Button.js';
+import { Button, IconButton } from '../Button.js';
 import { Icon } from '../components/Icon.js';
 import { InputModeSelect } from '../components/InputModeSelect.js';
+import { Menu } from '../components/Menu.js';
 import { GuideReader } from '../guide/GuideReader.js';
 import { Screenshot } from '../guide/Screenshot.js';
 import { mimeFor, usePreference } from '../hooks.js';
@@ -468,32 +469,23 @@ export function GuideEditor({
   return (
     <main class="ss-editor">
       <header class="ss-editor__bar">
-        <Button variant="ghost" onClick={onBack}>
-          <Icon name="back" /> {strings.guide.back}
-        </Button>
-        <span class={`ss-save ss-save--${saveState}`} role="status">
-          {saveState === 'saved' ? e.saved : saveState === 'saving' ? e.saving : e.saveFailed}
-        </span>
-        <div class="ss-toolbar__spacer" />
-        <Button
-          variant="ghost"
-          onClick={undo}
-          disabled={!history.current?.canUndo}
-          aria-label={e.undo}
-          title={e.undo}
-        >
-          ↶
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={redo}
-          disabled={!history.current?.canRedo}
-          aria-label={e.redo}
-          title={e.redo}
-        >
-          ↷
-        </Button>
-        <div class="ss-segmented" role="group">
+        <div class="ss-editor__group ss-editor__group--left">
+          <IconButton icon="back" label={strings.guide.back} onClick={onBack} />
+          <div class="ss-editor__titlebox">
+            <TextField
+              class="ss-editor__title"
+              aria-label={e.guideTitle}
+              value={guide.title}
+              onValue={(title) => apply((g) => ({ ...g, title }), 'type')}
+              onDone={endTyping}
+            />
+            <span class={`ss-save ss-save--${saveState}`} role="status">
+              {saveState === 'saved' ? <Icon name="check" size={14} /> : null}
+              {saveState === 'saved' ? e.saved : saveState === 'saving' ? e.saving : e.saveFailed}
+            </span>
+          </div>
+        </div>
+        <div class="ss-segmented ss-editor__modes" role="group" aria-label={e.view}>
           <button type="button" aria-pressed={mode === 'edit'} onClick={() => setMode('edit')}>
             {e.edit}
           </button>
@@ -508,63 +500,80 @@ export function GuideEditor({
             {strings.agent.tab}
           </button>
         </div>
-        {mode === 'edit' ? (
-          <Button
-            aria-pressed={compact === 'on'}
-            title={e.compactHint}
-            onClick={() => setCompact(compact === 'on' ? 'off' : 'on')}
-          >
-            {e.compact}
-          </Button>
-        ) : null}
-        <Button onClick={() => setModal('versions')}>{e.versions}</Button>
-        <Button onClick={() => setModal('share')}>{strings.share.button}</Button>
-        <Button onClick={() => setModal('secureBlur')}>{strings.secureBlur.button}</Button>
-        {readOnlyToggle ? (
-          <label class="ss-check" title={strings.readOnly.markHint}>
-            <input
-              type="checkbox"
-              checked={!!guide.readOnly}
-              onChange={(ev) => {
-                const on = ev.currentTarget.checked;
-                apply((g) => {
-                  const { readOnly: _r, ...rest } = g;
-                  return on ? { ...rest, readOnly: true } : rest;
-                });
-              }}
-            />{' '}
-            {strings.readOnly.mark}
-          </label>
-        ) : null}
-        {aiEnabled ? (
-          <AiTools
-            store={store}
-            guide={guide}
-            apply={(edit) => apply(edit)}
-            {...(onOpenGuide ? { onOpenGuide } : {})}
+        <div class="ss-editor__group ss-editor__group--right">
+          <IconButton
+            icon="undo"
+            label={e.undo}
+            onClick={undo}
+            disabled={!history.current?.canUndo}
           />
-        ) : null}
-        <Button onClick={() => setModal('branding')}>{e.branding}</Button>
-        <Button
-          variant="ghost"
-          onClick={() => setModal('shortcuts')}
-          aria-label={e.shortcuts}
-          title={e.shortcuts}
-        >
-          ?
-        </Button>
-        {onCaptureMore ? (
-          <Button
-            onClick={() =>
-              onCaptureMore(
-                guide,
-                focused ? guide.blocks.findIndex((b) => b.id === focused) + 1 : guide.blocks.length,
-              )
-            }
-          >
-            <Icon name="record" /> {strings.guide.captureMore}
+          <IconButton
+            icon="redo"
+            label={e.redo}
+            onClick={redo}
+            disabled={!history.current?.canRedo}
+          />
+          {aiEnabled ? (
+            <AiTools
+              store={store}
+              guide={guide}
+              apply={(edit) => apply(edit)}
+              {...(onOpenGuide ? { onOpenGuide } : {})}
+            />
+          ) : null}
+          {onCaptureMore ? (
+            <Button
+              onClick={() =>
+                onCaptureMore(
+                  guide,
+                  focused
+                    ? guide.blocks.findIndex((b) => b.id === focused) + 1
+                    : guide.blocks.length,
+                )
+              }
+            >
+              <Icon name="capture" /> {strings.guide.captureMore}
+            </Button>
+          ) : null}
+          <Button variant="primary" onClick={() => setModal('share')}>
+            <Icon name="share" /> {strings.share.button}
           </Button>
-        ) : null}
+          <Menu
+            label={e.more}
+            items={[
+              ...(mode === 'edit'
+                ? [
+                    {
+                      label: e.compact,
+                      checked: compact === 'on',
+                      onSelect: () => setCompact(compact === 'on' ? 'off' : 'on'),
+                    },
+                  ]
+                : []),
+              ...(readOnlyToggle
+                ? [
+                    {
+                      label: strings.readOnly.mark,
+                      checked: !!guide.readOnly,
+                      onSelect: () =>
+                        apply((g) => {
+                          const { readOnly: _r, ...rest } = g;
+                          return g.readOnly ? rest : { ...rest, readOnly: true };
+                        }),
+                    },
+                  ]
+                : []),
+              { label: e.versions, icon: 'history', onSelect: () => setModal('versions') },
+              {
+                label: strings.secureBlur.button,
+                icon: 'blur',
+                onSelect: () => setModal('secureBlur'),
+              },
+              { label: e.branding, icon: 'palette', onSelect: () => setModal('branding') },
+              { label: e.shortcuts, icon: 'help', onSelect: () => setModal('shortcuts') },
+            ]}
+          />
+        </div>
       </header>
 
       {mode === 'agent' ? (
@@ -592,13 +601,6 @@ export function GuideEditor({
         </div>
       ) : (
         <div class="ss-page ss-editor__page">
-          <TextField
-            class="ss-editor__title"
-            aria-label={e.guideTitle}
-            value={guide.title}
-            onValue={(title) => apply((g) => ({ ...g, title }), 'type')}
-            onDone={endTyping}
-          />
           <TextField
             multiline
             class="ss-editor__desc ss-input"

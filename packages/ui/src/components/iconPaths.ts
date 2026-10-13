@@ -44,6 +44,20 @@ export const ICON_PATHS = {
   drag: 'M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
+  cursor: 'M6 3l13 7-5.5 1.8L11.5 18z',
+  target: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M9 9h6v6H9z',
+  crop: 'M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2',
+  arrow: 'M5 19L19 5M10 5h9v9',
+  square: 'M5 5h14v14H5z',
+  circle: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
+  type: 'M5 7V4h14v3M12 4v16M9 20h6',
+  pen: 'M3 21c3-1 4-4 6-6s5-1 7-3 2-5 5-8',
+  badge: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10.5 9.5L12.5 8v8',
+  tip: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z',
+  info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01',
+  warning:
+    'M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01',
+  alert: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v6M12 16.5h.01',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

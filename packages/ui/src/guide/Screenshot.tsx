@@ -2,6 +2,7 @@ import { focusRect, type GuideStore, type Rect, type Step } from '@showsteps/cor
 import { useId } from 'preact/hooks';
 import { AnnotationShape, strokeFor } from '../components/Annotations.js';
 import { useImageUrl } from '../hooks.js';
+import { NAVY_RING_STYLE, useNavyRing } from './ringTone.js';
 
 /** Blur strength that hides text at any screenshot size. */
 export function blurRadius(imageWidth: number): number {
@@ -105,6 +106,7 @@ export function Screenshot({
   const shot = step.human.screenshot;
   const url = useImageUrl(store, guideId, shot?.file.replace(/^img\//, ''));
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const navy = useNavyRing(url, step);
   if (!shot) return null;
   const view: Rect = frame
     ? focusRect(step.human.actionBox, shot.width, shot.height, frame)
@@ -116,7 +118,11 @@ export function Screenshot({
   return (
     <figure
       class={`ss-shot${frame ? ' ss-shot--thumb' : ''}`}
-      style={{ aspectRatio: `${view.w} / ${view.h}`, ...(maxWidth ? { maxWidth } : {}) }}
+      style={{
+        aspectRatio: `${view.w} / ${view.h}`,
+        ...(maxWidth ? { maxWidth } : {}),
+        ...(navy ? NAVY_RING_STYLE : {}),
+      }}
     >
       {url ? (
         <svg

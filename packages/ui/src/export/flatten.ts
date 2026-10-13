@@ -1,7 +1,10 @@
 import {
   ANNOTATION_HALO,
   textOn,
+  HIGHLIGHT_ALT_COLOR,
   HIGHLIGHT_COLOR,
+  navyRing,
+  ringBlendsIn,
   type Annotation,
   type Guide,
   type GuideStore,
@@ -146,8 +149,23 @@ export async function flattenStepImage(
     const box = step.human.actionBox;
     if (box) {
       const sw = strokeFor(W);
+      // Navy instead of pink when the author chose it or the interface around the box is pink.
+      const navy = navyRing(step.human.highlight, () => {
+        const probe = new OffscreenCanvas(W, H);
+        const pctx = probe.getContext('2d', { willReadFrequently: true });
+        if (!pctx) return false;
+        pctx.drawImage(bitmap, 0, 0, W, H);
+        return ringBlendsIn(pctx.getImageData(0, 0, W, H).data, W, H, box);
+      });
       ctx.save();
-      ctx.strokeStyle = HIGHLIGHT_COLOR;
+      ctx.strokeStyle = navy ? HIGHLIGHT_ALT_COLOR : HIGHLIGHT_COLOR;
+      // A soft halo, then the ring.
+      ctx.globalAlpha = 0.18;
+      ctx.lineWidth = sw * 2.5;
+      ctx.beginPath();
+      ctx.roundRect(box.x - sw, box.y - sw, box.w + sw * 2, box.h + sw * 2, sw * 3);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
       ctx.lineWidth = sw;
       ctx.beginPath();
       ctx.roundRect(box.x, box.y, box.w, box.h, sw * 2);
