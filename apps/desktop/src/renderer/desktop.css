@@ -16,6 +16,19 @@
   background: var(--ss-surface);
 }
 
+.ss-desktopbar__brand {
+  display: block;
+  height: 20px;
+  margin-inline-end: var(--ss-space-2);
+  color: var(--ss-text);
+}
+
+.ss-desktopbar__brand svg {
+  display: block;
+  width: auto;
+  height: 100%;
+}
+
 .ss-desktopbar__spacer {
   flex: 1;
 }
@@ -35,7 +48,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--ss-alert);
+  background: var(--ss-signal);
 }
 
 .ss-bridge {
@@ -90,33 +103,34 @@ body[data-page='overlay'] {
 
 .ss-ctl {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
-  height: 48px;
+  height: 56px;
   margin: 4px;
-  padding: 0 8px;
+  padding: 0 6px 0 4px;
   border: 1px solid var(--ss-chrome-line);
-  border-radius: 12px;
+  border-radius: var(--ss-radius-pill);
   background: var(--ss-chrome-bg);
   color: var(--ss-chrome-fg);
-  font:
-    13px/1.2 'Segoe UI Variable',
-    'Segoe UI',
-    system-ui,
-    sans-serif;
+  font: 14px/20px var(--ss-font);
   user-select: none;
 }
 
 .ss-ctl__grip {
-  padding: 4px 2px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 44px;
   color: var(--ss-chrome-muted);
   cursor: grab;
   -webkit-app-region: drag;
 }
 
 .ss-ctl__dot {
-  width: 9px;
-  height: 9px;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-left: 2px;
   border-radius: 50%;
   background: var(--ss-chrome-signal);
 }
@@ -127,11 +141,22 @@ body[data-page='overlay'] {
 
 .ss-ctl__status {
   flex: 1;
+  padding: 0 6px;
   white-space: nowrap;
 }
 
 .ss-ctl__status span {
   color: var(--ss-chrome-muted);
+}
+
+.ss-ctl button {
+  min-height: 44px;
+}
+
+.ss-ctl button.icon-only {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
 }
 
 .ss-ctl button,

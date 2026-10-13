@@ -68,7 +68,8 @@ test('team library: others’ guides, who edited them, read-only guides and pers
   await win.getByRole('button', { name: 'Back to library' }).click();
   await win.getByRole('button', { name: 'Team library' }).click();
   await win.getByRole('button', { name: 'Close the month' }).click();
-  await win.getByRole('checkbox', { name: 'Read-only for others' }).check();
+  await win.getByRole('button', { name: 'More actions' }).click();
+  await win.getByRole('menuitemcheckbox', { name: 'Read-only for others' }).click();
   await expect
     .poll(async () => {
       const g = await priya.getGuide(open.id);

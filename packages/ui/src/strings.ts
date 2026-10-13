@@ -445,6 +445,16 @@ export const strings = {
     none: 'No guides yet.',
     noRuns: 'No Guide Me or Run for me runs yet.',
   },
+  about: {
+    button: 'About',
+    title: 'About ShowSteps',
+    version: (v: string) => `Version ${v}`,
+    privacy:
+      'Everything stays on this computer: no account, no uploads, no tracking. Guides go only where you save or send them.',
+    licences:
+      'ShowSteps is open source under the MIT licence. It uses the Funnel Sans and Funnel Display fonts under the SIL Open Font License 1.1.',
+    licencesLink: 'Licences',
+  },
   settings: {
     title: 'Settings',
     button: 'Settings',

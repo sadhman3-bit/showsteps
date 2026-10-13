@@ -44,6 +44,8 @@ export interface LibraryProps {
   onSettings?: () => void;
   /** Offered when the library is empty: start recording (opens the side panel). */
   onStartCapture?: () => void;
+  /** Open the About dialog. */
+  onAbout?: () => void;
 }
 
 type Modal =
@@ -64,6 +66,7 @@ export function Library({
   onInsights,
   onSettings,
   onStartCapture,
+  onAbout,
 }: LibraryProps) {
   const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -212,6 +215,11 @@ export function Library({
         {onSettings ? (
           <Button variant="ghost" onClick={onSettings}>
             <Icon name="settings" /> {strings.settings.button}
+          </Button>
+        ) : null}
+        {onAbout ? (
+          <Button variant="ghost" onClick={onAbout}>
+            <Icon name="help" /> {strings.about.button}
           </Button>
         ) : null}
       </aside>

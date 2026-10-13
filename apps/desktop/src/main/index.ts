@@ -17,6 +17,7 @@ import {
 import { mkdirSync } from 'node:fs';
 import { readFile, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { BridgeServer } from './bridge';
 import { DesktopGuide, type OverlayView } from './guide';
 import { UiaHelper } from './helper';
@@ -161,10 +162,10 @@ function updateController(state: DesktopCaptureState): void {
   if (!controller || controller.isDestroyed()) {
     const area = screen.getPrimaryDisplay().workArea;
     controller = new BrowserWindow({
-      width: 360,
-      height: 56,
-      x: area.x + area.width - 380,
-      y: area.y + area.height - 76,
+      width: 520,
+      height: 64,
+      x: area.x + area.width - 540,
+      y: area.y + area.height - 84,
       frame: false,
       resizable: false,
       alwaysOnTop: true,
@@ -328,6 +329,13 @@ function showMain(hash = ''): void {
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
     });
     mainWindow.setContentProtection(true);
+    // Links never open app windows: web pages go to the browser, the licences to the viewer.
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:/i.test(url)) void shell.openExternal(url);
+      else if (url.startsWith('file:') && url.includes('/licenses/'))
+        void shell.openPath(fileURLToPath(url));
+      return { action: 'deny' };
+    });
     mainWindow.once('ready-to-show', () => mainWindow?.show());
     void mainWindow.loadFile(join(renderer, 'index.html'), hash ? { hash: hash.slice(1) } : {});
     mainWindow.on('close', (e) => {

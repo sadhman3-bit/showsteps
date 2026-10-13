@@ -22,6 +22,7 @@
     "snapshot:demo": "node scripts/snapshot-demo.mjs",
     "brand": "node brand/build.mjs",
     "export-fonts": "node scripts/export-fonts.mjs",
+    "notices": "node scripts/notices.mjs",
     "make:samples": "node scripts/make-samples.mjs",
     "store:images": "node scripts/playwright.mjs test --project=store",
     "design:shots": "node scripts/playwright.mjs test --project=design",

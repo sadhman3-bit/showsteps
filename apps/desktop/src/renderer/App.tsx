@@ -1,10 +1,12 @@
 import { exportGuideArchive, importGuideArchive, type Guide } from '@showsteps/core';
 import {
+  AboutDialog,
   Button,
   Dialog,
   GuideEditor,
   GuideView,
   Icon,
+  IconButton,
   InputModeSelect,
   Insights,
   applyTheme,
@@ -14,7 +16,9 @@ import {
   detectAi,
   strings,
 } from '@showsteps/ui';
+import { LOCKUP_SVG } from '@showsteps/ui/brand';
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import desktopPackage from '../../package.json';
 import {
   api,
   ipcStore,
@@ -23,6 +27,8 @@ import {
   type CaptureView,
   type DesktopSettingsView,
 } from './api';
+
+const APP_VERSION: string = desktopPackage.version;
 
 type Route =
   | { page: 'library' }
@@ -51,6 +57,7 @@ export function App() {
   const [route, setRoute] = useState<Route>(() => parseRoute(location.hash));
   const [settings, setSettings] = useState<DesktopSettingsView>();
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [aiAvailable, setAiAvailable] = useState(false);
   const [notice, setNotice] = useState('');
   const libraryVersion = useLibraryVersion();
@@ -101,6 +108,12 @@ export function App() {
 
   const bar = (
     <header class="ss-desktopbar">
+      <span
+        class="ss-lockup ss-desktopbar__brand"
+        role="img"
+        aria-label={strings.app.name}
+        dangerouslySetInnerHTML={{ __html: LOCKUP_SVG }}
+      />
       {capture.status === 'idle' ? (
         <Button variant="primary" onClick={() => void api().invoke('capture:start')}>
           <Icon name="record" /> {d.record}
@@ -143,8 +156,17 @@ export function App() {
       >
         {bridge.connected ? d.connected : d.notConnected}
       </span>
+      <IconButton icon="help" label={strings.about.title} onClick={() => setShowAbout(true)} />
     </header>
   );
+
+  const aboutDialog = showAbout ? (
+    <AboutDialog
+      version={APP_VERSION}
+      licencesUrl="./licenses/NOTICES.txt"
+      onClose={() => setShowAbout(false)}
+    />
+  ) : null;
 
   const settingsDialog =
     showSettings && settings ? (
@@ -229,6 +251,7 @@ export function App() {
       ) : null}
       {body}
       {settingsDialog}
+      {aboutDialog}
     </div>
   );
 }

@@ -784,3 +784,34 @@ kbd,
   width: 100%;
   height: 100%;
 }
+
+/* ---------- About ---------- */
+
+.ss-about p {
+  margin: 0 0 var(--ss-space-3);
+}
+
+.ss-about__band {
+  position: relative;
+  height: 120px;
+  margin: 0 0 var(--ss-space-6);
+  overflow: hidden;
+  border-radius: var(--ss-radius);
+}
+
+.ss-about__lockup {
+  position: absolute;
+  right: var(--ss-space-4);
+  bottom: var(--ss-space-4);
+  height: 22px;
+  padding: 10px 14px;
+  border-radius: var(--ss-radius-pill);
+  background: var(--ss-surface);
+  color: var(--ss-text);
+}
+
+.ss-about__lockup svg {
+  display: block;
+  width: auto;
+  height: 100%;
+}

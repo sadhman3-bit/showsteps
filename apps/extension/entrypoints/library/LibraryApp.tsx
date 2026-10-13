@@ -1,6 +1,7 @@
 import { stepNumbers, toPlainText } from '@showsteps/core';
 import type { Guide } from '@showsteps/core';
 import {
+  AboutDialog,
   GuideEditor,
   GuideView,
   Insights,
@@ -79,6 +80,7 @@ export function LibraryApp() {
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => applyTheme(settings.theme), [settings.theme]);
   const [aiAvailable, setAiAvailable] = useState(false);
@@ -333,7 +335,15 @@ export function LibraryApp() {
         onInsights={() => go('#/insights')}
         onSettings={() => setShowSettings(true)}
         onStartCapture={openSidePanel}
+        onAbout={() => setShowAbout(true)}
       />
+      {showAbout ? (
+        <AboutDialog
+          version={browser.runtime.getManifest().version}
+          licencesUrl="/licenses/NOTICES.txt"
+          onClose={() => setShowAbout(false)}
+        />
+      ) : null}
       {settingsDialog}
     </>
   );

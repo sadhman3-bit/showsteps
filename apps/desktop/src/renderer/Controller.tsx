@@ -1,4 +1,4 @@
-import { strings } from '@showsteps/ui';
+import { Icon, strings } from '@showsteps/ui';
 import { api, usePushed, type CaptureView } from './api';
 
 const c = strings.capture;
@@ -19,33 +19,35 @@ export function Controller() {
       aria-label={strings.desktop.controllerLabel}
     >
       <span class="ss-ctl__grip" aria-hidden="true">
-        ⋮⋮
+        <Icon name="drag" size={18} />
       </span>
       <span class="ss-ctl__dot" aria-hidden="true" />
       <span class="ss-ctl__status">
         <strong>{paused ? c.paused : c.recording}</strong> <span>{c.steps(state.stepCount)}</span>
       </span>
-      <button type="button" onClick={() => control(paused ? 'resume' : 'pause')}>
-        {paused ? c.resume : c.pause}
-      </button>
       <button
         type="button"
-        onClick={() => control('delete-last')}
-        title={c.deleteLast}
-        aria-label={c.deleteLast}
+        class="icon-only"
+        onClick={() => control(paused ? 'resume' : 'pause')}
+        title={paused ? c.resume : c.pause}
+        aria-label={paused ? c.resume : c.pause}
       >
-        ↶
+        <Icon name={paused ? 'play' : 'pause'} size={18} />
+      </button>
+      <button type="button" onClick={() => control('delete-last')}>
+        <Icon name="undo" size={18} /> {c.deleteLast}
       </button>
       <button type="button" class="primary" onClick={() => control('finish')}>
-        {c.finish}
+        <Icon name="finish" size={18} /> {c.finish}
       </button>
       <button
         type="button"
+        class="icon-only"
         onClick={() => control('cancel')}
-        title={c.cancel}
-        aria-label={c.cancel}
+        title={c.cancelRecording}
+        aria-label={c.cancelRecording}
       >
-        ×
+        <Icon name="x" size={18} />
       </button>
     </div>
   );

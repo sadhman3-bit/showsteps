@@ -1,6 +1,7 @@
 export { Button, IconButton } from './Button.js';
 export type { ButtonProps, IconButtonProps } from './Button.js';
 export { EmptyState } from './components/EmptyState.js';
+export { AboutDialog } from './components/AboutDialog.js';
 export { Chip } from './components/Chip.js';
 export { Menu, type MenuItem } from './components/Menu.js';
 export { RipplePattern, TrailPattern } from './patterns/Patterns.js';
