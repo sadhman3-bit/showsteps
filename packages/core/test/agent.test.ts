@@ -188,6 +188,7 @@ describe('Agent Pack (U2)', () => {
     expect(name).toBe('create-a-supplier-invoice-in-ledgerline');
     expect(Object.keys(files).sort()).toEqual(
       [
+        'AGENTS.md',
         'SKILL.md',
         ...Array.from(
           { length: 17 },
@@ -206,6 +207,18 @@ describe('Agent Pack (U2)', () => {
     expect(skill).toContain('| `{{password}}` | Password | yes |');
     expect(skill).toContain('inside iframe `iframe[title="Cost centre lookup"]`');
     expect(skill).toContain('On failure:');
+    // Both kinds of agent get directions: browser automation and computer use.
+    expect(skill).toContain('## How it runs');
+    expect(skill).toContain(
+      '### Browser automation (Playwright, Playwright MCP, GitHub Copilot coding agent)',
+    );
+    expect(skill).toContain('### Computer use (screenshots, pointer and keyboard)');
+    expect(skill).toMatch(
+      /On screen: about \d+% across and \d+% down the screen .*; see `assets\/screenshots\/step-\d\d\.png`/,
+    );
+    const agents = strFromU8(files['AGENTS.md']!);
+    expect(agents).toContain('`SKILL.md` has every step');
+    expect(agents).not.toMatch(/\byou\b/i);
     // A callout sits between the steps it was written between.
     expect(skill).toMatch(
       /Type 1280\.50[^]*> Note: Enter the amount including GST[^]*9\. Select AUD/,

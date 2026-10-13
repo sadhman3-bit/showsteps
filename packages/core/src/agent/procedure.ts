@@ -68,6 +68,26 @@ export interface ProcedureStep {
   /** No reliable element information: only the screenshot (and OCR text) show the target. */
   visualOnly: boolean;
   timeoutMs: number;
+  /**
+   * Where the target was on the recorded screen, as fractions (0 to 1) of the screenshot's
+   * width and height: for agents that work from screenshots and the pointer.
+   */
+  screen?: { x: number; y: number; w: number; h: number };
+}
+
+const frac = (n: number) => Math.round(n * 1000) / 1000;
+
+function screenBox(step: Step): ProcedureStep['screen'] {
+  // The Action Box is in the pixels of the step's screenshot (the one the pack ships).
+  const box = step.human.actionBox;
+  const shot = step.human.screenshot;
+  if (!box || !shot || shot.width <= 0 || shot.height <= 0) return undefined;
+  return {
+    x: frac(box.x / shot.width),
+    y: frac(box.y / shot.height),
+    w: frac(box.w / shot.width),
+    h: frac(box.h / shot.height),
+  };
 }
 
 export interface Procedure {
@@ -174,6 +194,7 @@ export function toProcedure(guide: Guide): Procedure {
       confirm: b.agent.confirm,
       visualOnly: b.agent.visualOnly,
       timeoutMs: b.agent.timeoutMs,
+      ...(screenBox(b) ? { screen: screenBox(b) } : {}),
     });
     notes = [];
   }

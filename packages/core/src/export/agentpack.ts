@@ -109,7 +109,18 @@ function inputLine(step: ProcedureStep, p: Procedure): string | undefined {
   return input.value !== undefined ? `Input: ${code(input.value)} (fixed)` : undefined;
 }
 
-function stepSection(step: ProcedureStep, p: Procedure, compact: boolean): string[] {
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+/** Where the target was on the recorded screen, for agents working from screenshots. */
+export function describeScreen(step: ProcedureStep): string | undefined {
+  const b = step.screen;
+  if (!b) return undefined;
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  return `about ${pct(cx)} across and ${pct(cy)} down the screen (highlighted box ${pct(b.x)}–${pct(b.x + b.w)} across, ${pct(b.y)}–${pct(b.y + b.h)} down)`;
+}
+
+function stepSection(step: ProcedureStep, p: Procedure, compact: boolean, shot?: string): string[] {
   const where =
     step.app.kind === 'web'
       ? step.action === 'navigate'
@@ -129,6 +140,8 @@ function stepSection(step: ProcedureStep, p: Procedure, compact: boolean): strin
   }
   if (step.description) sub.push(step.description.replace(/\n+/g, ' '));
   if (step.target) sub.push(`Target: ${describeTarget(step.target)}`);
+  const screen = describeScreen(step);
+  if (screen) sub.push(`On screen: ${screen}${shot ? `; see ${code(shot)}` : ''}`);
   const input = inputLine(step, p);
   if (input) sub.push(input);
   if (step.key) sub.push(`Key: ${code(step.key)}`);
@@ -143,11 +156,61 @@ function stepSection(step: ProcedureStep, p: Procedure, compact: boolean): strin
 }
 
 /** SKILL.md: frontmatter, overview, variables, steps and the files in the pack. */
-export function skillMarkdown(p: Procedure, name: string, screenshots: boolean): string {
-  const full = skillMarkdownWith(p, name, screenshots, false);
+export function skillMarkdown(
+  p: Procedure,
+  name: string,
+  screenshots: boolean,
+  shots: ReadonlyMap<string, string> = new Map(),
+): string {
+  const full = skillMarkdownWith(p, name, screenshots, false, shots);
   return full.split('\n').length < SKILL_MD_MAX_LINES
     ? full
-    : skillMarkdownWith(p, name, screenshots, true);
+    : skillMarkdownWith(p, name, screenshots, true, shots);
+}
+
+/**
+ * How to carry the procedure out, for the two kinds of agent that use packs: browser
+ * automation (Playwright, Playwright MCP, the GitHub Copilot coding agent) and computer use
+ * (screenshots, pointer and keyboard).
+ */
+function howToRun(p: Procedure, screenshots: boolean): string[] {
+  const web = p.steps.some((s) => s.app.kind === 'web');
+  const desktop = p.steps.some((s) => s.app.kind !== 'web');
+  const envs = p.variables.map((v) => `${envName(v.name)}=…`).join(' ');
+  const out = ['## How it runs', ''];
+  out.push(
+    '1. Steps run in order. Each step’s **Expected result** appears before the next step starts; when it does not appear within the step’s time limit, the step’s **On failure** rule applies.',
+    '2. Steps marked **CONFIRM** wait for a person to approve them. An agent never approves them itself.',
+    '3. Variables without a value come from the person running the procedure. Values are never invented, and sensitive values are never written to files, logs or messages.',
+    '4. Elements are found by role and name first, then label, placeholder, test id and visible text; CSS selectors come last, because page IDs and classes can change between visits.',
+    '5. When the screen does not match the step (another page, an error, a sign-in prompt), the run stops and reports what is on screen.',
+    '',
+  );
+  if (web) {
+    out.push(
+      '### Browser automation (Playwright, Playwright MCP, GitHub Copilot coding agent)',
+      '',
+      `- The replay does every web step: \`npx playwright test scripts/replay.spec.ts\`${envs ? `, with ${code(envs)} set` : ''}. It stops before **CONFIRM** steps unless the person sets \`SHOWSTEPS_ALLOW_CONFIRM=1\`.`,
+      '- Step by step, each **Target** maps to `getByRole(role, { name })`, or `getByLabel`, `getByPlaceholder`, `getByTestId` and `getByText`, entering any iframes and shadow roots in the order listed. `references/procedure.json` has every selector, best first.',
+      '- Expected results are awaited with web-first assertions (such as `expect(page).toHaveURL(...)` or `expect(locator).toBeVisible()`), not fixed delays.',
+      '',
+    );
+  }
+  out.push(
+    '### Computer use (screenshots, pointer and keyboard)',
+    '',
+    '- A screenshot before each step shows the screen; the target is the element with the visible text or label given in **Target**.',
+    `- **On screen** gives where the target was when recorded, as a share of the screen’s width and height${screenshots ? `; the picture in \`assets/screenshots/\` shows it in a highlighted box` : ''}. Layouts shift with window size, so it shows where to look; the click goes to the element actually on screen.`,
+    '- Clicks go to the centre of the element. Typing steps click the field first and select any existing text before typing.',
+    '- A screenshot after each action is compared with the **Expected result** before the next step.',
+    ...(desktop
+      ? [
+          '- Windows app steps name the program, the window and the control (UI Automation type, name and automation id).',
+        ]
+      : []),
+    '',
+  );
+  return out;
 }
 
 function skillMarkdownWith(
@@ -155,6 +218,7 @@ function skillMarkdownWith(
   name: string,
   screenshots: boolean,
   compact: boolean,
+  shots: ReadonlyMap<string, string>,
 ): string {
   const out = [
     '---',
@@ -170,6 +234,7 @@ function skillMarkdownWith(
     `This procedure has ${p.steps.length} steps. The same steps, with every way to find each element, are in \`references/procedure.json\`; \`scripts/replay.spec.ts\` replays the web steps with Playwright.`,
     '',
   );
+  out.push(...howToRun(p, screenshots));
   if (p.preconditions.length) {
     out.push('## Before starting', '');
     for (const c of p.preconditions) out.push(`- ${c}`);
@@ -199,16 +264,39 @@ function skillMarkdownWith(
     }
     // Callouts sit where the author wrote them: between the steps, not inside one.
     for (const n of step.notes ?? []) out.push(`> Note: ${n.replace(/\n+/g, ' ')}`, '');
-    out.push(...stepSection(step, p, compact), '');
+    out.push(...stepSection(step, p, compact, shots.get(step.id)), '');
   }
   if (p.success) out.push('## Done when', '', p.success, '');
   out.push('## Files', '');
   out.push('- `references/procedure.json`: the full structured procedure (ShowSteps schema v1).');
   out.push('- `scripts/replay.spec.ts`: Playwright replay of the web steps.');
+  out.push('- `AGENTS.md`: the same rules in short, for agents that read it first.');
   if (screenshots)
     out.push('- `assets/screenshots/step-NN.png`: what the screen looked like at each step.');
   out.push('');
   return out.join('\n');
+}
+
+/**
+ * AGENTS.md: the rules in a few lines, for agents that look for it in the folder they work in
+ * (the GitHub Copilot coding agent and other coding agents read the nearest AGENTS.md).
+ */
+export function agentsMarkdown(p: Procedure): string {
+  const confirms = p.steps.filter((s) => s.confirm).map((s) => s.number);
+  return [
+    `# ${p.title}: agent notes`,
+    '',
+    'This folder holds a recorded procedure. `SKILL.md` has every step and is the one to read before acting.',
+    '',
+    '- Steps run in order; each step’s expected result appears before the next one starts.',
+    `- ${confirms.length ? `Step${confirms.length > 1 ? 's' : ''} ${confirms.join(', ')} (marked CONFIRM) wait` : 'Steps marked CONFIRM wait'} for a person’s approval.`,
+    '- Missing variable values come from the person running it; none are invented and sensitive ones are never stored.',
+    '- Elements are found by role and name, then label, test id and text; CSS selectors last.',
+    '- Browser agents: `npx playwright test scripts/replay.spec.ts` replays the web steps.',
+    '- Screen agents: each step’s “On screen” line and `assets/screenshots/` show where to look.',
+    '- When the screen does not match a step, the run stops and reports what is on screen.',
+    '',
+  ].join('\n');
 }
 
 export interface AgentPackOptions {
@@ -224,22 +312,23 @@ export function agentPackFiles(
   const procedure = toProcedure(input.guide);
   const name = skillName(input.guide.title);
   const withShots = options.screenshots !== false && input.images.size > 0;
-  const files: Record<string, Uint8Array> = {
-    'SKILL.md': strToU8(skillMarkdown(procedure, name, withShots)),
-    'references/procedure.json': strToU8(`${procedureJson(procedure)}\n`),
-    'scripts/replay.spec.ts': strToU8(replaySpec(procedure)),
-  };
+  const files: Record<string, Uint8Array> = {};
+  const shots = new Map<string, string>();
   if (withShots) {
     const width =
       String(procedure.steps.length).length < 2 ? 2 : String(procedure.steps.length).length;
     for (const step of procedure.steps) {
       const image = input.images.get(step.id);
-      if (image)
-        files[
-          `assets/screenshots/step-${String(step.number).padStart(width, '0')}.${extensionFor(image)}`
-        ] = image.bytes;
+      if (!image) continue;
+      const path = `assets/screenshots/step-${String(step.number).padStart(width, '0')}.${extensionFor(image)}`;
+      files[path] = image.bytes;
+      shots.set(step.id, path);
     }
   }
+  files['SKILL.md'] = strToU8(skillMarkdown(procedure, name, withShots, shots));
+  files['AGENTS.md'] = strToU8(agentsMarkdown(procedure));
+  files['references/procedure.json'] = strToU8(`${procedureJson(procedure)}\n`);
+  files['scripts/replay.spec.ts'] = strToU8(replaySpec(procedure));
   return { name, files };
 }
 

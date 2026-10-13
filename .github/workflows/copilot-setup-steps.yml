@@ -1,0 +1,36 @@
+# Prepares the GitHub Copilot coding agent's environment before it starts work on this repo:
+# dependencies installed, packages built and Playwright's Chromium ready for `pnpm e2e`.
+name: Copilot setup steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+  pull_request:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  # The job name is fixed: the Copilot coding agent runs the job called copilot-setup-steps.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright Chromium
+        run: node scripts/playwright.mjs install chromium --with-deps
