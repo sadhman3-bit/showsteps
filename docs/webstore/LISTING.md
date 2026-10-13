@@ -10,13 +10,14 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 | Store icon (128×128)       | `apps/extension/public/icon/128.png`                                |
 | Screenshots (1280×800)     | `docs/webstore/images/1-record.png`, `2-guide.png`, `3-agent.png`   |
 | Small promo tile (440×280) | `docs/webstore/images/promo-440x280.png`                            |
+| Marquee (1400×560)         | `docs/webstore/images/marquee-1400x560.png`                         |
 | Privacy policy             | `docs/webstore/PRIVACY.md` (needs a public web address; see step 3) |
 
 ## Steps
 
-1. **Developer account.** Sign in at <https://chrome.google.com/webstore/devconsole> with a Google account, pay the one-time registration fee and verify your contact email. For a free, non-commercial extension choose **non-trader** when asked.
+1. **Developer account.** Sign in at <https://chrome.google.com/webstore/devconsole> with a Google account, pay the one-time registration fee and verify your contact email. **Trader or non-trader** (an EU Digital Services Act question): choose **non-trader** only if you publish ShowSteps as a private person, free, with no income from it and not for your employer or business. If a company publishes it, or it is part of your work or business, choose **trader**; the store then shows your business name, address, phone and email publicly. If unsure, ask your employer (your employment contract may give them rights to software you write) or a lawyer before submitting.
 2. **New item.** Click **New item** and upload the `-chrome-web-store.zip`. The store assigns the extension's ID now. Put that ID in `apps/extension/extension-key.json` as `webstoreId` and rebuild the desktop app (`pnpm release`), so the desktop app accepts the store copy as well.
-3. **Privacy policy.** Fill in the contact line in `PRIVACY.md`, then put it somewhere anyone can read it, for example a Google Doc shared as "Anyone with the link can view", or a GitHub page. Paste that address into **Privacy policy URL**.
+3. **Privacy policy.** `PRIVACY.md` must be at a public web address, for example `https://github.com/<you>/showsteps/blob/main/docs/webstore/PRIVACY.md` once the repository is public. Paste that address into **Privacy policy URL**.
 4. **Store listing, Privacy and Distribution tabs.** Copy the fields below.
 5. **Visibility.** Choose **Unlisted**: only people with the link can find and install it. You can make it public later.
 6. **Submit for review.** Review usually takes a few days. Once it is approved, the install link is `https://chromewebstore.google.com/detail/<ID>`.
@@ -41,8 +42,8 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 >
 > PRIVATE BY DESIGN
 > • Everything stays on your computer. No account, no cloud, no tracking.
-> • Passwords, one-time codes and card numbers are never recorded.
-> • Secure Blur finds emails, phone numbers, card, bank and tax numbers in your screenshots so you can blur them before sharing.
+> • Values typed into password, one-time-code and payment-card fields are never stored.
+> • Secure Blur helps you find emails, phone numbers, and card, bank and tax numbers in your screenshots so you can blur them before sharing.
 >
 > EDIT AND SHARE
 > • Reorder steps, add sections, tips and warnings, crop and annotate screenshots.
@@ -51,13 +52,13 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 >
 > GUIDE PEOPLE THROUGH IT
 > • Guide Me shows each step on the real page, one at a time.
-> • Run for me does the steps for you and stops before anything irreversible.
+> • Run for me does the steps for you, and stops at passwords, at steps you mark for confirmation and whenever something unexpected happens.
 > • Pin guides and notes to the pages where they are needed.
 >
 > FOR AUTOMATION
 > • Each guide also holds a precise, machine-readable procedure that automation tools and AI agents can follow, with a ready-made Playwright test.
 >
-> Free and open source (MIT licence).
+> Free and open source (MIT licence). ShowSteps is an independent project and is not affiliated with Google or with any other guide or documentation product.
 
 ## Privacy practices tab
 

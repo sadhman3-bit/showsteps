@@ -1,39 +1,66 @@
 # ShowSteps privacy policy
 
-_Last updated: 12 October 2026_
+_Last updated: 14 October 2026_
 
-ShowSteps is a browser extension (and an optional Windows app) that records a process you perform and turns it into a step-by-step guide.
+ShowSteps is a browser extension, with an optional Windows app, that records a process you perform and turns it into a step-by-step guide. This policy covers both. It is published by the ShowSteps developer (contact below).
 
-## What ShowSteps handles
+## The short version
 
-While **you** are recording, and only then, ShowSteps reads the page you are recording:
+ShowSteps has no servers and no accounts. Nothing you record is sent to the developer or to anyone else. Your guides stay on your computer, or in a folder you choose, until you export or share them yourself.
 
-- screenshots of the visible tab;
-- the clicked or typed-into element (its name, label and position), and what you typed into ordinary fields;
+## What ShowSteps handles, and when
+
+**While you record (and only then)**, ShowSteps reads the tab you are recording:
+
+- screenshots of the visible part of the tab;
+- the element you clicked or typed into (its role, name, label and position on the page);
+- what you type into ordinary fields, so the step can say what to enter;
 - the page's address and title;
-- the positions of words on screen, so you can find and blur sensitive details later.
+- the position of words on screen, so sensitive details can be found and blurred later.
 
-ShowSteps **never stores** what you type into password fields, one-time-code fields or payment card fields.
+**Never stored:** values typed into password fields, one-time-code fields and payment-card fields (fields marked `password`, `one-time-code` or `cc-…`). A value typed into an ordinary text box is recorded like any other text, and anything visible on screen can appear in a screenshot. **Secure Blur** and **Live Blur** help you hide such details; check your screenshots before sharing a guide.
 
-When you use **Guide Me** or **Run for me**, ShowSteps reads the page you are on to find the element each step refers to.
+**While a guide runs** (Guide Me, Run for me, Check every step), ShowSteps reads the page you are on to find the element each step refers to, and Run for me clicks and types on that page for you.
 
-## Where it goes
+**Notes and pins** you add to web pages are stored with the page's address so they can appear there again.
 
-Everything stays on your computer. Guides, screenshots and settings are saved in your browser's own storage on this device, or in a folder you choose. If you turn on the connection to the ShowSteps desktop app, the extension and the app talk to each other directly on this computer.
+**Your name**, if you enter one in Settings (the desktop app suggests your Windows user name), is saved with guides you edit, comments and reactions, so others can see who wrote what when you share a guide or a team folder.
 
-ShowSteps has **no servers and no accounts**. It sends nothing to the developer or to anyone else. It contains no analytics, advertising or tracking. Text recognition (OCR) and the optional AI writing tools run on your device.
+**Usage of guides** (how often a guide was opened, and how far each walkthrough got) is counted on your computer for the Insights page. It is never sent anywhere.
 
-A guide leaves your computer only when **you** export or share it (for example as a PDF, Word or HTML file), and then only to where you put it.
+## Where your data is kept
 
-## Sale and use of data
+- **In the browser:** in the extension's own storage on this device.
+- **In the desktop app:** in `Documents\ShowSteps\Library`, or another folder you choose.
+- **In a team folder, if you set one up** (for example a OneDrive or SharePoint folder): the guides you save there, your comments and reactions, your name and your usage counts for those guides are written to that folder. Everyone with access to the folder can read them. The folder's own service (such as Microsoft OneDrive) handles syncing under its own terms.
+- **Between the extension and the desktop app:** if you turn on the connection, they talk to each other directly on this computer through Chrome's native messaging. Nothing goes over the network.
 
-Your data is not sold, not transferred to third parties, not used for advertising, and not used for any purpose unrelated to making and following guides. It is not used to determine creditworthiness or for lending.
+Text recognition (OCR) runs on your computer with an engine and language data that are part of ShowSteps. The optional AI writing tools are off by default; when turned on, they use the AI model built into Chrome, which runs on your computer.
+
+## When data leaves your computer
+
+Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web page, Agent Pack or `.showsteps` file), saving to a shared folder, or opening a link in a guide. Exports contain the guide's text, screenshots and, in `.showsteps` files, the names saved with it.
+
+## What ShowSteps does not do
+
+- It does not sell, rent or transfer your data to anyone.
+- It does not use your data for advertising, profiling, creditworthiness or lending, or any purpose other than making and following guides.
+- It contains no analytics, advertising or tracking code, and it loads no code from the internet.
 
 ## Your control
 
-- Website access is requested when you first record, not at install, and you can withdraw it in Chrome at any time.
-- You can delete any guide in the library, or everything at once in ShowSteps's Settings ("Delete all ShowSteps data").
-- Removing the extension deletes the data it stored in your browser.
+- Website access is requested when you first record or run a guide, not at install. You can withdraw it in Chrome's extension settings at any time.
+- You can delete any guide, note or comment, or everything at once with Settings → **Delete all ShowSteps data**.
+- Removing the extension removes the data it stored in the browser. Uninstalling the desktop app leaves your library folder in place so your guides are not lost; delete the folder if you no longer want them.
+- Because the developer never receives your data, there is nothing held by the developer to access, correct or delete. Everything is on your computer or in folders you control.
+
+## Children
+
+ShowSteps is a workplace tool and is not directed at children under 13.
+
+## Changes
+
+If this policy changes, the new version will be published at this address with a new date, and the changes will be described in the release notes.
 
 ## Contact
 
