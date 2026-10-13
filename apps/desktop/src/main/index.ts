@@ -453,6 +453,12 @@ void app.whenReady().then(async () => {
   if (process.env.SHOWSTEPS_LIBRARY) settings.libraryPath = process.env.SHOWSTEPS_LIBRARY;
   mkdirSync(settings.libraryPath, { recursive: true });
   mkdirSync(shotDir(), { recursive: true });
+  // Local only: the app's windows never reach the network (this also stops Chromium's own
+  // background requests, such as spell-check dictionary downloads). Links open in the browser.
+  session.defaultSession.webRequest.onBeforeRequest(
+    { urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] },
+    (_details, callback) => callback({ cancel: true }),
+  );
   openStores();
   registerIpc();
 

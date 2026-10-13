@@ -46,6 +46,7 @@ Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web 
 - It does not sell, rent or transfer your data to anyone.
 - It does not use your data for advertising, profiling, creditworthiness or lending, or any purpose other than making and following guides.
 - It contains no analytics, advertising or tracking code, and it loads no code from the internet.
+- It does not use cloud storage. The extension keeps its data in the browser's local storage on this device, never in Chrome Sync, and the desktop app blocks web requests from its own windows.
 
 ## Your control
 

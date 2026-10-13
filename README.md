@@ -20,6 +20,8 @@ ShowSteps works in Chrome and Edge, and in any Windows app through the desktop a
 
 ## Install
 
+The full step-by-step guide, with updating, uninstalling, troubleshooting and keeping everything on your computer, is in **[docs/INSTALL.md](docs/INSTALL.md)**. The short version:
+
 Release files are in `dist/` (build them with `pnpm release`, see [For developers](#for-developers)):
 
 | File                                             | What it is                                                       |
@@ -95,7 +97,7 @@ Desktop apps: press **Ctrl+Alt+R** anywhere to start and finish recording a Wind
 
 ## Privacy
 
-ShowSteps makes no network requests of its own: its fonts and icons are bundled, and a test checks that its pages load nothing from the internet. The extension talks to the desktop app over Windows native messaging on the same computer. Exports are files you choose where to put. The OCR engine and its English model ship inside both apps, so nothing is downloaded at run time.
+ShowSteps makes no network requests of its own: its fonts and icons are bundled, a test checks that its pages load nothing from the internet, and the desktop app blocks every web request from its own windows. The extension never uses Chrome Sync storage, so nothing is copied to your Google account. The extension talks to the desktop app over Windows native messaging on the same computer. Exports are files you choose where to put. The OCR engine and its English model ship inside both apps, so nothing is downloaded at run time.
 
 ## For developers
 
