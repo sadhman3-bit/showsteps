@@ -16,7 +16,7 @@ ShowSteps works in Chrome and Edge, and in any Windows app through the desktop a
 | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | ![A guide with numbered steps and highlighted screenshots](docs/webstore/images/2-guide.png) | ![The Agent view: targets, inputs and checks for each step](docs/webstore/images/3-agent.png) |
 
-**Local-first and free.** No accounts, no servers, no telemetry, no feature gates, no watermarks. Guides stay on your computer or in a folder you choose, such as one synced with OneDrive or SharePoint. Optional AI features use the AI built into Chrome, on your computer, and are off by default. Passwords, one-time codes and card fields are never stored. MIT licence.
+**Local-first and free.** No accounts, no servers, no telemetry, no feature gates, no watermarks. Guides stay on your computer or in a folder you choose, such as one synced with OneDrive or SharePoint. Optional AI features use the AI built into Chrome, on your computer, and are off by default. Passwords, one-time codes and card fields are never stored. Free for non-commercial use.
 
 ## Install
 
@@ -153,6 +153,8 @@ Brand files (logo, wordmark, patterns) are in `brand/`; `pnpm brand` regenerates
 
 ## Licence
 
-ShowSteps is under the [MIT licence](LICENSE). It uses the Funnel Sans and Funnel Display fonts (and, for the logo, Hanken Grotesk and Instrument Serif) under the SIL Open Font License 1.1, and open-source packages under their own licences: see `licenses/NOTICES.txt` in either app (`pnpm notices` regenerates it).
+ShowSteps is **free for personal and other non-commercial use** under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may download, use, study and change it, and share it with others for non-commercial purposes. You may not use it, or anything made from it, for commercial purposes: for example selling it, charging for it, bundling it into a paid product or service, or using it in the work of a business. Charities, schools, public research organisations and government bodies may use it. For commercial use, contact the author for a separate licence.
 
-"ShowSteps" and its logo identify this project. The name and logo are not covered by the MIT licence: a fork that changes the software should use its own name.
+ShowSteps uses the Funnel Sans and Funnel Display fonts (and, for the logo, Hanken Grotesk and Instrument Serif) under the SIL Open Font License 1.1, and open-source packages under their own licences: see `licenses/NOTICES.txt` in either app (`pnpm notices` regenerates it).
+
+"ShowSteps" and its logo identify this project. The name and logo are not covered by the licence: a fork that changes the software should use its own name.

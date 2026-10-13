@@ -26,7 +26,7 @@ Resume from the first unchecked item. Each milestone ends with build, lint, test
 - [x] Demo app with every awkward feature from section 10, verified by Playwright
 - [x] e2e harness that loads the unpacked extension into Chromium
 - [x] CI workflow (`windows-latest` + `ubuntu-latest`)
-- [x] `docs/DEVELOPING.md`, `PARITY.md`, `docs/DECISIONS.md`, `docs/MANUAL_TESTS.md`, `README.md`, MIT `LICENSE`
+- [x] `docs/DEVELOPING.md`, `PARITY.md`, `docs/DECISIONS.md`, `docs/MANUAL_TESTS.md`, `README.md`, `LICENSE` (PolyForm Noncommercial 1.0.0; was MIT)
 
 **Acceptance:** `pnpm i && pnpm build && pnpm test` pass; `pnpm lint` passes; `pnpm e2e` passes (5 tests); `pnpm demo` serves the app on <http://localhost:5173>.
 
@@ -169,9 +169,9 @@ Fixes found while testing:
 - Extension capture: screenshot encoding takes 1.5–2.5 s per step on a busy machine before the step appears (the step still lands in order). Look at faster encoding in M9's performance pass.
 - Secure Blur reads words only from the top frame of a web page at capture; a picture with iframe text can be re-read with OCR by deleting its word file (no button for that yet).
 
-## Polish (POLISH_PLAN.md)
+## Polish
 
-- [x] P0: finish notification (local tooling, Stop hook in local tooling), branch `polish`, "before" screenshots in `docs/design/before/` (`DESIGN_OUT=before pnpm design:shots`)
+- [x] P0: branch `polish`, "before" screenshots in `docs/design/before/` (`DESIGN_OUT=before pnpm design:shots`)
 - [x] P1: rename to ShowSteps (`@showsteps/*`, `--ss-`/`ss-`, `.showsteps`, `com.showsteps.host`, `app.showsteps.desktop`; compatibility for `.trailmark` imports, `trailmark-procedure`, the old library folder and the old native host keys)
 - [x] P2: tokens (`--ss-*`, Pink and Ink, light/dark/chrome; TypeScript copy in core/src/tokens.ts), bundled Funnel fonts (OFL), components (Button sizes and variants, IconButton, form controls, checkbox/toggle, segmented, badge, card, callout, dialog, menu, tooltip, toast, empty state, chip, key cap, disclosure), icon set, Ripple and Trail patterns; contrast, token-sync and no-hard-coded-colour tests. Also restyled the on-page toolbar (P4) and Guide Me tooltip and spotlight (P5) early, since they held hard-coded colours
 - [x] P3: logo, wordmark, lockup, tile and patterns in `brand/` (text as paths via opentype.js), `pnpm brand` renders the extension icons (16/32 small mark, 48/128 with the ring ~112 px of 128), desktop icon.png and icon.ico, tray icons (with a dark-taskbar variant) and favicons

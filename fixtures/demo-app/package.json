@@ -2,7 +2,7 @@
   "name": "@showsteps/demo-app",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "exports": {
     ".": "./server.mjs",

@@ -1,6 +1,6 @@
 # Parity and upgrades checklist
 
-Copied from BUILD_PROMPT.md sections 5 and 6. Tick an item only when it is implemented **and** covered by an automated test or a manual test in `docs/MANUAL_TESTS.md`. Note the covering test after the item when ticking it.
+The product's feature list. Tick an item only when it is implemented **and** covered by an automated test or a manual test in `docs/MANUAL_TESTS.md`. Note the covering test after the item when ticking it.
 
 ## Part A: Tango feature parity
 

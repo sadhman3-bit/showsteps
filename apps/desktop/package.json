@@ -3,7 +3,7 @@
   "productName": "ShowSteps",
   "version": "1.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "description": "ShowSteps for Windows: record desktop and web steps, edit, export and guide.",
   "type": "module",
   "main": "dist/main/index.cjs",
@@ -28,7 +28,7 @@
   "build": {
     "appId": "app.showsteps.desktop",
     "productName": "ShowSteps",
-    "copyright": "MIT licence",
+    "copyright": "Copyright (c) 2026 Sadhman. Free for non-commercial use (PolyForm Noncommercial 1.0.0).",
     "directories": {
       "output": "release",
       "buildResources": "build"

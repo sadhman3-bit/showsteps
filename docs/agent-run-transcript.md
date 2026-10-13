@@ -2,7 +2,7 @@
 
 **Date:** 11 October 2026
 
-**Agent:** a fresh an AI coding agent subagent with no earlier context. It drove the browser through the desktop app's built-in browser tools: navigate, read the accessibility tree, find, click, type, take screenshots.
+**Agent:** a fresh AI agent with no earlier context. It drove the browser through browser tools: navigate, read the accessibility tree, find, click, type, take screenshots.
 
 **Given:**
 

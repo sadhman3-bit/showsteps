@@ -1,6 +1,6 @@
 # ShowSteps: notes for coding agents
 
-ShowSteps is a local-first how-to guide recorder: a Chrome MV3 extension and a Windows desktop app (Electron), joined by a native messaging bridge. Full working notes are in `docs/DEVELOPING.md`; the product brief is `BUILD_PROMPT.md`, recorded decisions are in `docs/DECISIONS.md`.
+ShowSteps is a local-first how-to guide recorder: a Chrome MV3 extension and a Windows desktop app (Electron), joined by a native messaging bridge. Full working notes (layout and conventions) are in `docs/DEVELOPING.md`; recorded decisions are in `docs/DECISIONS.md`.
 
 ## Commands (repo root, pnpm 10, Node 22)
 

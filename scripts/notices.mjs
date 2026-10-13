@@ -58,7 +58,10 @@ const sections = [];
 const rule = '='.repeat(78);
 const add = (title, body) => sections.push(`${rule}\n${title}\n${rule}\n\n${body.trim()}\n`);
 
-add('ShowSteps (MIT License)', readFileSync(join(root, 'LICENSE'), 'utf8'));
+add(
+  'ShowSteps (PolyForm Noncommercial License 1.0.0)',
+  readFileSync(join(root, 'LICENSE'), 'utf8'),
+);
 for (const f of readdirSync(join(root, 'packages/ui/assets/fonts')).filter((f) =>
   f.endsWith('.txt'),
 ))

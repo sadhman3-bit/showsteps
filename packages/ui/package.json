@@ -2,7 +2,7 @@
   "name": "@showsteps/ui",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

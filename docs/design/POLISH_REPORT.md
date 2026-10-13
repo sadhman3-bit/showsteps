@@ -27,7 +27,7 @@ Store images (`docs/webstore/images/`): three 1280×800 screenshots, the 440×28
 
 ## What changed, by phase
 
-- **P0:** finish notification (local tooling), the `polish` branch and the "before" screenshots.
+- **P0:** the `polish` branch and the "before" screenshots.
 - **P1:** renamed to ShowSteps everywhere: packages `@showsteps/*`, CSS `--ss-`, files `.showsteps`, native host `com.showsteps.host`, app id `app.showsteps.desktop`. Old `.trailmark` files still import, old procedures still read, the old desktop library moves on first run, and the old native host keys are removed.
 - **P2:** design tokens (light, dark and the navy controls over other apps) in `tokens.css`, mirrored in `packages/core/src/tokens.ts`; bundled Funnel fonts; the component set (buttons in five variants and three sizes, icon buttons with tooltips, form controls, checkbox and toggle, segmented control, badges, cards, callouts with icons, dialogs, menus, toasts, empty states, chips, key caps); a 24-px icon set; the Ripple and Trail patterns. Tests check every text pair for WCAG AA contrast and fail on any hard-coded colour.
 - **P3:** the logo, wordmark, lockup and app tile in `brand/` (text turned into paths); `pnpm brand` renders every icon: extension, desktop, installer, tray (with a dark-taskbar version) and favicons.

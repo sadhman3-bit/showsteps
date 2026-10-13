@@ -452,7 +452,7 @@ export const strings = {
     privacy:
       'Everything stays on this computer: no account, no uploads, no tracking. Guides go only where you save or send them.',
     licences:
-      'ShowSteps is open source under the MIT licence. It uses the Funnel Sans and Funnel Display fonts under the SIL Open Font License 1.1.',
+      'ShowSteps is free for personal and other non-commercial use under the PolyForm Noncommercial License 1.0.0; commercial use needs a separate licence from the author. It uses the Funnel Sans and Funnel Display fonts under the SIL Open Font License 1.1.',
     licencesLink: 'Licences',
   },
   settings: {

@@ -58,7 +58,7 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 > FOR AUTOMATION
 > • Each guide also holds a precise, machine-readable procedure that automation tools and AI agents can follow, with a ready-made Playwright test.
 >
-> Free and open source (MIT licence). ShowSteps is an independent project and is not affiliated with Google or with any other guide or documentation product.
+> Free for personal and non-commercial use (PolyForm Noncommercial License 1.0.0); the source code is available. ShowSteps is an independent project and is not affiliated with Google or with any other guide or documentation product.
 
 ## Privacy practices tab
 

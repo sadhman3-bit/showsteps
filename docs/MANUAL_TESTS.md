@@ -291,7 +291,7 @@ In **Edit**, on step 7 click **Ask every run**, then start **Run for me** from t
 
 ### MT-M7-3 Agent Pack with a real agent
 
-Download **Share → Agent Pack** and unzip it. Give the folder to an AI agent that can drive a browser, such as an AI coding agent with a Playwright MCP server or a browser tool, and ask it to follow `SKILL.md` against the demo app.
+Download **Share → Agent Pack** and unzip it. Give the folder to an AI agent that can drive a browser, for example one with a Playwright MCP server or a browser tool, and ask it to follow `SKILL.md` against the demo app.
 
 **Expected:** it completes the flow and pauses for approval at "Submit invoice". See `docs/agent-run-transcript.md` for a recorded run.
 
