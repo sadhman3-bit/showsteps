@@ -74,10 +74,12 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
 
   return (
     <main class="ss-sidepanel ss-guidance">
-      <h1 class="ss-brand">
-        <Icon name="trail" size={22} /> {run ? g.runForMe : g.guideMe}
-      </h1>
-      <p class="ss-guidance__title">{state.title}</p>
+      <header class="ss-guidance__head">
+        <h1>
+          <Icon name={run ? 'play' : 'trail'} size={20} /> {run ? g.runForMe : g.guideMe}
+        </h1>
+        <p class="ss-guidance__title">{state.title}</p>
+      </header>
 
       {done ? (
         <section class="ss-notice ss-stack" role="status">
@@ -86,8 +88,8 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
           <Button onClick={() => control('stop')}>{strings.library.close}</Button>
         </section>
       ) : (
-        <section class="ss-guidance__now" aria-live="polite">
-          <p class="ss-muted">{g.stepOf(state.index + 1, state.total)}</p>
+        <section class="ss-guidance__now" data-phase={state.phase} aria-live="polite">
+          <p class="ss-guidance__count">{g.stepOf(state.index + 1, state.total)}</p>
           {step ? (
             <p class="ss-guidance__step">
               <RichText value={step.human.title} />
@@ -121,6 +123,13 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
               {g.stop}
             </Button>
           </div>
+          <div
+            class="ss-guidance__progress"
+            aria-hidden="true"
+            style={{
+              width: `${Math.round(((state.index + 1) / Math.max(1, state.total)) * 100)}%`,
+            }}
+          />
           {run ? (
             <div class="ss-guidance__speed">
               <label>
@@ -146,6 +155,8 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
               <label>
                 <input
                   type="checkbox"
+                  class="ss-toggle"
+                  role="switch"
                   checked={state.stepThrough}
                   onChange={(e) =>
                     void guideRequest({
@@ -176,10 +187,11 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
             >
               <button
                 type="button"
-                class="ss-link"
                 onClick={() => void guideRequest({ type: 'guide-goto', index: i })}
               >
-                <span class="ss-guidance__n">{i < state.index || done ? '✓' : i + 1}</span>
+                <span class="ss-guidance__n">
+                  {i < state.index || done ? <Icon name="check" size={14} /> : i + 1}
+                </span>
                 <span>
                   <RichText value={s.human.title} />
                 </span>

@@ -136,9 +136,14 @@ body[data-page='overlay'] {
 
 .ss-ctl button,
 .ss-ovl__card button {
-  padding: 5px 9px;
-  border: 1px solid var(--ss-chrome-line);
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--ss-radius-pill);
+  font-weight: 600;
   background: transparent;
   color: var(--ss-chrome-fg);
   font: inherit;
@@ -147,7 +152,7 @@ body[data-page='overlay'] {
 
 .ss-ctl button:hover,
 .ss-ovl__card button:hover {
-  background: var(--ss-chrome-button-hover);
+  background: var(--ss-chrome-button);
 }
 
 .ss-ctl button:focus-visible,
@@ -158,18 +163,21 @@ body[data-page='overlay'] {
 
 .ss-ctl button.primary,
 .ss-ovl__card button.primary {
-  border-color: var(--ss-chrome-signal);
   background: var(--ss-chrome-signal);
   color: var(--ss-chrome-on-signal);
-  font-weight: 600;
 }
 
-/* ---------- Desktop Guide Me overlay ---------- */
+.ss-ctl button.primary:hover,
+.ss-ovl__card button.primary:hover {
+  background: var(--ss-chrome-step);
+}
+
+/* ---------- Desktop Guide Me overlay (matches the browser's) ---------- */
 
 .ss-ovl__ring {
   position: fixed;
   border: 3px solid var(--ss-chrome-signal);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow:
     0 0 0 6px var(--ss-spot-halo),
     0 0 0 100vmax var(--ss-spot-backdrop);
@@ -178,37 +186,52 @@ body[data-page='overlay'] {
 
 .ss-ovl__card {
   position: fixed;
+  overflow: hidden;
   width: 340px;
-  padding: 12px 14px;
+  padding: 14px 16px 16px;
   border: 1px solid var(--ss-chrome-line);
   border-radius: 12px;
   background: var(--ss-chrome-bg);
   color: var(--ss-chrome-fg);
   box-shadow: var(--ss-shadow-lg);
-  font:
-    14px/1.4 'Segoe UI Variable',
-    'Segoe UI',
-    system-ui,
-    sans-serif;
+  font: 14px/20px var(--ss-font);
 }
 
 .ss-ovl__card p {
   margin: 0 0 6px;
 }
 
-.ss-ovl__count,
+.ss-ovl__count {
+  color: var(--ss-chrome-step);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .ss-ovl__note {
   color: var(--ss-chrome-muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .ss-ovl__title {
-  font-size: 15px;
+  font-weight: 600;
 }
 
 .ss-ovl__row {
   display: flex;
-  gap: 6px;
-  justify-content: flex-end;
-  margin-top: 8px;
+  gap: 4px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.ss-ovl__row .grow {
+  flex: 1;
+}
+
+.ss-ovl__progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--ss-chrome-signal);
 }

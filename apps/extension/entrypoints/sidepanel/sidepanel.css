@@ -207,35 +207,64 @@
 
 /* ---------- Guidance ---------- */
 
+.ss-guidance__head h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-2);
+  margin: 0;
+  color: var(--ss-accent);
+  font: var(--ss-text-h3);
+}
+
+.ss-guidance__head p {
+  margin: var(--ss-space-1) 0 0;
+}
+
 .ss-guidance__title {
   font-weight: 600;
 }
 
 .ss-guidance__now {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ss-space-2);
-  padding: var(--ss-space-3);
+  overflow: hidden;
+  padding: var(--ss-space-4) var(--ss-space-4) var(--ss-space-5);
   border: 1px solid var(--ss-line);
-  border-radius: var(--ss-radius);
+  border-radius: var(--ss-radius-lg);
   background: var(--ss-surface);
+  box-shadow: var(--ss-shadow);
+}
+
+.ss-guidance__now[data-phase='confirm'] {
+  border-color: var(--ss-alert);
+  background: var(--ss-alert-bg);
 }
 
 .ss-guidance__now p {
   margin: 0;
 }
 
+.ss-guidance__count {
+  color: var(--ss-accent);
+  font: var(--ss-text-caption);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .ss-guidance__step {
-  font-size: 1.05rem;
+  font: var(--ss-text-step);
+}
+
+.ss-guidance__phase {
+  color: var(--ss-text-muted);
 }
 
 .ss-guidance__phase[data-phase='failed'],
-.ss-guidance__phase[data-phase='not-found'] {
-  color: var(--ss-alert);
-}
-
+.ss-guidance__phase[data-phase='not-found'],
 .ss-guidance__phase[data-phase='confirm'] {
-  color: var(--ss-warning);
+  color: var(--ss-alert);
   font-weight: 600;
 }
 
@@ -243,6 +272,16 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--ss-space-2);
+  margin-top: var(--ss-space-1);
+}
+
+.ss-guidance__progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--ss-signal);
+  transition: width var(--ss-slow) var(--ss-ease);
 }
 
 .ss-guidance__speed {
@@ -250,15 +289,19 @@
   flex-wrap: wrap;
   gap: var(--ss-space-3);
   align-items: center;
-  font-size: 0.875rem;
+  font: var(--ss-text-small);
 }
 
-.ss-guidance__h {
-  margin: var(--ss-space-2) 0;
-  font-size: 1rem;
+.ss-guidance__speed label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ss-space-2);
 }
 
 .ss-guidance__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -266,18 +309,27 @@
 
 .ss-guidance__list li button {
   display: flex;
-  gap: var(--ss-space-2);
+  align-items: flex-start;
+  gap: var(--ss-space-3);
   width: 100%;
   padding: var(--ss-space-2);
-  border-radius: var(--ss-radius-sm);
+  border: 0;
+  border-radius: var(--ss-radius);
+  background: transparent;
   color: var(--ss-text);
+  font: inherit;
   text-align: start;
-  text-decoration: none;
+  cursor: pointer;
+}
+
+.ss-guidance__list li button:hover {
+  background: var(--ss-surface-2);
 }
 
 .ss-guidance__list li[aria-current='step'] button {
   background: var(--ss-surface);
-  outline: 2px solid var(--ss-accent);
+  box-shadow: inset 0 0 0 2px var(--ss-signal);
+  font-weight: 600;
 }
 
 .ss-guidance__list li.is-done {
@@ -285,10 +337,25 @@
 }
 
 .ss-guidance__n {
+  display: inline-grid;
   flex: none;
-  min-width: 1.6em;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ss-radius-pill);
+  background: var(--ss-surface-2);
   color: var(--ss-text-muted);
-  text-align: end;
+  font: 800 13px/1 var(--ss-font-display);
+}
+
+.ss-guidance__list li[aria-current='step'] .ss-guidance__n {
+  background: var(--ss-accent);
+  color: var(--ss-on-accent);
+}
+
+.ss-guidance__list li.is-done .ss-guidance__n {
+  background: var(--ss-tip-bg);
+  color: var(--ss-tip);
 }
 
 /* While recording: controls stay at the top, the step list scrolls under them. */

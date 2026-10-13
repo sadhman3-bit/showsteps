@@ -38,10 +38,10 @@ export function Overlay() {
         <div
           class="ss-ovl__ring"
           style={{
-            left: `${ring.x - 4}px`,
-            top: `${ring.y - 4}px`,
-            width: `${ring.w + 8}px`,
-            height: `${ring.h + 8}px`,
+            left: `${ring.x - 6}px`,
+            top: `${ring.y - 6}px`,
+            width: `${ring.w + 12}px`,
+            height: `${ring.h + 12}px`,
           }}
         />
       ) : null}
@@ -70,15 +70,21 @@ export function Overlay() {
               {g.back}
             </button>
           ) : null}
+          <button type="button" onClick={() => control('stop')}>
+            {view.phase === 'done' ? strings.library.close : g.stop}
+          </button>
+          <span class="grow" />
           {view.phase !== 'done' ? (
             <button type="button" class="primary" onClick={() => control('next')}>
               {g.didIt}
             </button>
           ) : null}
-          <button type="button" onClick={() => control('stop')}>
-            {view.phase === 'done' ? strings.library.close : g.stop}
-          </button>
         </div>
+        <div
+          class="ss-ovl__progress"
+          aria-hidden="true"
+          style={{ width: `${Math.round((view.number / Math.max(1, view.total)) * 100)}%` }}
+        />
       </div>
     </>
   );

@@ -127,8 +127,9 @@ test('guide health: re-capture a step Guide Me cannot find, keeping the rest (U9
   await panel.getByRole('button', { name: 'Re-capture this step' }).click();
   await expect.poll(() => sw.evaluate(() => __showsteps.recorder.current.status)).toBe('recording');
 
-  // Do the step for real; the capture ends by itself and the guide carries on.
+  // Do the step for real once the capture is on the page; it ends by itself and the guide carries on.
   await page.bringToFront();
+  await expect(page.locator('showsteps-controller').getByRole('toolbar')).toBeVisible();
   await page.waitForTimeout(650);
   await page.getByRole('button', { name: 'New invoice' }).click({ delay: 120 });
   await expect

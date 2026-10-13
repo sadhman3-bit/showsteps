@@ -102,5 +102,6 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   await expect.poll(() => sw.evaluate(() => __showsteps.guidance.current.phase)).toBe('showing');
   await guide.waitForTimeout(800);
   await both([guide], 'guide-me');
+  await both([panel], 'sidepanel-guiding');
   await sw.evaluate(() => __showsteps.guidance.control('stop'));
 });
