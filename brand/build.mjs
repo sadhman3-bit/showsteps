@@ -19,6 +19,7 @@ const INK_LIGHT = '#F5F2FF';
 const PINK = '#FF2E6E';
 const PINK_DARK = '#FF4D82';
 const BLUSH = '#FFF8F9';
+const WHITE = '#FFFFFF';
 
 const serif = opentype.loadSync(`${brand}fonts/InstrumentSerif-Italic.ttf`);
 const grotesk = opentype.loadSync(`${brand}fonts/HankenGrotesk-ExtraBold.woff`);
@@ -59,6 +60,8 @@ const svg = (viewBox, body, extra = '') =>
 
 const marks = {
   mark: mark({ ink: NAVY, pink: PINK, pinkOpacity: 0.6 }),
+  // Icons sit on any toolbar or store background: a white disc keeps the 1 readable on dark ones.
+  'mark-icon': mark({ ink: NAVY, pink: PINK, pinkOpacity: 0.6, fill: WHITE }),
   'mark-dark': mark({ ink: INK_LIGHT, pink: PINK_DARK, pinkOpacity: 0.7 }),
   'mark-small': mark({
     ink: NAVY,
@@ -154,7 +157,7 @@ const write = (path, bytes) => {
 
 const ext = `${root}apps/extension/`;
 const small = (size) => png(cropped(marks['mark-small'], 0.97), size);
-const big = (size) => png(cropped(marks.mark, 112 / 128), size);
+const big = (size) => png(cropped(marks['mark-icon'], 112 / 128), size);
 write(`${ext}public/icon/16.png`, small(16));
 write(`${ext}public/icon/32.png`, small(32));
 write(`${ext}public/icon/48.png`, big(48));
