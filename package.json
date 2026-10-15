@@ -26,7 +26,8 @@
     "make:samples": "node scripts/make-samples.mjs",
     "store:images": "node scripts/playwright.mjs test --project=store",
     "design:shots": "node scripts/playwright.mjs test --project=design",
-    "release": "pnpm build && pnpm --filter @showsteps/desktop dist && node scripts/release.mjs"
+    "release": "pnpm build && pnpm --filter @showsteps/desktop dist && node scripts/release.mjs",
+    "motion": "node scripts/render-motion.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -4,30 +4,31 @@ Local-first how-to guide recorder (Chrome MV3 extension + Windows desktop app, j
 
 ## Commands (run from the repo root)
 
-| What                               | Command                                                                            |
-| ---------------------------------- | ---------------------------------------------------------------------------------- |
-| Install                            | `pnpm install`                                                                     |
-| Build everything                   | `pnpm build`                                                                       |
-| Unit tests (all packages)          | `pnpm test`                                                                        |
-| Typecheck                          | `pnpm typecheck`                                                                   |
-| Lint + format check                | `pnpm lint` (fix formatting with `pnpm format`)                                    |
-| Install Playwright Chromium (once) | `pnpm setup:browsers`                                                              |
-| End-to-end tests (build first)     | `pnpm e2e`                                                                         |
-| Desktop e2e (real mouse/keyboard)  | `pnpm e2e:desktop` (Windows; opens Notepad and a headed Chromium; hands off input) |
-| Desktop app from source            | `pnpm --filter @showsteps/desktop start` (after `pnpm build`)                      |
-| Release files (`dist/`)            | `pnpm release` (extension zip, Web Store zip, installer, SHA256SUMS; builds first) |
-| Chrome Web Store images            | `pnpm store:images` (after `pnpm build`; writes `docs/webstore/images`)            |
-| Desktop installer                  | `pnpm --filter @showsteps/desktop dist` → `apps/desktop/release/*.exe`             |
-| OCR engine files (build does this) | `node scripts/copy-ocr.mjs <app public folder>/ocr` (tesseract.js, offline)        |
-| Windows helpers only               | `pnpm --filter @showsteps/desktop build:native` (built-in csc.exe, no .NET SDK)    |
-| Demo app                           | `pnpm demo` → <http://localhost:5173> (widget on `http://127.0.0.1:5174`)          |
-| Extension dev mode                 | `pnpm --filter @showsteps/extension dev`                                           |
-| One package's tests                | `pnpm --filter @showsteps/core test`                                               |
-| Re-capture demo DOM snapshots      | `pnpm snapshot:demo` (matcher test fixtures in `packages/core/test/fixtures/demo`) |
-| Rebuild the sample guides          | `pnpm make:samples` (records the demo app; writes `apps/extension/public/samples`) |
-| Logo, icons, patterns (brand/)     | `pnpm brand` (after `pnpm build`; writes brand/*.svg, extension and desktop icons) |
-| Design screenshots                 | `pnpm design:shots` (light and dark, into `docs/design/after/`)                    |
-| Stress-test e2e for flakiness      | `node scripts/playwright.mjs test --repeat-each=3`                                 |
+| What                               | Command                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Install                            | `pnpm install`                                                                                   |
+| Build everything                   | `pnpm build`                                                                                     |
+| Unit tests (all packages)          | `pnpm test`                                                                                      |
+| Typecheck                          | `pnpm typecheck`                                                                                 |
+| Lint + format check                | `pnpm lint` (fix formatting with `pnpm format`)                                                  |
+| Install Playwright Chromium (once) | `pnpm setup:browsers`                                                                            |
+| End-to-end tests (build first)     | `pnpm e2e`                                                                                       |
+| Desktop e2e (real mouse/keyboard)  | `pnpm e2e:desktop` (Windows; opens Notepad and a headed Chromium; hands off input)               |
+| Desktop app from source            | `pnpm --filter @showsteps/desktop start` (after `pnpm build`)                                    |
+| Release files (`dist/`)            | `pnpm release` (extension zip, Web Store zip, installer, SHA256SUMS; builds first)               |
+| Chrome Web Store images            | `pnpm store:images` (after `pnpm build`; writes `docs/webstore/images`)                          |
+| Desktop installer                  | `pnpm --filter @showsteps/desktop dist` → `apps/desktop/release/*.exe`                           |
+| OCR engine files (build does this) | `node scripts/copy-ocr.mjs <app public folder>/ocr` (tesseract.js, offline)                      |
+| Windows helpers only               | `pnpm --filter @showsteps/desktop build:native` (built-in csc.exe, no .NET SDK)                  |
+| Demo app                           | `pnpm demo` → <http://localhost:5173> (widget on `http://127.0.0.1:5174`)                        |
+| Extension dev mode                 | `pnpm --filter @showsteps/extension dev`                                                         |
+| One package's tests                | `pnpm --filter @showsteps/core test`                                                             |
+| Re-capture demo DOM snapshots      | `pnpm snapshot:demo` (matcher test fixtures in `packages/core/test/fixtures/demo`)               |
+| Rebuild the sample guides          | `pnpm make:samples` (records the demo app; writes `apps/extension/public/samples`)               |
+| Logo, icons, patterns (brand/)     | `pnpm brand` (after `pnpm build`; writes brand/*.svg, extension and desktop icons)               |
+| Design screenshots                 | `pnpm design:shots` (light and dark, into `docs/design/after/`)                                  |
+| Promo video                        | `pnpm motion` (renders `docs/promo/motion.html` to `docs/promo/showsteps-promo.mp4` and `.webm`) |
+| Stress-test e2e for flakiness      | `node scripts/playwright.mjs test --repeat-each=3`                                               |
 
 Always run Playwright through `scripts/playwright.mjs` (the `e2e` and `setup:browsers` scripts do). It sets `PLAYWRIGHT_BROWSERS_PATH=0` so browsers live in `node_modules`; Chromium will not start from `%LOCALAPPDATA%\ms-playwright` on the owner's machine.
 

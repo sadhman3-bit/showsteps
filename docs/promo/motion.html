@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ShowSteps motion</title>
+    <!-- Promo animation, 1280×720, about 21 s. Open in a browser to watch it loop;
+         `pnpm motion` renders it to docs/promo/showsteps-promo.webm and .mp4. -->
+    <link rel="stylesheet" href="../../packages/ui/src/fonts.css" />
+    <link rel="stylesheet" href="../../packages/ui/src/tokens.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        background: var(--ss-chrome-bg);
+        overflow: hidden;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        font-family: var(--ss-font);
+        color: var(--ss-text);
+      }
+      #stage {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        background: var(--ss-bg);
+        overflow: hidden;
+        flex: none;
+        transform-origin: center;
+      }
+      .abs {
+        position: absolute;
+      }
+      .hide {
+        opacity: 0;
+      }
+
+      /* ---------- Shared pieces ---------- */
+      .caption {
+        left: 64px;
+        top: 48px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-family: var(--ss-font-display);
+        font-weight: 700;
+        font-size: 40px;
+        letter-spacing: -0.01em;
+      }
+      .caption b {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 3px solid var(--ss-text);
+        font-size: 24px;
+        position: relative;
+      }
+      .caption b::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        right: 4px;
+        bottom: 8px;
+        height: 9px;
+        border-radius: 3px;
+        background: var(--ss-signal);
+        opacity: 0.6;
+        z-index: -1;
+      }
+      .window {
+        background: var(--ss-surface);
+        border-radius: 14px;
+        box-shadow: var(--ss-shadow-lg);
+        overflow: hidden;
+      }
+      .titlebar {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        background: var(--ss-surface-2);
+        border-bottom: 1px solid var(--ss-line);
+        font-size: 13px;
+        color: var(--ss-text-muted);
+      }
+      .titlebar i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--ss-line);
+        display: inline-block;
+      }
+      .titlebar span {
+        margin-left: 16px;
+        padding: 4px 14px;
+        border-radius: 999px;
+        background: var(--ss-surface);
+      }
+      .btn {
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 16px;
+      }
+      .btn.primary {
+        background: var(--ss-accent);
+        color: var(--ss-on-accent);
+      }
+      .btn.ghost {
+        border: 1.5px solid var(--ss-line);
+        color: var(--ss-text);
+      }
+      .label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ss-text-muted);
+      }
+      .input {
+        border: 1.5px solid var(--ss-input-border);
+        border-radius: 10px;
+        height: 48px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        font-size: 17px;
+        background: var(--ss-surface);
+      }
+      .typed {
+        display: inline-block;
+        white-space: nowrap;
+        clip-path: inset(0 100% 0 0);
+      }
+      .ring {
+        border: 4px solid var(--ss-signal);
+        border-radius: 14px;
+        pointer-events: none;
+      }
+      .click {
+        width: 64px;
+        height: 64px;
+        margin: -32px 0 0 -32px;
+        border-radius: 50%;
+        border: 4px solid var(--ss-signal);
+        opacity: 0;
+      }
+      .cursor {
+        width: 28px;
+        height: 28px;
+        left: 0;
+        top: 0;
+        z-index: 20;
+        filter: drop-shadow(0 2px 3px rgb(20 16 43 / 0.35));
+      }
+      .thumb {
+        position: relative;
+        border-radius: 8px;
+        background: var(--ss-surface-2);
+        border: 1px solid var(--ss-line);
+        overflow: hidden;
+      }
+      .thumb::before,
+      .thumb::after {
+        content: '';
+        position: absolute;
+        left: 10%;
+        height: 9%;
+        border-radius: 3px;
+        background: var(--ss-line);
+      }
+      .thumb::before {
+        top: 18%;
+        width: 55%;
+      }
+      .thumb::after {
+        top: 36%;
+        width: 75%;
+      }
+      .thumb .hit {
+        position: absolute;
+        border: 2.5px solid var(--ss-signal);
+        border-radius: 6px;
+      }
+
+      /* ---------- Scene 1: logo ---------- */
+      #logo {
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+      #logo .row {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+      }
+      #logo svg {
+        width: 168px;
+        height: 168px;
+      }
+      #word {
+        font-family: var(--ss-font-display);
+        font-weight: 800;
+        font-size: 96px;
+        letter-spacing: -0.02em;
+      }
+      #tagline {
+        margin-top: 28px;
+        font-size: 26px;
+        color: var(--ss-text-muted);
+      }
+
+      /* ---------- Scene 2: recording ---------- */
+      #browser {
+        left: 64px;
+        top: 140px;
+        width: 780px;
+        height: 520px;
+      }
+      .pagehead {
+        left: 32px;
+        top: 64px;
+        font-family: var(--ss-font-display);
+        font-weight: 700;
+        font-size: 28px;
+      }
+      .rows div {
+        height: 14px;
+        border-radius: 4px;
+        background: var(--ss-surface-2);
+        margin-bottom: 18px;
+      }
+      #panel {
+        left: 876px;
+        top: 140px;
+        width: 340px;
+        height: 520px;
+        padding: 16px;
+      }
+      .pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 44px;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: var(--ss-chrome-bg);
+        color: var(--ss-chrome-fg);
+        font-weight: 600;
+        font-size: 15px;
+        position: relative;
+      }
+      .pill .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--ss-chrome-signal);
+      }
+      .count {
+        position: relative;
+        width: 80px;
+        height: 20px;
+      }
+      .count span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+      }
+      .card {
+        left: 16px;
+        width: 308px;
+        height: 96px;
+        border: 1px solid var(--ss-line);
+        border-radius: 12px;
+        background: var(--ss-surface);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        font-size: 15px;
+        line-height: 1.3;
+      }
+      .num {
+        flex: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 14px;
+        background: var(--ss-highlight);
+      }
+      .card .thumb {
+        flex: none;
+        width: 76px;
+        height: 54px;
+        margin-left: auto;
+      }
+
+      /* ---------- Scene 3: the guide ---------- */
+      #guide {
+        left: 250px;
+        top: 128px;
+        width: 780px;
+        height: 540px;
+        padding: 36px 44px;
+      }
+      #guide h2 {
+        font-family: var(--ss-font-display);
+        font-weight: 700;
+        font-size: 34px;
+        position: relative;
+        display: inline-block;
+      }
+      #guide h2 .hl {
+        position: absolute;
+        left: -6px;
+        right: -6px;
+        bottom: 2px;
+        height: 16px;
+        border-radius: 4px;
+        background: var(--ss-highlight);
+        transform-origin: left;
+        transform: scaleX(0);
+        z-index: -1;
+      }
+      .gstep {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-top: 22px;
+        font-size: 19px;
+      }
+      .gstep .thumb {
+        width: 150px;
+        height: 94px;
+        margin-left: auto;
+      }
+      .chips {
+        display: flex;
+        gap: 10px;
+        margin-top: 26px;
+      }
+      .chip {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ss-line);
+        font-weight: 600;
+        font-size: 15px;
+        background: var(--ss-surface);
+      }
+      .chip.accent {
+        border-color: var(--ss-signal);
+        background: var(--ss-highlight);
+      }
+
+      /* ---------- Scene 4: Guide Me ---------- */
+      #guideme {
+        left: 250px;
+        top: 140px;
+        width: 780px;
+        height: 520px;
+      }
+      #spot {
+        left: 64px;
+        top: 356px;
+        width: 216px;
+        height: 64px;
+        border-radius: 14px;
+        box-shadow: 0 0 0 2000px var(--ss-spot-backdrop);
+      }
+      #tip {
+        left: 312px;
+        top: 316px;
+        width: 340px;
+        padding: 18px 20px;
+        border-radius: 14px;
+        background: var(--ss-chrome-bg);
+        color: var(--ss-chrome-fg);
+        box-shadow: var(--ss-shadow-lg);
+      }
+      #tip small {
+        color: var(--ss-chrome-muted);
+        font-weight: 600;
+        font-size: 13px;
+      }
+      #tip p {
+        margin: 6px 0 14px;
+        font-size: 19px;
+        font-weight: 600;
+      }
+      .bar {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--ss-chrome-line);
+        overflow: hidden;
+      }
+      .bar div {
+        height: 100%;
+        width: 100%;
+        background: var(--ss-chrome-signal);
+        transform-origin: left;
+        transform: scaleX(0.66);
+      }
+      #tip .acts {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+        justify-content: flex-end;
+      }
+      #tip .acts span {
+        padding: 8px 14px;
+        border-radius: 9px;
+        font-weight: 600;
+        font-size: 14px;
+        background: var(--ss-chrome-button);
+      }
+      #tip .acts span.go {
+        background: var(--ss-chrome-signal);
+        color: var(--ss-chrome-on-signal);
+      }
+      #done {
+        left: 0;
+        right: 0;
+        top: 600px;
+        display: flex;
+        justify-content: center;
+      }
+      #done span {
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: var(--ss-chrome-bg);
+        color: var(--ss-chrome-fg);
+        font-weight: 600;
+        font-size: 17px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      #done b {
+        color: var(--ss-tip-bg);
+      }
+
+      /* ---------- Scene 5: agent ---------- */
+      #term {
+        left: 220px;
+        top: 140px;
+        width: 840px;
+        background: var(--ss-chrome-bg);
+        color: var(--ss-chrome-fg);
+        border-radius: 14px;
+        box-shadow: var(--ss-shadow-lg);
+        padding: 0 0 28px;
+        font-family: var(--ss-font-mono);
+        font-size: 19px;
+        line-height: 1.9;
+      }
+      #term .tb {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        border-bottom: 1px solid var(--ss-chrome-line);
+        margin-bottom: 18px;
+      }
+      #term .tb i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--ss-chrome-line);
+        display: inline-block;
+      }
+      #term .ln {
+        padding: 0 32px;
+        white-space: pre;
+        opacity: 0;
+      }
+      .mut {
+        color: var(--ss-chrome-muted);
+      }
+      .ok {
+        color: var(--ss-tip-bg);
+      }
+      .sig {
+        color: var(--ss-chrome-signal);
+      }
+      #works {
+        left: 0;
+        right: 0;
+        top: 476px;
+        text-align: center;
+        font-size: 22px;
+        color: var(--ss-text-muted);
+      }
+
+      /* ---------- Scene 6: end card ---------- */
+      #end {
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background: var(--ss-bg);
+      }
+      #end::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url('../../brand/pattern-ripple.svg') center / cover no-repeat;
+        opacity: 0.07;
+      }
+      #end > div {
+        position: relative;
+      }
+      .chk {
+        width: 0.9em;
+        height: 0.9em;
+        vertical-align: -0.08em;
+      }
+      #end img {
+        height: 104px;
+      }
+      #end p {
+        font-size: 24px;
+        margin-top: 26px;
+      }
+      #end .url {
+        margin-top: 14px;
+        font-family: var(--ss-font-mono);
+        font-size: 20px;
+        color: var(--ss-text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <!-- Scene 1: logo -->
+      <div id="logo" class="abs">
+        <div>
+          <div class="row">
+            <svg viewBox="0 0 96 96" aria-hidden="true">
+              <circle
+                id="lring"
+                cx="48"
+                cy="48"
+                r="36"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-dasharray="227"
+                stroke-dashoffset="227"
+                transform="rotate(-90 48 48)"
+              />
+              <rect
+                id="lhl"
+                x="22"
+                y="56"
+                width="52"
+                height="16"
+                rx="5"
+                fill="var(--ss-signal)"
+                fill-opacity="0.6"
+                style="transform-box: fill-box; transform-origin: left; transform: scaleX(0)"
+              />
+              <path
+                id="lone"
+                fill="currentColor"
+                opacity="0"
+                d="M51.34 68L39.80 68Q38.93 68 38.93 67.42L38.93 67.42Q38.93 66.72 39.80 66.67L39.80 66.67L42.12 66.43Q43.40 66.32 43.95 65.85Q44.50 65.39 44.73 64.17L44.73 64.17L52.68 29.72Q52.91 28.73 52.45 28.41Q51.980 28.10 51.05 28.21L51.05 28.21L48.91 28.44Q48.44 28.50 48.24 28.27Q48.04 28.04 48.04 27.81L48.04 27.81Q48.04 27.05 49.20 26.88L49.20 26.88Q52.33 26.36 53.87 25.86Q55.40 25.37 56.10 25.37L56.10 25.37Q57.26 25.37 57.03 26.65L57.03 26.65L48.33 64.17Q48.10 65.390 48.42 65.85Q48.73 66.32 49.89 66.43L49.89 66.43L51.69 66.67Q52.39 66.72 52.39 67.30L52.39 67.30Q52.39 68 51.34 68L51.34 68Z"
+              />
+            </svg>
+            <div id="word" class="hide">ShowSteps</div>
+          </div>
+          <div id="tagline" class="hide">
+            Record a process once. Get a guide people and agents can follow.
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 2: recording -->
+      <div id="cap1" class="abs caption hide"><b>1</b>Do it once.</div>
+      <div id="browser" class="abs window hide">
+        <div class="titlebar"><i></i><i></i><i></i><span>ledgerline.example/invoices</span></div>
+        <div class="abs pagehead">Invoices</div>
+        <div
+          id="newbtn"
+          class="abs btn primary"
+          style="left: 588px; top: 64px; width: 160px; height: 44px"
+        >
+          New invoice
+        </div>
+        <div id="list" class="abs rows" style="left: 32px; top: 140px; width: 716px">
+          <div style="width: 92%"></div>
+          <div style="width: 78%"></div>
+          <div style="width: 86%"></div>
+          <div style="width: 64%"></div>
+        </div>
+        <div
+          id="form"
+          class="abs hide"
+          style="left: 32px; top: 120px; width: 716px; height: 372px; background: var(--ss-surface)"
+        >
+          <div class="label abs" style="left: 0; top: 8px">Supplier</div>
+          <div id="supplier" class="input abs" style="left: 0; top: 32px; width: 420px">
+            <span id="typed" class="typed">Saltbush Supplies</span>
+          </div>
+          <div class="label abs" style="left: 0; top: 100px">Amount</div>
+          <div class="input abs" style="left: 0; top: 124px; width: 420px">1,240.00</div>
+          <div
+            id="submit"
+            class="abs btn primary"
+            style="left: 0; top: 204px; width: 200px; height: 48px"
+          >
+            Submit invoice
+          </div>
+        </div>
+      </div>
+      <div id="panel" class="abs window hide">
+        <div class="pill">
+          <span class="dot"></span
+          ><span style="display: flex; gap: 6px"
+            >Recording ·
+            <span class="count"
+              ><span id="c0" style="opacity: 1">0 steps</span><span id="c1">1 step</span
+              ><span id="c2">2 steps</span><span id="c3">3 steps</span></span
+            ></span
+          >
+        </div>
+        <div id="card1" class="abs card hide" style="top: 80px">
+          <span class="num">1</span><span>Click <b>New invoice</b></span>
+          <span class="thumb"
+            ><span class="hit" style="right: 6px; top: 6px; width: 30px; height: 12px"></span
+          ></span>
+        </div>
+        <div id="card2" class="abs card hide" style="top: 188px">
+          <span class="num">2</span><span>Type <b>Saltbush Supplies</b> in Supplier</span>
+          <span class="thumb"
+            ><span class="hit" style="left: 6px; top: 22px; width: 44px; height: 12px"></span
+          ></span>
+        </div>
+        <div id="card3" class="abs card hide" style="top: 296px">
+          <span class="num">3</span><span>Click <b>Submit invoice</b></span>
+          <span class="thumb"
+            ><span class="hit" style="left: 6px; top: 34px; width: 30px; height: 12px"></span
+          ></span>
+        </div>
+      </div>
+      <div id="click1" class="abs click" style="left: 732px; top: 226px"></div>
+      <div id="click2" class="abs click" style="left: 300px; top: 316px"></div>
+      <div id="click3" class="abs click" style="left: 196px; top: 488px"></div>
+
+      <!-- Scene 3: the guide -->
+      <div id="cap2" class="abs caption hide"><b>2</b>Get the guide.</div>
+      <div id="guide" class="abs window hide">
+        <h2><span class="hl" id="ghl"></span>Create a supplier invoice</h2>
+        <div id="g1" class="gstep hide">
+          <span class="num">1</span><span>Click <b>New invoice</b></span>
+          <span class="thumb"
+            ><span class="hit" style="right: 10px; top: 10px; width: 52px; height: 20px"></span
+          ></span>
+        </div>
+        <div id="g2" class="gstep hide">
+          <span class="num">2</span><span>Type <b>Saltbush Supplies</b> in <b>Supplier</b></span>
+          <span class="thumb"
+            ><span class="hit" style="left: 10px; top: 40px; width: 80px; height: 20px"></span
+          ></span>
+        </div>
+        <div id="g3" class="gstep hide">
+          <span class="num">3</span><span>Click <b>Submit invoice</b></span>
+          <span class="thumb"
+            ><span class="hit" style="left: 10px; top: 62px; width: 54px; height: 20px"></span
+          ></span>
+        </div>
+        <div class="chips">
+          <span class="chip hide">PDF</span><span class="chip hide">Word</span
+          ><span class="chip hide">Web page</span><span class="chip hide">Markdown</span
+          ><span class="chip accent hide">Agent Pack</span>
+        </div>
+      </div>
+
+      <!-- Scene 4: Guide Me -->
+      <div id="cap3" class="abs caption hide"><b>3</b>Guide anyone through it.</div>
+      <div id="guideme" class="abs window hide">
+        <div class="titlebar">
+          <i></i><i></i><i></i><span>ledgerline.example/invoices/new</span>
+        </div>
+        <div class="abs pagehead">New invoice</div>
+        <div class="label abs" style="left: 32px; top: 128px">Supplier</div>
+        <div class="input abs" style="left: 32px; top: 152px; width: 420px">Saltbush Supplies</div>
+        <div class="label abs" style="left: 32px; top: 220px">Amount</div>
+        <div class="input abs" style="left: 32px; top: 244px; width: 420px">1,240.00</div>
+        <div class="abs btn primary" style="left: 72px; top: 364px; width: 200px; height: 48px">
+          Submit invoice
+        </div>
+        <div id="spot" class="abs ring"></div>
+        <div id="tip" class="abs">
+          <small>Step 3 of 3</small>
+          <p>Click <b>Submit invoice</b></p>
+          <div class="bar"><div id="barfill"></div></div>
+          <div class="acts"><span>Back</span><span class="go">I did this</span></div>
+        </div>
+      </div>
+      <div id="done" class="abs hide">
+        <span
+          ><b
+            ><svg class="chk" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M3 8.5l3.2 3L13 4.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></b>
+          Guide complete</span
+        >
+      </div>
+
+      <!-- Scene 5: agent -->
+      <div id="cap4" class="abs caption hide"><b>4</b>Hand it to an AI agent.</div>
+      <div id="term" class="abs hide">
+        <div class="tb"><i></i><i></i><i></i></div>
+        <div class="ln"><span class="sig">$</span> follow create-supplier-invoice/SKILL.md</div>
+        <div class="ln mut">Reading procedure.json · 3 steps</div>
+        <div class="ln">
+          <span class="ok"
+            ><svg class="chk" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M3 8.5l3.2 3L13 4.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></span>
+          1 Click “New invoice”
+        </div>
+        <div class="ln">
+          <span class="ok"
+            ><svg class="chk" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M3 8.5l3.2 3L13 4.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></span>
+          2 Type “Saltbush Supplies” in Supplier
+        </div>
+        <div class="ln">
+          <span class="sig">‖</span> 3 Submit invoice:
+          <span class="sig">waiting for your approval</span>
+        </div>
+        <div class="ln mut">Replay as a test: npx playwright test replay.spec.ts</div>
+      </div>
+      <div id="works" class="abs hide">Works with Playwright and AI coding agents</div>
+
+      <!-- Scene 6: end card -->
+      <div id="end" class="abs hide">
+        <div>
+          <img src="../../brand/lockup.svg" alt="ShowSteps" />
+          <p>Local-first · No account · Nothing leaves your computer</p>
+          <div class="url">github.com/sadhman3-bit/showsteps</div>
+        </div>
+      </div>
+
+      <svg id="cursor" class="abs cursor" viewBox="0 0 28 28" aria-hidden="true" style="opacity: 0">
+        <path
+          d="M4 2 L4 22 L9.5 17 L13 25 L16.5 23.5 L13 15.8 L20.5 15.8 Z"
+          fill="var(--ss-text)"
+          stroke="var(--ss-surface)"
+          stroke-width="1.6"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+
+    <script>
+      const DURATION = 21;
+      const EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+      const all = [];
+      const $ = (s) => (typeof s === 'string' ? document.querySelector(s) : s);
+      /** Animate from `start` for `dur` seconds. `fill: 'both'` for entrances, 'forwards' for later changes. */
+      const at = (sel, keyframes, start, dur, { fill = 'forwards', easing = EASE } = {}) =>
+        all.push(
+          $(sel).animate(keyframes, { delay: start * 1000, duration: dur * 1000, fill, easing }),
+        );
+      const enter = (sel, start, dy = 24, dur = 0.5) =>
+        at(
+          sel,
+          [
+            { opacity: 0, transform: `translateY(${dy}px)` },
+            { opacity: 1, transform: 'none' },
+          ],
+          start,
+          dur,
+          { fill: 'both' },
+        );
+      const exit = (sel, start, dur = 0.35) =>
+        at(sel, [{ opacity: 1 }, { opacity: 0 }], start, dur);
+      const show = (sel, start, dur = 0.2) =>
+        at(sel, [{ opacity: 0 }, { opacity: 1 }], start, dur, { fill: 'both' });
+
+      // Cursor: positions are the tip of the arrow (the svg's 4,2 point) in stage pixels.
+      let cursorAt = [420, 660];
+      const tip = ([x, y]) => `translate(${x - 4}px, ${y - 2}px)`;
+      $('#cursor').style.transform = tip(cursorAt);
+      const move = (to, start, dur) => {
+        at('#cursor', [{ transform: tip(cursorAt) }, { transform: tip(to) }], start, dur, {
+          easing: 'cubic-bezier(0.45, 0, 0.2, 1)',
+        });
+        cursorAt = to;
+      };
+      const click = (ring, start, target) => {
+        at(
+          ring,
+          [
+            { opacity: 0.9, transform: 'scale(0.3)' },
+            { opacity: 0, transform: 'scale(1.5)' },
+          ],
+          start,
+          0.55,
+          { fill: 'none', easing: 'ease-out' },
+        );
+        if (target)
+          at(
+            target,
+            [{ transform: 'scale(1)' }, { transform: 'scale(0.95)' }, { transform: 'scale(1)' }],
+            start,
+            0.2,
+            { fill: 'none', easing: 'ease-out' },
+          );
+      };
+      const count = (n, start) => {
+        exit(`#c${n - 1}`, start, 0.15);
+        show(`#c${n}`, start, 0.15);
+      };
+
+      // Scene 1: logo (0–2.8 s)
+      at('#lring', [{ strokeDashoffset: 227 }, { strokeDashoffset: 0 }], 0.2, 0.8, {
+        fill: 'both',
+      });
+      at('#lhl', [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 0.75, 0.4, {
+        fill: 'both',
+      });
+      at(
+        '#lone',
+        [
+          { opacity: 0, transform: 'translateY(6px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        0.9,
+        0.4,
+        { fill: 'both' },
+      );
+      at(
+        '#word',
+        [
+          { opacity: 0, transform: 'translateX(-24px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        1.05,
+        0.55,
+        { fill: 'both' },
+      );
+      enter('#tagline', 1.5, 12);
+      at(
+        '#logo',
+        [
+          { opacity: 1, transform: 'none' },
+          { opacity: 0, transform: 'scale(0.97)' },
+        ],
+        2.45,
+        0.35,
+      );
+
+      // Scene 2: recording (2.8–7.9 s)
+      enter('#cap1', 2.8, 12);
+      enter('#browser', 2.85, 40, 0.6);
+      at(
+        '#panel',
+        [
+          { opacity: 0, transform: 'translateX(40px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        3.0,
+        0.6,
+        { fill: 'both' },
+      );
+      show('#cursor', 3.3);
+      move([732, 226], 3.4, 0.7);
+      click('#click1', 4.15, '#newbtn');
+      show('#form', 4.4, 0.3);
+      enter('#card1', 4.45, 16, 0.4);
+      count(1, 4.45);
+      move([300, 316], 4.7, 0.6);
+      click('#click2', 5.35);
+      at(
+        '#supplier',
+        [{ borderColor: 'var(--ss-input-border)' }, { borderColor: 'var(--ss-signal)' }],
+        5.35,
+        0.15,
+      );
+      at('#typed', [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], 5.5, 0.8, {
+        fill: 'both',
+        easing: 'steps(17, end)',
+      });
+      enter('#card2', 6.4, 16, 0.4);
+      count(2, 6.4);
+      move([196, 488], 6.6, 0.6);
+      click('#click3', 7.25, '#submit');
+      enter('#card3', 7.45, 16, 0.4);
+      count(3, 7.45);
+      exit('#cursor', 7.6, 0.2);
+      for (const s of ['#cap1', '#browser', '#panel']) exit(s, 7.95, 0.35);
+
+      // Scene 3: the guide (8.1–11 s)
+      enter('#cap2', 8.1, 12);
+      enter('#guide', 8.15, 40, 0.6);
+      at('#ghl', [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 8.55, 0.45, {
+        fill: 'both',
+      });
+      ['#g1', '#g2', '#g3'].forEach((s, i) => enter(s, 8.7 + i * 0.18, 14, 0.45));
+      document.querySelectorAll('#guide .chip').forEach((c, i) =>
+        at(
+          c,
+          [
+            { opacity: 0, transform: 'scale(0.8)' },
+            { opacity: 1, transform: 'none' },
+          ],
+          9.5 + i * 0.1,
+          0.3,
+          { fill: 'both' },
+        ),
+      );
+      for (const s of ['#cap2', '#guide']) exit(s, 10.85, 0.35);
+
+      // Scene 4: Guide Me (11.2–14.2 s)
+      enter('#cap3', 11.2, 12);
+      enter('#guideme', 11.25, 40, 0.6);
+      at(
+        '#spot',
+        [
+          { boxShadow: '0 0 0 2000px rgb(0 0 0 / 0)' },
+          { boxShadow: '0 0 0 2000px var(--ss-spot-backdrop)' },
+        ],
+        11.7,
+        0.4,
+        { fill: 'both' },
+      );
+      at(
+        '#tip',
+        [
+          { opacity: 0, transform: 'translateX(-12px)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        11.9,
+        0.4,
+        { fill: 'both' },
+      );
+      at(
+        '#spot',
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }],
+        12.3,
+        0.9,
+        { fill: 'none', easing: 'ease-in-out' },
+      );
+      at('#barfill', [{ transform: 'scaleX(0.66)' }, { transform: 'scaleX(1)' }], 13.15, 0.4);
+      exit('#tip', 13.2, 0.2);
+      enter('#done', 13.35, 12, 0.35);
+      for (const s of ['#cap3', '#guideme', '#done']) exit(s, 14.0, 0.35);
+
+      // Scene 5: agent (14.4–17.6 s)
+      enter('#cap4', 14.4, 12);
+      enter('#term', 14.45, 40, 0.6);
+      document.querySelectorAll('#term .ln').forEach((l, i) =>
+        at(
+          l,
+          [
+            { opacity: 0, transform: 'translateX(-8px)' },
+            { opacity: 1, transform: 'none' },
+          ],
+          14.95 + i * 0.32,
+          0.25,
+          { fill: 'both' },
+        ),
+      );
+      enter('#works', 16.7, 10, 0.4);
+      for (const s of ['#cap4', '#term', '#works']) exit(s, 17.55, 0.35);
+
+      // Scene 6: end card (17.9–21 s)
+      at(
+        '#end',
+        [
+          { opacity: 0, transform: 'scale(1.02)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        17.9,
+        0.7,
+        { fill: 'both' },
+      );
+
+      // Capture mode (`#capture`): everything paused; the renderer calls seek(seconds) per frame.
+      window.seek = (t) => all.forEach((a) => (a.currentTime = t * 1000));
+      window.DURATION = DURATION;
+      if (location.hash === '#capture') {
+        all.forEach((a) => a.pause());
+        window.seek(0);
+      } else {
+        const fit = () => {
+          const s = Math.min(innerWidth / 1280, innerHeight / 720);
+          $('#stage').style.transform = `scale(${s})`;
+        };
+        fit();
+        addEventListener('resize', fit);
+        setInterval(
+          () => all.forEach((a) => ((a.currentTime = 0), a.play())),
+          (DURATION + 0.5) * 1000,
+        );
+      }
+    </script>
+  </body>
+</html>
