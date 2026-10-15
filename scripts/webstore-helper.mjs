@@ -32,6 +32,11 @@ const fields = [
   ['Privacy', 'Single purpose', quote('**Single purpose:**')],
   ...perms.map(([p, why]) => ['Privacy', `Justification: ${p}`, why]),
   ['Privacy', 'Are you using remote code?', 'No'],
+  [
+    'Privacy',
+    'Privacy policy URL',
+    md.match(/^\| Privacy policy\s*\| <(https:[^>]+)> \|$/m)?.[1] ?? '',
+  ],
 ];
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 let section = '';
