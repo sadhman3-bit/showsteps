@@ -41,8 +41,8 @@ You do **not** need administrator rights, an account or an internet connection a
 
 1. Open the repository's **Releases** page on GitHub (the **Releases** link on the right of the repository's main page).
 2. Under the latest release, open **Assets** and download:
-   - `showsteps-extension-1.0.0.zip` (the browser extension);
-   - `ShowSteps-Setup-1.0.0.exe` (the desktop app; skip it if you only record web pages);
+   - `showsteps-extension-1.1.0.zip` (the browser extension);
+   - `ShowSteps-Setup-1.1.0.exe` (the desktop app; skip it if you only record web pages);
    - `SHA256SUMS.txt` (optional, to check the downloads).
 
 The `…-chrome-web-store.zip` file is for submitting to the Chrome Web Store. You do not need it to install ShowSteps.
@@ -61,7 +61,7 @@ This confirms the files arrived complete and unchanged.
 3. Print each file's checksum:
 
    ```powershell
-   Get-FileHash .\showsteps-extension-1.0.0.zip, .\ShowSteps-Setup-1.0.0.exe -Algorithm SHA256
+   Get-FileHash .\showsteps-extension-1.1.0.zip, .\ShowSteps-Setup-1.1.0.exe -Algorithm SHA256
    ```
 
 4. Open `SHA256SUMS.txt` in Notepad. Each value in the **Hash** column must match the line for the same file. Capital and small letters do not matter.
@@ -70,27 +70,31 @@ If a value differs, delete the file and download it again.
 
 ## 4. Install the browser extension
 
-ShowSteps is not in the Chrome Web Store yet, so it is installed as an "unpacked" extension. This takes about two minutes.
+**The easy way:** open ShowSteps in the Chrome Web Store, <https://chromewebstore.google.com/detail/hlkihjibgiehjcaemfhfnfcjphgkcnoa>, and click **Add to Chrome**. Chrome keeps it up to date. Then skip to [4.3 Pin it to the toolbar](#43-pin-it-to-the-toolbar).
+
+If your organisation blocks the Web Store, or you want a specific version, install it from the release files as an "unpacked" extension, as below.
+
+Installing it unpacked takes about two minutes.
 
 ### 4.1 Unzip it to a folder you will keep
 
 1. Make a folder that will stay put, for example `Documents\ShowSteps\extension`. Chrome loads the extension from this folder every time it starts, so **do not delete or move it later**.
-2. Right-click `showsteps-extension-1.0.0.zip` → **Extract All…** → choose that folder → **Extract**.
-3. Open the folder. It contains a folder named `showsteps-extension-1.0.0`, and that folder contains `manifest.json`. That inner folder is the one to load.
+2. Right-click `showsteps-extension-1.1.0.zip` → **Extract All…** → choose that folder → **Extract**.
+3. Open the folder. It contains a folder named `showsteps-extension-1.1.0`, and that folder contains `manifest.json`. That inner folder is the one to load.
 
 ### 4.2 Load it in Chrome
 
 1. In the address bar, type `chrome://extensions` and press **Enter**.
 2. Turn on **Developer mode** (switch at the top right).
 3. Click **Load unpacked**.
-4. Select the `showsteps-extension-1.0.0` folder (the one containing `manifest.json`) and click **Select Folder**.
+4. Select the `showsteps-extension-1.1.0` folder (the one containing `manifest.json`) and click **Select Folder**.
 5. A **ShowSteps** card appears. Make sure its switch is on.
 
 ### 4.2 (alternative) Load it in Edge
 
 1. In the address bar, type `edge://extensions` and press **Enter**.
 2. Turn on **Developer mode** (switch in the left-hand panel).
-3. Click **Load unpacked**, select the `showsteps-extension-1.0.0` folder and click **Select Folder**.
+3. Click **Load unpacked**, select the `showsteps-extension-1.1.0` folder and click **Select Folder**.
 
 ### 4.3 Pin it to the toolbar
 
@@ -106,7 +110,7 @@ ShowSteps is not in the Chrome Web Store yet, so it is installed as an "unpacked
 
 Skip this section if you only record web pages.
 
-1. Double-click `ShowSteps-Setup-1.0.0.exe`.
+1. Double-click `ShowSteps-Setup-1.1.0.exe`.
 2. Windows may show **"Windows protected your PC"**, because the installer is not code-signed. Click **More info**, then **Run anyway**.
 3. The installer runs by itself. It installs for your Windows user only, so no administrator prompt appears.
 4. ShowSteps starts, and its icon appears in the system tray (bottom right of the taskbar; click **^** if you do not see it).
@@ -114,6 +118,8 @@ Skip this section if you only record web pages.
 The installer also registers the connection that lets the extension talk to the desktop app. It writes only to your own user settings (`HKEY_CURRENT_USER`).
 
 Your desktop guides are saved in `Documents\ShowSteps\Library`. You can change this in the desktop app's **Settings**.
+
+**Start with Windows (optional).** In the desktop app's **Settings**, turn on **Start with Windows**. The app then starts in the tray when you sign in to Windows. Turn it on if you use scheduled runs: with the app running, it opens Chrome when a run is due and Chrome is closed.
 
 ## 6. Connect the extension and the desktop app
 
@@ -159,7 +165,9 @@ The browser shortcut to start and finish a capture is **Alt+Shift+R**.
 
 Your guides are kept. They live in the browser's storage, not in the extension folder. Do not click **Remove** to update, because removing the extension deletes the guides it kept in the browser.
 
-**Desktop app:** run the new `ShowSteps-Setup-<version>.exe`. It replaces the old version and keeps your library and settings.
+From the Chrome Web Store, updates arrive by themselves. To check now, turn on **Developer mode** in `chrome://extensions` and click **Update**.
+
+**Desktop app:** install the new `ShowSteps-Setup-<version>.exe` over the old one, without uninstalling first. It replaces the old version and keeps your library and settings.
 
 ## 9. Moving from Trailmark or ABCXYZ
 
@@ -181,23 +189,26 @@ To remove ShowSteps's data but keep the extension, open the library and click **
 
 ## 11. Troubleshooting
 
-| Problem                                                    | What to do                                                                                                                                                                                                                      |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Load unpacked** says "Manifest file is missing"          | You chose the outer folder. Choose the `showsteps-extension-1.0.0` folder that contains `manifest.json`.                                                                                                                        |
-| The ShowSteps icon is missing from the toolbar             | Click the puzzle-piece icon and pin ShowSteps (section 4.3). Check that its switch is on in `chrome://extensions`.                                                                                                              |
-| The extension disappeared after Chrome restarted           | The extension folder was moved or deleted. Extract it again to the same place and click **Load unpacked**.                                                                                                                      |
-| **Start capture** does nothing on a page                   | Browsers do not let extensions work on their own pages (`chrome://…`, `edge://…`, the Chrome Web Store) or on PDFs opened in the browser. Try an ordinary web page, and click **Allow** when ShowSteps asks for website access. |
-| Settings says **The desktop app is not running.**          | Start ShowSteps from the Start menu and wait for the tray icon. If it still does not connect, close every Chrome or Edge window (the browser reads the connection only when it starts), then open it again.                     |
-| "Windows protected your PC" when installing                | Click **More info**, then **Run anyway** (section 5). The installer is not code-signed.                                                                                                                                         |
-| **Ctrl+Alt+R** does nothing                                | Another program may use the same shortcut. Click **Record a process** in the desktop app instead.                                                                                                                               |
-| A Windows app is recorded without steps                    | Some programs that run as administrator cannot be read by an app running as your normal user. Run the program normally, or start ShowSteps as administrator for that recording.                                                 |
-| Guides are missing after changing the desktop library path | They are still in the old folder. In the desktop app's **Settings**, point **Library folder** back to it, or copy the guide folders into the new one.                                                                           |
+| Problem                                                    | What to do                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Load unpacked** says "Manifest file is missing"          | You chose the outer folder. Choose the `showsteps-extension-1.1.0` folder that contains `manifest.json`.                                                                                                                                                                                                                  |
+| The ShowSteps icon is missing from the toolbar             | Click the puzzle-piece icon and pin ShowSteps (section 4.3). Check that its switch is on in `chrome://extensions`.                                                                                                                                                                                                        |
+| The extension disappeared after Chrome restarted           | The extension folder was moved or deleted. Extract it again to the same place and click **Load unpacked**.                                                                                                                                                                                                                |
+| **Start capture** does nothing on a page                   | Browsers do not let extensions work on their own pages (`chrome://…`, `edge://…`, the Chrome Web Store) or on PDFs opened in the browser. Try an ordinary web page, and click **Allow** when ShowSteps asks for website access.                                                                                           |
+| Settings says **The desktop app is not running.**          | Start ShowSteps from the Start menu and wait for the tray icon. If it still does not connect, close every Chrome or Edge window (the browser reads the connection only when it starts), then open it again.                                                                                                               |
+| "Windows protected your PC" when installing                | Click **More info**, then **Run anyway** (section 5). The installer is not code-signed.                                                                                                                                                                                                                                   |
+| **Ctrl+Alt+R** does nothing                                | Another program may use the same shortcut. Click **Record a process** in the desktop app instead.                                                                                                                                                                                                                         |
+| A Windows app is recorded without steps                    | Some programs that run as administrator cannot be read by an app running as your normal user. Run the program normally, or start ShowSteps as administrator for that recording.                                                                                                                                           |
+| Guides are missing after changing the desktop library path | They are still in the old folder. In the desktop app's **Settings**, point **Library folder** back to it, or copy the guide folders into the new one.                                                                                                                                                                     |
+| A scheduled run didn't happen                              | Runs need the computer on and awake, you signed in and the screen unlocked, and Chrome open. Check the Schedules page: a run missed while Chrome was closed shows as **Missed** (or runs at the next start, as the schedule says). With the desktop app running and **Start with Windows** on, Chrome is opened for runs. |
+| A scheduled run stopped                                    | Open the Schedules page and the run's history: the reason and a picture after each step show where. A confirm step can be pre-approved in the schedule; a sign-in page needs you to sign in and press **Continue**.                                                                                                       |
+| No notifications from scheduled runs                       | Allow notifications for ShowSteps (saving a schedule asks), and check that Windows notifications are on for Chrome. Without them, `!` on the toolbar icon shows when a run stopped.                                                                                                                                       |
 
 ## 12. Staying on your computer
 
 ShowSteps is built to keep everything on your computer:
 
-- **No cloud storage.** Guides are saved in the browser's own storage on this computer, or in a folder on your disk. The extension does not use Chrome Sync storage, so nothing is copied to your Google account.
+- **No cloud storage.** Guides are saved in the browser's own storage on this computer, or in a folder on your disk. Schedules, run logs and their screenshots stay in the extension's storage on this computer. The extension does not use Chrome Sync storage, so nothing is copied to your Google account.
 - **No network requests.** All fonts, icons, the text-recognition (OCR) engine and its language data ship inside the apps. A test checks that ShowSteps's pages load nothing from the internet. The desktop app blocks all web requests from its own windows. Links you click in a guide open in your normal browser.
 - **No accounts, analytics or telemetry.**
 - **AI writing tools are off by default.** When turned on, they use the AI model built into Chrome, which runs on your computer.

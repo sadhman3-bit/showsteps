@@ -282,3 +282,5 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Scheduler state changes are queued:** every change to schedules and run state, including clearing the badge, runs one at a time. Clearing the badge outside the queue once revived a finished run and logged it as stopped.
 - **Date and time fields** show the focus ring whenever focus is inside them (`:focus-within`), because Tab also stops on their calendar button, where `:focus-visible` lapses.
 - **Notification wording** lives in `apps/extension/lib/notices.ts`, built only from a schedule's name, a step number and fixed text, so a test can prove no typed value reaches the screen.
+- **Docs for 1.1:** the README and the installation guide now lead with the Chrome Web Store (unpacked stays as the alternative), name the 1.1.0 files, and tell desktop users to install the new setup over the old one. Release notes live in `docs/release-notes/<version>.md` and are the GitHub release's notes.
+- **Guides with Windows-app steps** can only ask "Start now?" through a notification, so the Schedule dialog and README say to allow notifications for them.

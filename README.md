@@ -26,22 +26,24 @@ Release files are in `dist/` (build them with `pnpm release`, see [For developer
 
 | File                                             | What it is                                                       |
 | ------------------------------------------------ | ---------------------------------------------------------------- |
-| `showsteps-extension-1.0.0.zip`                  | The browser extension                                            |
-| `showsteps-extension-1.0.0-chrome-web-store.zip` | The same extension, packaged for the Chrome Web Store            |
-| `ShowSteps-Setup-1.0.0.exe`                      | The Windows desktop app (installs for you only; no admin rights) |
+| `showsteps-extension-1.1.0.zip`                  | The browser extension                                            |
+| `showsteps-extension-1.1.0-chrome-web-store.zip` | The same extension, packaged for the Chrome Web Store            |
+| `ShowSteps-Setup-1.1.0.exe`                      | The Windows desktop app (installs for you only; no admin rights) |
 | `SHA256SUMS.txt`                                 | Checksums to verify the downloads                                |
 
 ### The browser extension (Chrome or Edge)
 
-ShowSteps is not in the Chrome Web Store yet (the submission is prepared in `docs/webstore/`). Until then, install it as an unpacked extension:
+Install ShowSteps from the Chrome Web Store: <https://chromewebstore.google.com/detail/hlkihjibgiehjcaemfhfnfcjphgkcnoa>. Chrome keeps it up to date.
 
-1. Unzip `showsteps-extension-1.0.0.zip` to a folder you will keep, for example `Documents\ShowSteps\extension`. Chrome loads it from there each time.
+Or install it as an unpacked extension (for example where the Web Store is blocked):
+
+1. Unzip `showsteps-extension-1.1.0.zip` to a folder you will keep, for example `Documents\ShowSteps\extension`. Chrome loads it from there each time.
 2. Open `chrome://extensions` (in Edge, `edge://extensions`).
 3. Turn on **Developer mode** (top right in Chrome; bottom left in Edge).
-4. Click **Load unpacked** and choose the unzipped `showsteps-extension-1.0.0` folder.
+4. Click **Load unpacked** and choose the unzipped `showsteps-extension-1.1.0` folder.
 5. Pin ShowSteps: click the puzzle-piece icon in the toolbar, then the pin next to ShowSteps.
 
-Chrome may show a banner about developer-mode extensions when it starts. That is expected for extensions loaded this way. To update, unzip the new version over the same folder, then click **↻** on ShowSteps's card in `chrome://extensions`.
+Chrome may show a banner about developer-mode extensions when it starts. That is expected for extensions loaded this way. To update an unpacked copy, unzip the new version over the same folder, then click **↻** on ShowSteps's card in `chrome://extensions`.
 
 ShowSteps asks for website access the first time you record or start a walkthrough, not when it is installed.
 
@@ -54,11 +56,13 @@ ShowSteps was briefly called Trailmark, then ABCXYZ. Your guides carry over:
 
 ### The desktop app (Windows 10 or 11)
 
-1. Run `ShowSteps-Setup-1.0.0.exe`. It installs for your Windows user only; no administrator rights are needed.
+1. Run `ShowSteps-Setup-1.1.0.exe`. It installs for your Windows user only; no administrator rights are needed. To update, run the new installer over the old version: your library and settings are kept.
 2. Windows SmartScreen may say the app is unrecognised, because the installer is not code-signed. Click **More info**, then **Run anyway**.
 3. ShowSteps starts and puts an icon in the system tray.
 
 To record Windows apps and web pages into the same guide, open the extension's **Settings** and turn on **Use the ShowSteps desktop app**. The installer has already registered the connection between the two.
+
+To have scheduled runs work after a restart, turn on **Start with Windows** in the desktop app's **Settings**: it then starts in the tray when you sign in, and can open Chrome when a run is due.
 
 To uninstall, use **Settings → Apps** in Windows. It removes the app and the browser connection; your guides stay where they are.
 
@@ -80,6 +84,25 @@ Settings → **Delete all ShowSteps data** removes everything the extension keep
 
 Desktop apps: press **Ctrl+Alt+R** anywhere to start and finish recording a Windows app.
 
+## Schedules
+
+Run for me can run a guide on its own at set times, for reports, checks and other routine tasks.
+
+**Setting one up.** Open a guide, then **⋯ → Schedule…** (or **Schedule…** on its card in the library). Choose:
+
+- **when:** every day, weekdays, chosen days, a day of the month (the 31st means the last day in shorter months) or a business day of the month (1st to 5th, or last), at a time, with dates to skip such as public holidays;
+- **values to type:** the answers Run for me would otherwise ask for. A value can contain a date placeholder, filled in when the run starts: `{today}`, `{yesterday}`, `{tomorrow}`, `{month_start}`, `{month_end}`, `{last_month_start}`, `{last_month_end}` and `{last_business_day}` (the business day before today). **Insert a date** adds one, and the dialog shows what the next run will type;
+- **steps to run without stopping:** Run for me normally stops before steps marked to confirm (Submit, Send, Delete…). Tick the ones this schedule may do on its own. Any change to what the guide's steps click or type cancels these approvals, and the schedule then says "Guide changed: check pre-approved steps";
+- what to do if Chrome is closed at the time (run it at the next start, or skip it), how long a stopped run waits for you, whether to keep the window open, and whether to check the guide an hour before.
+
+Saving asks Chrome for website access (runs need it) and, optionally, notifications.
+
+**When it runs.** Each run opens its own Chrome window, without taking focus from what you're doing. It stops and tells you with a notification (if you allowed them; otherwise `!` on the toolbar icon shows once the run has ended) when it reaches a confirm step you didn't pre-approve, a step only you can do (a password, say), a page that wants you to sign in ("Sign in, then press Continue"), or a step it can't find. It waits there for you, then ends as stopped. Guides with steps in Windows apps need you at the computer, so they ask "Due. Start now?" with a notification instead of running alone (so allow notifications for those).
+
+**The Schedules page** (library → **Schedules**) lists each schedule's next run and last outcome, with **Run now**, **Edit**, **Delete** and an on/off switch, and a history of the last 20 runs with the values typed and a picture after each step.
+
+**What schedules can't do:** run while the computer is asleep or off, or on a locked screen; do Windows-app steps by themselves; or follow you to another computer. Runs happen while Chrome is open; with the desktop app running (and **Start with Windows** on), Chrome is opened for a run if it's closed.
+
 ## What else is in it
 
 - **Editor:** rich step titles, sections, callouts, image steps, crop, zoom, arrows, shapes, badges, blur, bulk blur, undo, version history, branding.
@@ -97,7 +120,7 @@ Desktop apps: press **Ctrl+Alt+R** anywhere to start and finish recording a Wind
 
 ## Privacy
 
-ShowSteps makes no network requests of its own: its fonts and icons are bundled, a test checks that its pages load nothing from the internet, and the desktop app blocks every web request from its own windows. The extension never uses Chrome Sync storage, so nothing is copied to your Google account. The extension talks to the desktop app over Windows native messaging on the same computer. Exports are files you choose where to put. The OCR engine and its English model ship inside both apps, so nothing is downloaded at run time.
+ShowSteps makes no network requests of its own: its fonts and icons are bundled, a test checks that its pages load nothing from the internet, and the desktop app blocks every web request from its own windows. The extension never uses Chrome Sync storage, so nothing is copied to your Google account. Schedules, run logs and their screenshots stay in the extension's own storage on this computer. The extension talks to the desktop app over Windows native messaging on the same computer. Exports are files you choose where to put. The OCR engine and its English model ship inside both apps, so nothing is downloaded at run time.
 
 ## For developers
 

@@ -482,7 +482,7 @@ export const strings = {
     keepWindowOpen: 'Keep the window open when it finishes',
     checkFirst: 'Check the guide an hour before (finds each step without clicking)',
     desktopNote:
-      'This guide has steps in Windows apps, so it needs you at the computer. When it’s due, ShowSteps asks you to start it.',
+      'This guide has steps in Windows apps, so it needs you at the computer. When it’s due, ShowSteps asks you to start it with a notification, so allow notifications when you save.',
     chromeOnlyNote:
       'Runs happen only while Chrome is open. With the ShowSteps desktop app connected, it can open Chrome when a run is due.',
     permission:
