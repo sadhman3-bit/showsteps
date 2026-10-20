@@ -190,12 +190,14 @@ Fixes found while testing:
 
 ### Polish: open issues
 
+- `e2e/guidance.spec.ts` "Guide Me: completes the demo invoice flow" occasionally times out waiting for step 6 in a full run; it passes when re-run.
+
 - `e2e/performance.spec.ts` can miss its time limits when it runs beside another Playwright worker on this machine; it passes when run alone (`node scripts/playwright.mjs test e2e/performance.spec.ts --project=chromium`).
 
 ## Update 1.1: schedules
 
 - [x] S0: branch `schedules`, baseline, progress section. Baseline on 2026-10-20: lint, typecheck and build pass; unit tests 261 (core 194, ui 27, desktop 11, extension 21, demo 8); `pnpm e2e` 34 tests: 31 pass in the parallel run, and capture, library and performance pass when re-run alone (they miss timing limits while the machine is busy; the library helper now waits up to 15 s for slow screenshot encoding)
-- [ ] S1: schedule model in `core` (schema, recurrence, placeholders, run log)
+- [x] S1: schedule model in `core` (`packages/core/src/schedule/`: `ScheduleSchema`, `RunLogSchema`, `nextRun`/`nextRuns`/`missedRun` with Sydney daylight-saving and month-end tests, `resolveTokens` placeholders, `guideVersion` and approvals, `SIGN_IN_HOSTS`). Unit tests 286 (core 219)
 - [ ] S2: running a schedule in the extension (alarms, unattended rules, sign-in stop, run log)
 - [ ] S3: interface (Schedule dialog, Schedules page, notifications)
 - [ ] S4: desktop app (start with Windows, open Chrome when a run is due)

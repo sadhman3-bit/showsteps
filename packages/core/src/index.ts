@@ -196,6 +196,58 @@ export {
   urlMatches,
 } from './dom/act.js';
 
+// Schedules (local to the browser profile; never inside guides or exports)
+export {
+  RecurrenceSchema,
+  ScheduleSchema,
+  RunStepLogSchema,
+  RunLogSchema,
+  RUN_OUTCOMES,
+  MAX_RUN_LOGS,
+  SCHEDULE_DEFAULTS,
+  runLogsToDrop,
+  parseSchedules,
+  type Recurrence,
+  type Schedule,
+  type RunLog,
+  type RunStepLog,
+  type RunOutcome,
+} from './schedule/schema.js';
+export { nextRun, nextRuns, missedRun, occursOn } from './schedule/recurrence.js';
+export {
+  PLACEHOLDERS,
+  DEFAULT_DATE_FORMAT,
+  UnknownPlaceholderError,
+  unknownPlaceholders,
+  hasPlaceholders,
+  isDateFormat,
+  formatDate as formatScheduleDate,
+  placeholderDate,
+  resolveTokens,
+  type Placeholder,
+} from './schedule/placeholders.js';
+export { guideVersion, activeApprovals, approvalsOutdated } from './schedule/version.js';
+export {
+  canSchedule,
+  needsPerson,
+  createSchedule,
+  withApprovals,
+  resolveValues,
+} from './schedule/create.js';
+export { SIGN_IN_HOSTS, hostMatches, isSignInHost, needsSignIn } from './schedule/signin.js';
+export {
+  zone,
+  systemZone,
+  daysInMonth,
+  weekday,
+  addDays,
+  isoDate,
+  isBusinessDay,
+  type Zone,
+  type LocalDate,
+  type LocalDateTime,
+} from './schedule/zone.js';
+
 // On-device AI helpers (prompts and results only)
 export {
   fromMarkdown,

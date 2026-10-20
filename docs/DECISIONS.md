@@ -251,3 +251,11 @@ One line per default chosen during the build. Newest at the bottom of each miles
 ## Update 1.1: schedules
 
 - **Milestone gate:** `pnpm e2e` runs with two workers; a test that fails only on timing while the machine is busy is re-run alone (`--workers=1`) and counts as passing if it passes there. Real failures are fixed before the commit.
+- **Schedule times** are local wall-clock times in the computer's time zone (via `Intl`). A time skipped when clocks go forward runs the same distance past the change (02:30 on Sydney's October change day runs at 03:30); a time that happens twice when clocks go back runs once, at the first.
+- **Skip dates** apply to every repeat type and are also not business days.
+- **`{last_business_day}`** is the business day before today (Monday to Friday, minus the schedule's skip dates), so on a Monday it is the previous Friday.
+- **Placeholders** are lower-case words in braces; `{ABC}` or other text in braces is typed as written. An unknown lower-case placeholder fails validation when the schedule is saved.
+- **Date formats** understand `d`, `dd`, `M`, `MM`, `MMM`, `MMMM`, `yy` and `yyyy`; other characters are kept. Default `dd/MM/yyyy`.
+- **Guide version** (for approvals) hashes each step's id, action, page, key, target, input and confirm flag in order. Edits to titles, descriptions, pictures and annotations keep approvals; anything that changes what is clicked or typed drops them.
+- **Run log outcome** is absent while a run is going and set when it ends.
+- **Sign-in check** compares host names (without ports): a sign-in-looking page on the step's own host is a missing element, not a sign-in stop.
