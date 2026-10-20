@@ -247,3 +247,7 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - Polish: the desktop app cancels every http(s)/ws(s) request from its own session (`webRequest.onBeforeRequest`), so neither the app nor Chromium's background features (spell-check dictionaries) reach the network; links still open in the default browser. The extension uses only `storage.local`/`storage.session`, never `storage.sync`. Install steps live in docs/INSTALL.md.
 - **Licence:** PolyForm Noncommercial 1.0.0 (owner request: free to download and use, not commercially), replacing MIT before any public release. The SPDX id is in every package.json; the About dialog, README and store listing say the same.
 - **Promo video:** `docs/promo/motion.html` is a 21-second Web Animations timeline using the real tokens, fonts and logo; `pnpm motion` steps it frame by frame (30 fps) and encodes WebM with Playwright's ffmpeg, and MP4 with Chromium's H.264 recorder fed the same frames on a canvas, rewritten from fragmented to plain MP4 so players show the right length.
+
+## Update 1.1: schedules
+
+- **Milestone gate:** `pnpm e2e` runs with two workers; a test that fails only on timing while the machine is busy is re-run alone (`--workers=1`) and counts as passing if it passes there. Real failures are fixed before the commit.

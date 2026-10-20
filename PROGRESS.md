@@ -186,9 +186,27 @@ Fixes found while testing:
 
 ### Waiting on the owner (Polish)
 
-- **Name:** "ShowSteps" is close to **ScreenSteps** (an established step-by-step guide product with a browser extension, and a US trademark application for guide-making software). Decide whether to keep the name (ideally after a trademark search or a word with a trademark lawyer) or pick a more distinct one before anything goes public. The repo is private and the release is a draft until then.
-- **Public steps after that:** `gh repo edit sadhman3-bit/showsteps --visibility public --accept-visibility-change-consequences`, publish the draft release, then submit the store listing (`docs/webstore/submit.html`).
+- Nothing. The repo is public, v1.0.0 is published on GitHub and the extension is live on the Chrome Web Store (`hlkihjibgiehjcaemfhfnfcjphgkcnoa`).
 
 ### Polish: open issues
 
 - `e2e/performance.spec.ts` can miss its time limits when it runs beside another Playwright worker on this machine; it passes when run alone (`node scripts/playwright.mjs test e2e/performance.spec.ts --project=chromium`).
+
+## Update 1.1: schedules
+
+- [x] S0: branch `schedules`, baseline, progress section. Baseline on 2026-10-20: lint, typecheck and build pass; unit tests 261 (core 194, ui 27, desktop 11, extension 21, demo 8); `pnpm e2e` 34 tests: 31 pass in the parallel run, and capture, library and performance pass when re-run alone (they miss timing limits while the machine is busy; the library helper now waits up to 15 s for slow screenshot encoding)
+- [ ] S1: schedule model in `core` (schema, recurrence, placeholders, run log)
+- [ ] S2: running a schedule in the extension (alarms, unattended rules, sign-in stop, run log)
+- [ ] S3: interface (Schedule dialog, Schedules page, notifications)
+- [ ] S4: desktop app (start with Windows, open Chrome when a run is due)
+- [ ] S5: hardening (security, version mix, accessibility, performance, design)
+- [ ] S6: docs, privacy policy and store listing
+- [ ] S7: release 1.1.0 and go live
+
+### Waiting on the owner (1.1)
+
+- Nothing yet.
+
+### Deferred (1.1)
+
+- Nothing yet.
