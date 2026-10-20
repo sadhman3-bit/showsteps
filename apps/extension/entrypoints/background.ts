@@ -510,7 +510,12 @@ export default defineBackground(() => {
     }
   }
 
+  /** A scheduled run is going (in its own window): nothing else may record or guide. */
+  const scheduledRunGoing = () => guidance.isActive && !!guidance.current.scheduleId;
+
   async function startCapture(msg: Extract<PageMessage, { type: 'start' }>): Promise<CaptureState> {
+    // Recording now would also record the scheduled run's own clicks.
+    if (scheduledRunGoing()) throw new Error('busy');
     const tab = await browser.tabs.get(msg.tabId);
     if (!tab.url || !/^(https?|file):/.test(tab.url)) throw new Error('cannot-record-here');
     const allowed = await browser.permissions.contains({ origins: [tab.url] });
@@ -730,6 +735,8 @@ export default defineBackground(() => {
     msg: Extract<GuidePageMessage, { type: 'guide-start' }>,
     options?: StartOptions,
   ) {
+    // Starting another session would end the scheduled run.
+    if (!options?.scheduleId && scheduledRunGoing()) throw new Error('busy');
     const state = await guidance.start(msg, options);
     if (state.tabId !== undefined) await injectGuide(state.tabId);
     return state;

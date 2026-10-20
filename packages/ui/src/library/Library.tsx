@@ -46,6 +46,12 @@ export interface LibraryProps {
   onStartCapture?: () => void;
   /** Open the About dialog. */
   onAbout?: () => void;
+  /** Open the Schedules page (S3). */
+  onSchedules?: () => void;
+  /** A scheduled run stopped or failed since the Schedules page was last opened. */
+  schedulesAttention?: boolean;
+  /** Set when a guide's Run for me runs (S3); offered on each card. */
+  onSchedule?: (guideId: string) => void;
 }
 
 type Modal =
@@ -67,6 +73,9 @@ export function Library({
   onSettings,
   onStartCapture,
   onAbout,
+  onSchedules,
+  schedulesAttention,
+  onSchedule,
 }: LibraryProps) {
   const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -210,6 +219,14 @@ export function Library({
         {onInsights ? (
           <Button variant="ghost" onClick={onInsights}>
             <Icon name="stack" /> {strings.insights.title}
+          </Button>
+        ) : null}
+        {onSchedules ? (
+          <Button variant="ghost" onClick={onSchedules}>
+            <Icon name="clock" /> {strings.schedules.button}
+            {schedulesAttention ? (
+              <span class="ss-attention" role="img" aria-label={strings.schedules.attention} />
+            ) : null}
           </Button>
         ) : null}
         {onSettings ? (
@@ -377,8 +394,12 @@ export function Library({
               view={view}
               trash={inTrash}
               onOpen={() => onOpen(g.id)}
+              {...(onSchedule ? { schedulable: g.apps.some((a) => a.kind === 'web') } : {})}
               onAction={(action) => {
                 switch (action) {
+                  case 'schedule':
+                    onSchedule?.(g.id);
+                    break;
                   case 'rename':
                   case 'tags':
                   case 'move':
@@ -493,13 +514,15 @@ export function Library({
 }
 
 type CardAction =
-  'rename' | 'tags' | 'move' | 'duplicate' | 'export' | 'trash' | 'restore' | 'purge';
+  'rename' | 'tags' | 'move' | 'duplicate' | 'export' | 'schedule' | 'trash' | 'restore' | 'purge';
 
 function GuideCard(props: {
   store: GuideStore;
   guide: GuideSummary;
   view: 'grid' | 'list';
   trash: boolean;
+  /** Offer Schedule; false shows it disabled (no browser steps). */
+  schedulable?: boolean;
   onOpen: () => void;
   onAction: (a: CardAction) => void;
 }) {
@@ -521,6 +544,9 @@ function GuideCard(props: {
         ['move', s.moveTo],
         ['duplicate', s.duplicate],
         ['export', s.export],
+        ...(props.schedulable === undefined
+          ? []
+          : ([['schedule', strings.schedules.schedule]] as [CardAction, string][])),
         ['trash', s.moveToTrash],
       ];
   return (
@@ -567,6 +593,10 @@ function GuideCard(props: {
               <button
                 type="button"
                 role="menuitem"
+                disabled={action === 'schedule' && !props.schedulable}
+                {...(action === 'schedule' && !props.schedulable
+                  ? { title: strings.schedules.needsWebStep }
+                  : {})}
                 onClick={(e) => {
                   (
                     e.currentTarget.closest('details') as HTMLDetailsElement | null

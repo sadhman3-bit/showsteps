@@ -44,6 +44,13 @@ export { flattenStepImage, prepareExport } from './export/flatten.js';
 export { RunDialog, type RunSpeed } from './guidance/RunDialog.js';
 export { CommentBox, useComments, type CommentsApi } from './guidance/Comments.js';
 export { Insights } from './guidance/Insights.js';
+export { ScheduleDialog, type ScheduleDialogProps } from './schedule/ScheduleDialog.js';
+export {
+  SchedulesPage,
+  type ScheduleItem,
+  type SchedulesPageProps,
+} from './schedule/SchedulesPage.js';
+export { describeSchedule, formatWhen } from './schedule/format.js';
 export { SettingsDialog, type UserSettings } from './guidance/SettingsDialog.js';
 export { detectAi, anyAi, type AiCapabilities } from './ai/builtin.js';
 export { AiTools } from './editor/AiTools.js';

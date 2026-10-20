@@ -820,3 +820,17 @@ kbd,
   width: auto;
   height: 100%;
 }
+
+.ss-popmenu__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
+}
+
+.ss-popmenu__text small {
+  max-width: 260px;
+  color: var(--ss-text-muted);
+  font: var(--ss-text-caption);
+  white-space: normal;
+}

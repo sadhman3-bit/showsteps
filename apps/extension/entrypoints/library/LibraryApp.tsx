@@ -1,5 +1,5 @@
 import { stepNumbers, toPlainText } from '@showsteps/core';
-import type { Guide } from '@showsteps/core';
+import type { Guide, Schedule } from '@showsteps/core';
 import {
   AboutDialog,
   GuideEditor,
@@ -26,6 +26,7 @@ import {
   stepUrl,
   startGuide,
   useBackground,
+  useGuidance,
   writeCaptureMore,
   writeRecapture,
 } from '../../lib/client';
@@ -33,20 +34,24 @@ import { BridgeClient, bridgeStore, copyLibrary } from '../../lib/bridge';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type Settings } from '../../lib/guideMessages';
 import { installSamples } from '../../lib/samples';
 import { readSettings, writeSettings } from '../../lib/settings';
+import { readSchedules, scheduleAttention, useSchedulesVersion } from '../../lib/scheduleClient';
+import { ScheduleHost, Schedules } from './Schedules';
 
 type Route =
   | { page: 'library' }
   | { page: 'edit'; id: string }
   | { page: 'view'; id: string; stepId?: string }
   | { page: 'print'; id: string }
-  | { page: 'insights' };
+  | { page: 'insights' }
+  | { page: 'schedules' };
 
 /**
  * Hash routes: #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId>
- * (reader) · #/guide/<id>/print · #/insights.
+ * (reader) · #/guide/<id>/print · #/insights · #/schedules.
  */
 export function parseRoute(hash: string): Route {
   if (hash.startsWith('#/insights')) return { page: 'insights' };
+  if (hash.startsWith('#/schedules')) return { page: 'schedules' };
   const m = /^#\/guide\/([^/?]+)(?:\/(view|step|print)(?:\/([^/?]+))?)?/.exec(hash);
   if (!m?.[1]) return { page: 'library' };
   const id = decodeURIComponent(m[1]);
@@ -66,6 +71,18 @@ export function LibraryApp() {
   const [route, setRoute] = useState<Route>(() => parseRoute(location.hash));
   // Known in advance: sidePanel.open must run synchronously inside the click.
   const [windowId, setWindowId] = useState<number>();
+  const guidanceState = useGuidance();
+  const schedulesVersion = useSchedulesVersion();
+  const [scheduling, setScheduling] = useState<{ guide: Guide; schedule?: Schedule } | null>(null);
+  const [attention, setAttention] = useState(false);
+  useEffect(() => {
+    void scheduleAttention().then(setAttention);
+  }, [schedulesVersion, route.page]);
+  /** Schedule a guide: edit its schedule if it has one. */
+  const scheduleGuide = async (guide: Guide) => {
+    const existing = (await readSchedules()).find((s) => s.guideId === guide.id);
+    setScheduling({ guide, ...(existing ? { schedule: existing } : {}) });
+  };
 
   useEffect(() => {
     void browser.windows.getCurrent().then((w) => setWindowId(w.id));
@@ -115,7 +132,9 @@ export function LibraryApp() {
             ? strings.guidance.permission
             : error === 'no-web-steps'
               ? strings.guidance.noWebSteps
-              : strings.guidance.startFailed,
+              : error === 'busy'
+                ? strings.schedules.busy
+                : strings.guidance.startFailed,
         );
     });
   };
@@ -249,6 +268,14 @@ export function LibraryApp() {
       {notice}
     </p>
   ) : null;
+  const scheduleDialog = scheduling ? (
+    <ScheduleHost
+      guide={scheduling.guide}
+      {...(scheduling.schedule ? { schedule: scheduling.schedule } : {})}
+      desktopConnected={desktopConnected}
+      onDone={() => setScheduling(null)}
+    />
+  ) : null;
 
   if (route.page === 'edit') {
     return (
@@ -298,8 +325,28 @@ export function LibraryApp() {
           onPrint={() => go(printRoute(route.id))}
           onGuideMe={(g) => guide(g, 'guide')}
           onRunForMe={(g, run) => guide(g, 'run', run)}
+          onSchedule={(g) => void scheduleGuide(g)}
           user={settings.userName}
         />
+        {scheduleDialog}
+      </>
+    );
+  }
+  if (route.page === 'schedules') {
+    return (
+      <>
+        <Schedules
+          store={store}
+          refreshKey={libraryVersion}
+          runningId={guidanceState.status === 'active' ? guidanceState.scheduleId : undefined}
+          onBack={() => go('#/')}
+          onEdit={(schedule) =>
+            void store.getGuide(schedule.guideId).then((g) => {
+              if (g) setScheduling({ guide: g, schedule });
+            })
+          }
+        />
+        {scheduleDialog}
       </>
     );
   }
@@ -336,7 +383,11 @@ export function LibraryApp() {
         onSettings={() => setShowSettings(true)}
         onStartCapture={openSidePanel}
         onAbout={() => setShowAbout(true)}
+        onSchedules={() => go('#/schedules')}
+        schedulesAttention={attention}
+        onSchedule={(id) => void store.getGuide(id).then((g) => (g ? scheduleGuide(g) : undefined))}
       />
+      {scheduleDialog}
       {showAbout ? (
         <AboutDialog
           version={browser.runtime.getManifest().version}
