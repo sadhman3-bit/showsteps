@@ -384,3 +384,10 @@ Run `pnpm release`. On a clean Windows user account, follow the README's **Insta
 - **MT-P-5 PDF export:** open an exported PDF in Acrobat or Edge: navy cover band with the pink Trail and the white title; File → Properties → Fonts lists FunnelSans and FunnelDisplay as embedded subsets.
 - **MT-P-6 Pink interface:** record a step on a pink or red page (for example a red "Delete" banner): the highlight ring in the editor and in exports is navy; the image editor's Highlight colour menu can switch it back to pink.
 - **MT-P-7 Screen reader spot check:** with Narrator, tab through the side panel and the editor top bar: every icon button announces its name (Pause, Live Blur, More actions, Undo, Redo, Share).
+
+## Update 1.1: schedules
+
+- **MT-S-1 Notifications:** with notifications allowed, set a schedule on the demo invoice guide (its Submit step not pre-approved) a few minutes ahead and switch to another app. **Expected:** a Chrome notification "ShowSteps paused Scheduled invoice: needs your confirmation" appears and stays; clicking it (or **Open**) brings the run's window to the front, stopped at Submit invoice.
+- **MT-S-2 No notifications:** block ShowSteps's notifications in Chrome's site settings and let a run stop. **Expected:** the toolbar icon shows `!` until the Schedules page is opened.
+- **MT-S-3 Sign-in stop:** run the scheduled guide after visiting `http://localhost:5173/auth/expire`. **Expected:** the run window shows the Demo ID password page with "Sign in, then press Continue." across the top; after signing in, **Continue** finishes the run.
+- **MT-S-4 Unfocused window:** while a scheduled run goes, keep typing in another window. **Expected:** focus never moves to the run's window, and the run log's pictures show the run's pages, not yours.

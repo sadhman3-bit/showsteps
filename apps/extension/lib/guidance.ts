@@ -1,6 +1,7 @@
 import {
   createId,
   guideSteps,
+  needsSignIn,
   parseAnalytics,
   planStep,
   recordRun,
@@ -16,6 +17,7 @@ import {
   GUIDANCE_IDLE,
   RunReplySchema,
   ShowReplySchema,
+  SignInReplySchema,
   type GuideControl,
   type GuidePageMessage,
   type GuideToContent,
@@ -55,6 +57,16 @@ export interface PersistedGuidance {
   state: GuidanceState;
   values: Record<string, string>;
   run: Run;
+  approved?: string[];
+  windowId?: number;
+}
+
+export interface StartOptions {
+  /** Confirm steps that run without stopping: a schedule's approvals, for this guide version. */
+  approved?: readonly string[];
+  /** The schedule this run is for. It stays in `windowId` and doesn't follow other tabs. */
+  scheduleId?: string;
+  windowId?: number;
 }
 
 /** Pause between Run for me steps, and how long the cursor takes to travel. */
@@ -63,6 +75,15 @@ const CHECK_RETRY_MS = 750;
 const SPEED_DELAY: Record<Speed, number> = { slow: 1400, normal: 700, fast: 250 };
 const PAGE_LOAD_TIMEOUT = 15_000;
 const RETRY_MS = 250;
+
+/** A URL's host name, or '' when it isn't a URL (`URL.canParse` needs Chrome 120). */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+}
 
 /** Which frame shows a step: the iframe it was recorded in, else the top frame. */
 export function frameFor(frames: FrameInfo[], step: Step): number | undefined {
@@ -85,6 +106,9 @@ export class Guidance {
   private values: Record<string, string> = {};
   private run: Run | undefined;
   private confirmed = new Set<number>();
+  private approved = new Set<string>();
+  /** A scheduled run's own window: guidance never moves to tabs outside it. */
+  private ownWindow: number | undefined;
   /** Bumped whenever the current step changes; stale async work checks it and stops. */
   private seq = 0;
   private reshowTimer: ReturnType<typeof setTimeout> | undefined;
@@ -106,14 +130,21 @@ export class Guidance {
   private set(patch: Partial<GuidanceState>): void {
     this.state = { ...this.state, ...patch };
     if (!patch.reason && 'phase' in patch) delete this.state.reason;
-    this.deps.broadcast(this.state);
+    // A copy: listeners may read it later, after this session's state has moved on.
+    this.deps.broadcast({ ...this.state });
     void this.save();
   }
 
   private async save(): Promise<void> {
     await this.deps.persist(
       this.state.status === 'active' && this.run
-        ? { state: this.state, values: this.values, run: this.run }
+        ? {
+            state: this.state,
+            values: this.values,
+            run: this.run,
+            ...(this.approved.size ? { approved: [...this.approved] } : {}),
+            ...(this.ownWindow !== undefined ? { windowId: this.ownWindow } : {}),
+          }
         : undefined,
     );
   }
@@ -141,7 +172,10 @@ export class Guidance {
 
   // ---------- Starting and stopping ----------
 
-  async start(msg: Extract<GuidePageMessage, { type: 'guide-start' }>): Promise<GuidanceState> {
+  async start(
+    msg: Extract<GuidePageMessage, { type: 'guide-start' }>,
+    options: StartOptions = {},
+  ): Promise<GuidanceState> {
     if (this.isActive) await this.finish(false);
     const guide = await this.deps.store.getGuide(msg.guideId);
     if (!guide) throw new Error('not-found');
@@ -152,7 +186,10 @@ export class Guidance {
 
     let tabId = msg.tabId;
     const currentUrl = tabId === undefined ? undefined : await this.deps.tabUrl(tabId);
-    if (tabId === undefined || !currentUrl || !/^(https?|file):/.test(currentUrl)) {
+    if (options.scheduleId && tabId !== undefined) {
+      // A scheduled run's window was opened on the first page for it: stay in that tab even if
+      // the site redirected it (to sign in, say). The first step takes it where it should be.
+    } else if (tabId === undefined || !currentUrl || !/^(https?|file):/.test(currentUrl)) {
       tabId = await this.deps.openTab(startUrl, msg.windowId);
     } else if (!samePage(currentUrl, startUrl) && (msg.from ?? 0) === 0) {
       // The first step's page is somewhere else: open it next to the current tab.
@@ -162,6 +199,8 @@ export class Guidance {
     this.steps = steps;
     this.values = msg.values ?? {};
     this.confirmed = new Set();
+    this.approved = new Set(options.approved ?? []);
+    this.ownWindow = options.scheduleId ? (options.windowId ?? msg.windowId) : undefined;
     this.run = {
       id: createId(),
       mode: msg.mode,
@@ -181,6 +220,7 @@ export class Guidance {
       phase: 'finding',
       speed: msg.speed ?? 'normal',
       stepThrough: msg.stepThrough ?? false,
+      ...(options.scheduleId ? { scheduleId: options.scheduleId } : {}),
     };
     void this.recordRun();
     void this.show();
@@ -203,7 +243,13 @@ export class Guidance {
       await this.recordRun();
     }
     this.run = undefined;
-    this.set(completed ? { status: 'done', phase: 'finding' } : { ...GUIDANCE_IDLE });
+    this.approved = new Set();
+    this.ownWindow = undefined;
+    const ended: Partial<GuidanceState> = completed
+      ? { status: 'done', phase: 'finding' }
+      : { ...GUIDANCE_IDLE };
+    this.set(ended);
+    if (!completed) delete this.state.scheduleId;
   }
 
   /** After a worker restart: carry on where the session was (Run for me waits, paused). */
@@ -215,6 +261,8 @@ export class Guidance {
     this.steps = guideSteps(guide);
     this.values = data.values;
     this.run = data.run;
+    this.approved = new Set(data.approved ?? []);
+    this.ownWindow = data.windowId;
     this.state = data.state;
     if (this.state.mode === 'run') this.set({ phase: 'paused' });
     else void this.show();
@@ -306,7 +354,8 @@ export class Guidance {
       return;
     }
 
-    const needsConfirm = step.agent.confirm && !this.confirmed.has(index);
+    const needsConfirm =
+      step.agent.confirm && !this.confirmed.has(index) && !this.approved.has(step.id);
     if (mode === 'run' && plan.kind === 'act' && !needsConfirm) return this.act(seq, step);
 
     // In Guide Me the person does every step, so secrets and uploads are highlighted like any
@@ -368,7 +417,32 @@ export class Guidance {
       }
       return;
     }
+    if (await this.signInStop(seq, step)) return;
+    if (seq !== this.seq) return;
     this.set({ phase: 'failed', reason: 'not-found' });
+  }
+
+  /**
+   * The step's element wasn't found: if the page now is a sign-in page on another host (the
+   * session ended and the app sent the person to sign in), stop with "Sign in, then press
+   * Continue". Run for me never types passwords or codes, so the person signs in themselves.
+   */
+  private async signInStop(seq: number, step: Step): Promise<boolean> {
+    const tabId = this.state.tabId;
+    if (tabId === undefined || step.app.kind !== 'web') return false;
+    const reply = SignInReplySchema.safeParse(
+      await this.deps.send(tabId, { type: 'guide-signin' }, 0).catch(() => undefined),
+    );
+    if (seq !== this.seq || !reply.success) return false;
+    const stepHost = hostOf(step.app.url);
+    if (
+      !stepHost ||
+      !needsSignIn({ host: reply.data.host, stepHost, hasSecretField: reply.data.secretField })
+    )
+      return false;
+    this.set({ phase: 'failed', reason: 'sign-in' });
+    void this.deps.send(tabId, { type: 'guide-notice', kind: 'sign-in' }, 0).catch(() => undefined);
+    return true;
   }
 
   /** Run for me: let the page settle, check expectations, then go on. */
@@ -534,8 +608,9 @@ export class Guidance {
   }
 
   /** Guidance follows the person to another tab (a link that opened a new tab, say). */
-  async tabActivated(tabId: number): Promise<void> {
+  async tabActivated(tabId: number, windowId?: number): Promise<void> {
     if (!this.isActive || tabId === this.state.tabId) return;
+    if (this.ownWindow !== undefined && windowId !== this.ownWindow) return;
     const url = await this.deps.tabUrl(tabId);
     if (!url || !/^(https?|file):/.test(url)) return;
     await this.clear();

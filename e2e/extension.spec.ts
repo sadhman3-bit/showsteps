@@ -20,5 +20,10 @@ test('release manifest asks for no host permissions at install', () => {
   expect(manifest.host_permissions ?? []).toEqual([]);
   expect(manifest.content_scripts ?? []).toEqual([]);
   expect(manifest.optional_host_permissions).toEqual(['<all_urls>']);
+  // 1.0's permissions plus `alarms` (no warning), so 1.1 updates without asking anything.
+  expect([...manifest.permissions].sort()).toEqual(
+    ['alarms', 'scripting', 'sidePanel', 'storage', 'unlimitedStorage', 'webNavigation'].sort(),
+  );
+  expect([...manifest.optional_permissions].sort()).toEqual(['nativeMessaging', 'notifications']);
   expect(manifest.commands['toggle-capture'].suggested_key.default).toBe('Alt+Shift+R');
 });

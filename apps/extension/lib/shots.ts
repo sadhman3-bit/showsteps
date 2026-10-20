@@ -78,3 +78,23 @@ export async function encodeScreenshot(dataUrl: string, quality = 0.9): Promise<
     bitmap.close();
   }
 }
+
+/** Run-log pictures: JPEG at about 70 % quality, at most this wide. */
+export const LOG_SHOT_WIDTH = 1280;
+
+/** A scheduled run's step picture: a captureVisibleTab data URL as a small JPEG. */
+export async function encodeLogShot(dataUrl: string): Promise<Blob> {
+  const bitmap = await createImageBitmap(await (await fetch(dataUrl)).blob());
+  try {
+    const size = fitWidth(bitmap.width, bitmap.height, LOG_SHOT_WIDTH);
+    const canvas = new OffscreenCanvas(size.width, size.height);
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(bitmap, 0, 0, size.width, size.height);
+    }
+    return await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 });
+  } finally {
+    bitmap.close();
+  }
+}

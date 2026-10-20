@@ -64,12 +64,12 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
   {
-    files: ['fixtures/demo-app/public/**/*.js'],
+    files: ['fixtures/demo-app/public/**/*.js', 'fixtures/demo-app/xorigin/**/*.js'],
     languageOptions: { sourceType: 'script', globals: { ...globals.browser } },
   },
   {
     files: ['**/*.{mjs,cjs,js}', '**/*.config.ts', 'e2e/**/*.ts'],
-    ignores: ['fixtures/demo-app/public/**'],
+    ignores: ['fixtures/demo-app/public/**', 'fixtures/demo-app/xorigin/**'],
     languageOptions: { globals: { ...globals.node } },
   },
 );

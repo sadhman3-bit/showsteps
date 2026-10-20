@@ -342,6 +342,8 @@ export const strings = {
     resume: 'Resume',
     stepOnce: 'Do next step',
     retry: 'Try again',
+    continue: 'Continue',
+    signIn: 'Sign in, then press Continue.',
     confirmDo: 'Confirm and continue',
     confirmSelf: 'I’ll do it myself',
     speed: 'Speed',
@@ -368,6 +370,7 @@ export const strings = {
       manual: 'This is a step for you to do.',
       cannot: 'ShowSteps cannot do this one on this page.',
       'not-found': 'The element could not be found.',
+      'sign-in': 'Sign in, then press Continue.',
     } as Record<string, string>,
     expectFailed: (what: string) => `What should have happened did not: ${what}.`,
     openPage: 'Open the page',
@@ -383,6 +386,33 @@ export const strings = {
     startFailed: 'Could not start. Open a website tab and try again.',
     permission:
       'ShowSteps needs website access to show steps on pages. Try again and choose Allow.',
+  },
+  schedules: {
+    /** Notifications from scheduled runs. Never include typed values. */
+    notify: {
+      title: 'ShowSteps',
+      paused: {
+        confirm: (name: string) => `ShowSteps paused ${name}: needs your confirmation`,
+        manual: (name: string, step: number) => `ShowSteps paused ${name}: step ${step} needs you`,
+        'sign-in': (name: string) => `ShowSteps paused ${name}: sign-in needed`,
+        'not-found': (name: string, step: number) =>
+          `ShowSteps paused ${name}: couldn’t find step ${step}`,
+        failed: (name: string, step: number) =>
+          `ShowSteps paused ${name}: step ${step} didn’t work`,
+      },
+      due: (name: string) => `${name} is due. Start now?`,
+      finished: {
+        completed: (name: string) => `${name} finished.`,
+        stopped: (name: string) => `${name} stopped before the end. See the run log.`,
+        failed: (name: string) => `${name} couldn’t run. See the run log.`,
+        skipped: (name: string) => `${name} was skipped: the browser was busy.`,
+        missed: (name: string) => `${name} didn’t run at its time.`,
+      },
+      checkFailed: (name: string, step: number) =>
+        `ShowSteps checked ${name} ahead of its run: couldn’t find step ${step}`,
+      open: 'Open',
+      start: 'Start',
+    },
   },
   discover: {
     heading: 'Guides for this site',

@@ -41,6 +41,8 @@ async function setup(blocks: Step[], tabUrl = PAGE) {
   const states: GuidanceState[] = [];
   /** How the page answers guide-show / guide-run. */
   let found = true;
+  /** How the top page answers the sign-in check (undefined: no answer). */
+  let signIn: { host: string; secretField: boolean } | undefined;
   const deps: GuidanceDeps = {
     store,
     userName: async () => 'Alex',
@@ -57,6 +59,7 @@ async function setup(blocks: Step[], tabUrl = PAGE) {
       if (msg.type === 'guide-show') return { found };
       if (msg.type === 'guide-run') return { result: found ? 'acted' : 'not-found' };
       if (msg.type === 'guide-check') return { failed: [] };
+      if (msg.type === 'guide-signin') return signIn;
       return { ok: true };
     },
     broadcast: (s) => states.push(s),
@@ -74,6 +77,8 @@ async function setup(blocks: Step[], tabUrl = PAGE) {
     states,
     settle,
     notFound: () => (found = false),
+    found: () => (found = true),
+    signInPage: (page: { host: string; secretField: boolean } | undefined) => (signIn = page),
     shown: () => sent.filter((x) => x.msg.type === 'guide-show').map((x) => x.msg),
     ran: () => sent.filter((x) => x.msg.type === 'guide-run').map((x) => x.msg),
   };
@@ -183,5 +188,80 @@ describe('Run for me', () => {
     expect(t.g.current).toMatchObject({ index: 1, phase: 'failed', reason: 'not-found' });
     await t.g.control('stop');
     expect(t.g.current.status).toBe('idle');
+  });
+
+  it('stops for a sign-in page on another host, and Continue retries the step', async () => {
+    const t = await setup([step('Click A'), step('Click B')]);
+    await t.g.start({ type: 'guide-start', guideId: t.guide.id, mode: 'run', tabId: 1 });
+    await t.settle();
+    expect(t.g.current.status).toBe('done');
+
+    const t2 = await setup([step('Click A'), step('Click B')]);
+    t2.notFound();
+    t2.signInPage({ host: '127.0.0.1', secretField: true });
+    await t2.g.start({ type: 'guide-start', guideId: t2.guide.id, mode: 'run', tabId: 1 });
+    await t2.settle();
+    expect(t2.g.current).toMatchObject({ index: 0, phase: 'failed', reason: 'sign-in' });
+    expect(t2.sent.find((x) => x.msg.type === 'guide-notice')).toEqual({
+      msg: { type: 'guide-notice', kind: 'sign-in' },
+      frameId: 0,
+    });
+    // The person signs in; Continue tries the step again and the run finishes.
+    t2.found();
+    await t2.g.control('retry');
+    await t2.settle();
+    expect(t2.g.current.status).toBe('done');
+  });
+
+  it('treats a missing element as not found when the page is on the step’s own host or no sign-in', async () => {
+    const own = await setup([step('Click A')]);
+    own.notFound();
+    own.signInPage({ host: 'localhost', secretField: true });
+    await own.g.start({ type: 'guide-start', guideId: own.guide.id, mode: 'run', tabId: 1 });
+    await own.settle();
+    expect(own.g.current).toMatchObject({ phase: 'failed', reason: 'not-found' });
+
+    const plainPage = await setup([step('Click A')]);
+    plainPage.notFound();
+    plainPage.signInPage({ host: 'example.com', secretField: false });
+    await plainPage.g.start({
+      type: 'guide-start',
+      guideId: plainPage.guide.id,
+      mode: 'run',
+      tabId: 1,
+    });
+    await plainPage.settle();
+    expect(plainPage.g.current).toMatchObject({ phase: 'failed', reason: 'not-found' });
+
+    const idp = await setup([step('Click A')]);
+    idp.notFound();
+    idp.signInPage({ host: 'acme.okta.com', secretField: false });
+    await idp.g.start({ type: 'guide-start', guideId: idp.guide.id, mode: 'run', tabId: 1 });
+    await idp.settle();
+    expect(idp.g.current).toMatchObject({ phase: 'failed', reason: 'sign-in' });
+  });
+
+  it('runs pre-approved confirm steps for a schedule, in its own window only', async () => {
+    const submit = step('Click Submit', {
+      agent: { timeoutMs: 1000, confirm: true, visualOnly: false },
+    });
+    const other = step('Click Delete', {
+      agent: { timeoutMs: 1000, confirm: true, visualOnly: false },
+    });
+    const t = await setup([step('Click A'), submit, other]);
+    await t.g.start(
+      { type: 'guide-start', guideId: t.guide.id, mode: 'run', tabId: 1, windowId: 5 },
+      { approved: [submit.id], scheduleId: 'sched', windowId: 5 },
+    );
+    await t.settle();
+    // Submit ran without asking; Delete still asks.
+    expect(t.ran().map((m) => m.type === 'guide-run' && m.step.id)).toContain(submit.id);
+    expect(t.g.current).toMatchObject({ index: 2, phase: 'confirm', scheduleId: 'sched' });
+    // The person switching tabs in their own window doesn't pull the run there.
+    await t.g.tabActivated(2, 9);
+    expect(t.g.current.tabId).toBe(1);
+    await t.g.control('stop');
+    expect(t.states.at(-1)).toMatchObject({ status: 'idle', scheduleId: 'sched' });
+    expect(t.g.current.scheduleId).toBeUndefined();
   });
 });

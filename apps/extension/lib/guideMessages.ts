@@ -1,5 +1,11 @@
 // Messages for guidance (Guide Me, Run for me), notes and pins, validated with Zod on receipt.
-import { InputModeSchema, PageMarkSchema, StepSchema, TargetSchema } from '@showsteps/core';
+import {
+  InputModeSchema,
+  PageMarkSchema,
+  ScheduleSchema,
+  StepSchema,
+  TargetSchema,
+} from '@showsteps/core';
 import { z } from 'zod';
 
 export const SpeedSchema = z.enum(['slow', 'normal', 'fast']);
@@ -34,6 +40,8 @@ export const GuidanceStateSchema = z.object({
   reason: z.string().optional(),
   speed: SpeedSchema,
   stepThrough: z.boolean(),
+  /** Set while Run for me runs for a schedule (in its own window). */
+  scheduleId: z.string().optional(),
 });
 export type GuidanceState = z.infer<typeof GuidanceStateSchema>;
 
@@ -134,6 +142,13 @@ export const GuidePageMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('settings-changed') }),
   /** Desktop app connection status (and reconnect if the setting changed). */
   z.object({ type: z.literal('desktop-get') }),
+  /** Schedules (S2): pages read schedules and run logs directly; changes go through here. */
+  z.object({ type: z.literal('schedule-save'), schedule: ScheduleSchema }),
+  z.object({ type: z.literal('schedule-delete'), id: z.string().min(1) }),
+  z.object({ type: z.literal('schedule-enable'), id: z.string().min(1), enabled: z.boolean() }),
+  z.object({ type: z.literal('schedule-run'), id: z.string().min(1) }),
+  /** The Schedules page was opened: clear the toolbar badge. */
+  z.object({ type: z.literal('schedule-seen') }),
 ]);
 export type GuidePageMessage = z.infer<typeof GuidePageMessageSchema>;
 
@@ -191,6 +206,10 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('marks-changed') }),
   z.object({ type: z.literal('pick'), on: z.boolean() }),
+  /** Top frame: does this page look like a sign-in page? (Run for me could not find a step.) */
+  z.object({ type: z.literal('guide-signin') }),
+  /** Top frame: a message across the page with its button (cleared by guide-clear). */
+  z.object({ type: z.literal('guide-notice'), kind: z.enum(['sign-in']) }),
 ]);
 export type GuideToContent = z.infer<typeof GuideToContentSchema>;
 
@@ -217,6 +236,8 @@ export const SelfCheckReportSchema = z.array(
 );
 
 export const CheckReplySchema = z.object({ failed: z.array(z.string()) });
+/** The top page's host and whether a password or one-time-code field shows on it. */
+export const SignInReplySchema = z.object({ host: z.string(), secretField: z.boolean() });
 
 /** Broadcasts to extension pages. */
 export const GuideBroadcastSchema = z.discriminatedUnion('type', [
@@ -231,5 +252,7 @@ export const GuideBroadcastSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('marks-changed') }),
   z.object({ type: z.literal('desktop-state'), connected: z.boolean() }),
+  /** Schedules or their run logs changed. */
+  z.object({ type: z.literal('schedules-changed') }),
 ]);
 export type GuideBroadcast = z.infer<typeof GuideBroadcastSchema>;

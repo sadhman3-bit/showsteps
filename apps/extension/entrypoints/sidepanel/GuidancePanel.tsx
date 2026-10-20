@@ -28,12 +28,16 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
   const run = state.mode === 'run';
   const done = state.status === 'done';
 
-  const message =
-    state.phase === 'failed' && state.reason?.startsWith('expect:')
+  const signIn = state.phase === 'failed' && state.reason === 'sign-in';
+  const message = signIn
+    ? g.signIn
+    : state.phase === 'failed' && state.reason?.startsWith('expect:')
       ? g.expectFailed(state.reason.slice(7))
       : g.phase[state.phase];
   const reason =
-    state.reason && !state.reason.startsWith('expect:') ? g.reasons[state.reason] : undefined;
+    state.reason && !signIn && !state.reason.startsWith('expect:')
+      ? g.reasons[state.reason]
+      : undefined;
 
   const openPage = () => {
     if (state.tabId === undefined || step?.app.kind !== 'web') return;
@@ -63,7 +67,8 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
         break;
       case 'failed':
       case 'not-found':
-        buttons.push([g.retry, 'retry'], [g.didIt, 'next'], [g.skip, 'skip']);
+        if (state.reason === 'sign-in') buttons.push([g.continue, 'retry', 'primary']);
+        else buttons.push([g.retry, 'retry'], [g.didIt, 'next'], [g.skip, 'skip']);
         break;
       default:
         buttons.push([g.didIt, 'next', 'primary'], [g.skip, 'skip']);

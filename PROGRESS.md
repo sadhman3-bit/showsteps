@@ -198,7 +198,7 @@ Fixes found while testing:
 
 - [x] S0: branch `schedules`, baseline, progress section. Baseline on 2026-10-20: lint, typecheck and build pass; unit tests 261 (core 194, ui 27, desktop 11, extension 21, demo 8); `pnpm e2e` 34 tests: 31 pass in the parallel run, and capture, library and performance pass when re-run alone (they miss timing limits while the machine is busy; the library helper now waits up to 15 s for slow screenshot encoding)
 - [x] S1: schedule model in `core` (`packages/core/src/schedule/`: `ScheduleSchema`, `RunLogSchema`, `nextRun`/`nextRuns`/`missedRun` with Sydney daylight-saving and month-end tests, `resolveTokens` placeholders, `guideVersion` and approvals, `SIGN_IN_HOSTS`). Unit tests 286 (core 219)
-- [ ] S2: running a schedule in the extension (alarms, unattended rules, sign-in stop, run log)
+- [x] S2: running a schedule in the extension: `alarms` permission and optional `notifications`; `Scheduler` (`apps/extension/lib/schedules.ts`: alarms, start-up rebuild and catch-up, busy retry, unattended stops with notifications and waits, desktop-step guides ask to start, check first) and `RunLogStore` (IndexedDB `showsteps-runlogs`, JPEG per step, newest 20 per schedule); Run for me gains pre-approved confirm steps, the sign-in stop ("Sign in, then press Continue") and stays in a scheduled run's window and tab; the demo app has a session cookie and a mock identity provider. Tests: extension unit 38, demo 11, e2e `schedules.spec.ts` (3)
 - [ ] S3: interface (Schedule dialog, Schedules page, notifications)
 - [ ] S4: desktop app (start with Windows, open Chrome when a run is due)
 - [ ] S5: hardening (security, version mix, accessibility, performance, design)

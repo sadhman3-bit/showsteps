@@ -9,4 +9,9 @@
     // Full page load into the SPA.
     window.location.href = '/app/';
   });
+  // Single sign-on through the mock identity provider on the second port.
+  const xoriginPort = (window.DEMO_CONFIG && window.DEMO_CONFIG.xoriginPort) || 5174;
+  const callback = location.origin + '/auth/callback?return=%2Fapp%2F';
+  document.getElementById('sso').href =
+    'http://127.0.0.1:' + xoriginPort + '/idp/?return=' + encodeURIComponent(callback);
 })();
