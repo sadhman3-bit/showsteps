@@ -207,7 +207,9 @@ Fixes found while testing:
 
 ### Waiting on the owner (1.1)
 
-- **Say "go" for `pnpm e2e:desktop`** (S4, and again in S7). It drives the real mouse and keyboard inside a Notepad window the tests open, and starts a desktop app test copy; leave the mouse and keyboard alone for about 5 minutes. The new test (`e2e/desktop-schedule.spec.ts`) points the app at a stand-in for Chrome, so your own Chrome is never touched.
+1. **Say "go" for `pnpm e2e:desktop`.** It drives the real mouse and keyboard inside a Notepad window the tests open, and starts a test copy of the desktop app; leave the mouse and keyboard alone for about 5 minutes. The new test (`e2e/desktop-schedule.spec.ts`) points the app at a stand-in for Chrome, so your own Chrome is never touched.
+2. **Manual tests MT-S-1 to MT-S-8** in `docs/MANUAL_TESTS.md` (about 15 minutes). MT-S-7 and MT-S-8 need the 1.1 desktop app installed (`ShowSteps-Setup-1.1.0.exe`, built after the merge).
+3. Then: merge PR https://github.com/sadhman3-bit/showsteps/pull/1 once CI passes, build the release on `main`, and a draft GitHub release; you say "go" to publish it, then update the Chrome Web Store item (steps at the top of `docs/webstore/submit.html`).
 
 ### Deferred (1.1)
 
