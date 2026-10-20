@@ -523,6 +523,8 @@ export const strings = {
       'not-found': 'Couldn’t find a step',
       failed: 'A step didn’t work',
       stopped: 'Stopped by you',
+      'window-closed': 'Its window was closed',
+      replaced: 'Another Guide Me or Run for me started',
       interrupted: 'Chrome closed during the run',
       busy: 'The browser was busy',
       closed: 'Chrome was closed or the computer was asleep',
@@ -540,6 +542,8 @@ export const strings = {
     scheduledRun: 'Scheduled run',
     showWindow: 'Show window',
     guideMissing: 'Deleted guide',
+    suggestStartWithWindows:
+      'Tip: turn on Start with Windows in the ShowSteps desktop app’s Settings, so it can open Chrome for this schedule even after the computer restarts.',
   },
   discover: {
     heading: 'Guides for this site',
@@ -779,6 +783,9 @@ export const strings = {
     myLibrary: 'My library',
     teamLibrary: 'Team library',
     libraryFolder: 'Library folder',
+    startWithWindows: 'Start with Windows',
+    startWithWindowsHint:
+      'Starts in the tray when you sign in to Windows, so it can open Chrome when a scheduled run is due.',
     sharedFolder: 'Team library folder (synced with OneDrive or SharePoint)',
     sharedNone: 'None',
     choose: 'Choose…',

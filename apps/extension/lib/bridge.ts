@@ -7,9 +7,11 @@ import {
   PartCollector,
   decodeMessage,
   encodeMessage,
+  type BridgeCapability,
   type BridgePart,
   type BridgeReply,
   type GuideStore,
+  type HelloReply,
 } from '@showsteps/core';
 
 type Status = 'off' | 'connecting' | 'connected' | 'offline';
@@ -28,6 +30,8 @@ export class BridgeClient {
   >();
   private readonly parts = new PartCollector();
   private connecting: Promise<boolean> | undefined;
+  /** The desktop app's reply to hello (1.0 sends no capabilities). */
+  private hello: HelloReply | undefined;
 
   constructor(
     private readonly role: 'background' | 'page',
@@ -37,6 +41,16 @@ export class BridgeClient {
 
   get connected(): boolean {
     return this.status === 'connected';
+  }
+
+  /** Whether the connected desktop app offers a feature beyond 1.0. */
+  can(capability: BridgeCapability): boolean {
+    return this.connected && !!this.hello?.capabilities?.includes(capability);
+  }
+
+  /** The desktop app starts with Windows (undefined for desktop app 1.0). */
+  get startWithWindows(): boolean | undefined {
+    return this.connected ? this.hello?.startWithWindows : undefined;
   }
 
   /** Connect (once at a time). Resolves false when the desktop app is not running or missing. */
@@ -64,7 +78,10 @@ export class BridgeClient {
     );
     port.onMessage.addListener((raw: unknown) => this.receive(raw));
     const hello = this.call('hello', [{ role: this.role }]).then(
-      () => true,
+      (reply) => {
+        this.hello = reply && typeof reply === 'object' ? (reply as HelloReply) : undefined;
+        return true;
+      },
       () => false,
     );
     const ok = await Promise.race([hello, gone]);
@@ -81,6 +98,7 @@ export class BridgeClient {
     const was = this.status === 'connected';
     this.status = 'offline';
     this.port = undefined;
+    this.hello = undefined;
     for (const w of this.waiting.values()) w.reject(new Error('bridge closed'));
     this.waiting.clear();
     if (was) this.onStatus(false);
@@ -108,6 +126,11 @@ export class BridgeClient {
     }
     if ('event' in msg) {
       const ev = msg as { event: string; data?: unknown };
+      // The desktop app's settings changed (Start with Windows): keep the hello info current.
+      if (ev.event === 'desktop-info' && this.hello && ev.data && typeof ev.data === 'object') {
+        const on = (ev.data as { startWithWindows?: unknown }).startWithWindows;
+        if (typeof on === 'boolean') this.hello = { ...this.hello, startWithWindows: on };
+      }
       this.onEvent(ev.event, ev.data);
       return;
     }

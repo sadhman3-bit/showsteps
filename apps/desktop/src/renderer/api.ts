@@ -39,6 +39,7 @@ export interface DesktopSettingsView {
   sharedAvailable: boolean;
   defaultInputMode: InputMode;
   theme: 'system' | 'light' | 'dark';
+  startWithWindows: boolean;
 }
 
 export interface CaptureView {

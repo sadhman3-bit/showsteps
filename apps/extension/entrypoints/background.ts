@@ -72,11 +72,20 @@ export default defineBackground(() => {
     (event, data) => void onDesktopEvent(event, data),
     (connected) => {
       broadcast({ type: 'desktop-state', connected });
-      if (connected) bridge.sendEvent('capture-state', recorder.current);
-      else desktopDisconnected();
+      if (connected) {
+        bridge.sendEvent('capture-state', recorder.current);
+        // S4: a desktop app that can open Chrome for runs learns the next due time.
+        void scheduler.nextDueAt().then(sendNextDue);
+      } else desktopDisconnected();
     },
   );
   const desktop = bridgeStore(bridge);
+
+  /** Tell the desktop app when the next run is due (desktop app 1.0 never gets this). */
+  function sendNextDue(at: Date | undefined): void {
+    if (bridge.can('schedule-wake'))
+      bridge.sendEvent('schedule-next', { at: at ? at.toISOString() : null });
+  }
   /** Guides live in the desktop library once the person chose that and the app is reachable. */
   const store = switchableStore(
     async () => (desktopLibrary && (await bridge.connect()) ? desktop : local),
@@ -361,6 +370,7 @@ export default defineBackground(() => {
     notify: (notice) => void notify(notice),
     attention: (on) => void attention(on),
     selfCheck: backgroundSelfCheck,
+    nextDue: sendNextDue,
     changed: () => broadcast({ type: 'schedules-changed' }),
   });
 
@@ -803,8 +813,16 @@ export default defineBackground(() => {
         await notifyTabs({ type: 'marks-changed' });
         void syncDesktop().then(() => broadcast({ type: 'library-changed' }));
         return { ok: true };
-      case 'desktop-get':
-        return { connected: await syncDesktop() };
+      case 'desktop-get': {
+        const connected = await syncDesktop();
+        return {
+          connected,
+          // For the Schedule dialog's tip (S4); undefined with desktop app 1.0.
+          ...(bridge.can('schedule-wake')
+            ? { startWithWindows: bridge.startWithWindows === true }
+            : {}),
+        };
+      }
       case 'schedule-save':
         try {
           return { schedule: await scheduler.save(msg.schedule) };

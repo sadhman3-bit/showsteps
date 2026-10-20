@@ -200,14 +200,14 @@ Fixes found while testing:
 - [x] S1: schedule model in `core` (`packages/core/src/schedule/`: `ScheduleSchema`, `RunLogSchema`, `nextRun`/`nextRuns`/`missedRun` with Sydney daylight-saving and month-end tests, `resolveTokens` placeholders, `guideVersion` and approvals, `SIGN_IN_HOSTS`). Unit tests 286 (core 219)
 - [x] S2: running a schedule in the extension: `alarms` permission and optional `notifications`; `Scheduler` (`apps/extension/lib/schedules.ts`: alarms, start-up rebuild and catch-up, busy retry, unattended stops with notifications and waits, desktop-step guides ask to start, check first) and `RunLogStore` (IndexedDB `showsteps-runlogs`, JPEG per step, newest 20 per schedule); Run for me gains pre-approved confirm steps, the sign-in stop ("Sign in, then press Continue") and stays in a scheduled run's window and tab; the demo app has a session cookie and a mock identity provider. Tests: extension unit 38, demo 11, e2e `schedules.spec.ts` (3)
 - [x] S3: interface: Schedule dialog (`packages/ui/src/schedule/ScheduleDialog.tsx`: repeat, time, skip dates, next three runs, values with placeholder picker and preview, pre-approvals with the "Guide changed" warning, missed run, wait, keep window, check first, desktop and Chrome-only notes) from the reader's new ⋯ menu and library cards; Schedules page (`SchedulesPage.tsx`: next run, last outcome, switch, Run now, Edit, Delete, run history with values and pictures, what schedules can't do); side panel run card; badge cleared by the page; recording and other guidance refused during a scheduled run. e2e: 40 (`schedule-screens.spec.ts` 2 new)
-- [ ] S4: desktop app (start with Windows, open Chrome when a run is due)
+- [x] S4: desktop app: Start with Windows (off by default, `--hidden`); hello reply carries `appVersion`, `capabilities: ['schedule-wake']` and `startWithWindows`; the extension sends `schedule-next` only to a capable app; `ScheduleWake` (`apps/desktop/src/main/wake.ts`) starts Chrome from App Paths with no arguments when a run is due and Chrome isn't running, remembering the time across restarts; the Schedule dialog suggests Start with Windows. Also fixed a race that revived finished runs. Tests: desktop unit 18, extension unit 41, e2e 40; `e2e/desktop-schedule.spec.ts` written, **waiting for the owner's go** to run `pnpm e2e:desktop`
 - [ ] S5: hardening (security, version mix, accessibility, performance, design)
 - [ ] S6: docs, privacy policy and store listing
 - [ ] S7: release 1.1.0 and go live
 
 ### Waiting on the owner (1.1)
 
-- Nothing yet.
+- **Say "go" for `pnpm e2e:desktop`** (S4, and again in S7). It drives the real mouse and keyboard inside a Notepad window the tests open, and starts a desktop app test copy; leave the mouse and keyboard alone for about 5 minutes. The new test (`e2e/desktop-schedule.spec.ts`) points the app at a stand-in for Chrome, so your own Chrome is never touched.
 
 ### Deferred (1.1)
 

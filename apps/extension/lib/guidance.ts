@@ -176,7 +176,7 @@ export class Guidance {
     msg: Extract<GuidePageMessage, { type: 'guide-start' }>,
     options: StartOptions = {},
   ): Promise<GuidanceState> {
-    if (this.isActive) await this.finish(false);
+    if (this.isActive) await this.finish(false, 'replaced');
     const guide = await this.deps.store.getGuide(msg.guideId);
     if (!guide) throw new Error('not-found');
     const steps = guideSteps(guide);
@@ -227,7 +227,8 @@ export class Guidance {
     return this.state;
   }
 
-  async finish(completed: boolean): Promise<void> {
+  /** End the session. `reason` says why one ended early: stopped, closed (its tab) or replaced. */
+  async finish(completed: boolean, reason?: 'stopped' | 'closed' | 'replaced'): Promise<void> {
     this.seq++;
     clearTimeout(this.reshowTimer);
     const tabId = this.state.tabId;
@@ -247,7 +248,7 @@ export class Guidance {
     this.ownWindow = undefined;
     const ended: Partial<GuidanceState> = completed
       ? { status: 'done', phase: 'finding' }
-      : { ...GUIDANCE_IDLE };
+      : { ...GUIDANCE_IDLE, ...(reason ? { reason } : {}) };
     this.set(ended);
     if (!completed) delete this.state.scheduleId;
   }
@@ -527,7 +528,7 @@ export class Guidance {
         break;
       }
       case 'stop':
-        await this.finish(false);
+        await this.finish(false, 'stopped');
         break;
       case 'pause':
         if (run) {
@@ -619,6 +620,6 @@ export class Guidance {
   }
 
   tabClosed(tabId: number): void {
-    if (this.isActive && tabId === this.state.tabId) void this.finish(false);
+    if (this.isActive && tabId === this.state.tabId) void this.finish(false, 'closed');
   }
 }

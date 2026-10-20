@@ -88,6 +88,8 @@ export function ScheduleHost(props: {
   guide: Guide;
   schedule?: Schedule;
   desktopConnected: boolean;
+  /** The desktop app is connected but doesn't start with Windows (S4). */
+  suggestStartWithWindows: boolean;
   onDone: () => void;
 }) {
   const [error, setError] = useState('');
@@ -96,6 +98,9 @@ export function ScheduleHost(props: {
       guide={props.guide}
       {...(props.schedule ? { schedule: props.schedule } : {})}
       desktopConnected={props.desktopConnected}
+      {...(props.suggestStartWithWindows
+        ? { extra: <p class="ss-notice">{s.suggestStartWithWindows}</p> }
+        : {})}
       {...(error ? { error } : {})}
       onClose={props.onDone}
       onSave={(schedule) => {

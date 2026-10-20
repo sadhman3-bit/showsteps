@@ -61,7 +61,10 @@ test('a schedule runs the demo flow unattended in its own window and pauses at t
   await expect(page.getByRole('heading', { name: 'Invoice submitted' })).toHaveCount(0);
 
   // The person is told.
-  expect((await notifications(sw)).some((n) => n.startsWith(`ss|paused|${id}`))).toBe(true);
+  // The notification follows the stop by a moment.
+  await expect
+    .poll(async () => (await notifications(sw)).some((n) => n.startsWith(`ss|paused|${id}`)))
+    .toBe(true);
 
   // Nobody comes: the wait runs out and the run ends as stopped.
   const [running] = await logs(sw, id);
@@ -140,7 +143,10 @@ test('an expired session stops the run for sign-in, and Continue finishes it', a
       { timeout: 120_000 },
     )
     .toBe('failed:sign-in');
-  expect((await notifications(sw)).some((n) => n.startsWith(`ss|paused|${id}`))).toBe(true);
+  // The notification follows the stop by a moment.
+  await expect
+    .poll(async () => (await notifications(sw)).some((n) => n.startsWith(`ss|paused|${id}`)))
+    .toBe(true);
 
   // The page says what to do; the person signs in (Run for me never types passwords).
   const idp = await runPage(context, /127\.0\.0\.1:5174\/idp\//);

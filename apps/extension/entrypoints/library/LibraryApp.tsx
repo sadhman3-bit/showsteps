@@ -142,14 +142,17 @@ export function LibraryApp() {
   // ---------- Desktop app (bridge) ----------
 
   const [desktopConnected, setDesktopConnected] = useState(false);
+  /** Desktop app 1.1+ without Start with Windows: the Schedule dialog suggests turning it on. */
+  const [suggestStart, setSuggestStart] = useState(false);
   const [moving, setMoving] = useState<{ total: number; done: number } | null>(null);
   const [askMove, setAskMove] = useState(0);
   const checkDesktop = async (current: Settings) => {
     const r = (await browser.runtime
       .sendMessage({ type: 'desktop-get' })
-      .catch(() => undefined)) as { connected?: boolean } | undefined;
+      .catch(() => undefined)) as { connected?: boolean; startWithWindows?: boolean } | undefined;
     const connected = !!r?.connected;
     setDesktopConnected(connected);
+    setSuggestStart(connected && r?.startWithWindows === false);
     if (connected && !current.desktopAsked) {
       const local = await getLocalStore().listGuides();
       if (local.length) setAskMove(local.length);
@@ -273,6 +276,7 @@ export function LibraryApp() {
       guide={scheduling.guide}
       {...(scheduling.schedule ? { schedule: scheduling.schedule } : {})}
       desktopConnected={desktopConnected}
+      suggestStartWithWindows={suggestStart}
       onDone={() => setScheduling(null)}
     />
   ) : null;

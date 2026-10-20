@@ -91,7 +91,8 @@ export class Desktop {
     return join(this.dir, 'downloads');
   }
 
-  static async launch(): Promise<Desktop> {
+  /** `env` adds variables for one test (a stand-in for Chrome, say). */
+  static async launch(env: Record<string, string> = {}): Promise<Desktop> {
     if (!existsSync(join(DESKTOP, 'dist', 'main', 'index.cjs'))) {
       throw new Error('The desktop app is not built. Run `pnpm build` first.');
     }
@@ -106,6 +107,7 @@ export class Desktop {
         SHOWSTEPS_LIBRARY: join(dir, 'library'),
         SHOWSTEPS_USER_DATA: join(dir, 'data'),
         SHOWSTEPS_DOWNLOADS: join(dir, 'downloads'),
+        ...env,
       },
     });
     // Main-process errors show up in the test output.
@@ -346,14 +348,15 @@ async function takeLock(): Promise<() => void> {
 }
 
 /** Playwright fixtures for desktop tests (Windows only). */
-export const test = base.extend<{ desktop: Desktop }>({
+export const test = base.extend<{ desktop: Desktop; desktopEnv: Record<string, string> }>({
+  /** Extra environment for the app under test (`test.use({ desktopEnv })`). */
+  desktopEnv: [{}, { option: true }],
   desktop: [
-    // eslint-disable-next-line no-empty-pattern
-    async ({}, use, info) => {
+    async ({ desktopEnv }, use, info) => {
       info.skip(process.platform !== 'win32', 'Windows only');
       const release = await takeLock();
       try {
-        const d = await Desktop.launch();
+        const d = await Desktop.launch(desktopEnv);
         await use(d);
         await closeNotepads(d);
         await d.close();

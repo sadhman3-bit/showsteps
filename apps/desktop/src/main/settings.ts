@@ -19,6 +19,8 @@ export const DesktopSettingsSchema = z.object({
   defaultInputMode: InputModeSchema,
   /** Colours of the app's windows. */
   theme: z.enum(['system', 'light', 'dark']),
+  /** Start (hidden, in the tray) when Windows starts, so it can open Chrome for scheduled runs. */
+  startWithWindows: z.boolean(),
 });
 export type DesktopSettings = z.infer<typeof DesktopSettingsSchema>;
 
@@ -84,6 +86,7 @@ export function defaultSettings(documents: string, libraryPath?: string): Deskto
     active: 'personal',
     defaultInputMode: 'fixed',
     theme: 'system',
+    startWithWindows: false,
   };
 }
 

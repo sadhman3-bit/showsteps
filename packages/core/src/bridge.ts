@@ -7,7 +7,26 @@ import { toBase64 } from './export/model.js';
  */
 
 export const BRIDGE_HOST = 'com.showsteps.host';
+/** Unchanged since 1.0: new features are announced as capabilities instead. */
 export const BRIDGE_VERSION = 1;
+/**
+ * What this desktop app can do beyond 1.0, sent in its reply to `hello`. Desktop app 1.0 sends
+ * none, so the extension uses a feature only when its capability is listed.
+ * - `schedule-wake`: takes `schedule-next { at }` events and starts Chrome when a run is due.
+ */
+export const BRIDGE_CAPABILITIES = ['schedule-wake'] as const;
+export type BridgeCapability = (typeof BRIDGE_CAPABILITIES)[number];
+
+/** The desktop app's reply to `hello` (fields after `version` are optional for 1.0). */
+export interface HelloReply {
+  version: number;
+  user?: string;
+  library?: string;
+  appVersion?: string;
+  capabilities?: string[];
+  /** The app starts with Windows (so it can open Chrome for runs after a restart). */
+  startWithWindows?: boolean;
+}
 /** Stay well under Chrome's 1 MB limit for one message from a native host. */
 export const CHUNK_CHARS = 700_000;
 

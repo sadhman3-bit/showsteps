@@ -463,8 +463,10 @@ export class Scheduler {
         await this.deps.stopGuidance();
         return;
       }
-      // Stopped by the person, or its tab was closed.
-      await this.end(a, 'stopped', a.pauseReason ?? 'stopped', false);
+      // Stopped by the person, its tab was closed, or another session replaced it.
+      const why =
+        g.reason === 'closed' ? 'window-closed' : g.reason === 'replaced' ? 'replaced' : 'stopped';
+      await this.end(a, 'stopped', a.pauseReason ?? why, false);
     });
   }
 
@@ -591,6 +593,17 @@ export class Scheduler {
     await this.close(log, outcome, reason);
   }
 
+  /** The soonest next run of all schedules (sent to the desktop app on each connection). */
+  async nextDueAt(): Promise<Date | undefined> {
+    let soonest: Date | undefined;
+    const now = this.now;
+    for (const s of await this.list()) {
+      const at = nextRun(s, now, this.deps.zone);
+      if (at && (!soonest || at < soonest)) soonest = at;
+    }
+    return soonest;
+  }
+
   // ---------- For the pages ----------
 
   /** The window of the run going now (notifications bring it to the front). */
@@ -598,16 +611,17 @@ export class Scheduler {
     return (await this.state()).active?.windowId;
   }
 
-  async activeScheduleId(): Promise<string | undefined> {
-    return (await this.state()).active?.scheduleId;
-  }
-
-  /** The Schedules page was opened: clear the badge. */
-  async seen(): Promise<void> {
-    const st = await this.state();
-    st.attention = false;
-    await this.saveState(st);
-    this.deps.attention(false);
+  /**
+   * The Schedules page was opened: clear the badge. Queued like every other change, so it never
+   * writes back state read before a run moved on (that once revived a finished run).
+   */
+  seen(): Promise<void> {
+    return this.serial(async () => {
+      const st = await this.state();
+      st.attention = false;
+      await this.saveState(st);
+      this.deps.attention(false);
+    });
   }
 
   async needsAttention(): Promise<boolean> {

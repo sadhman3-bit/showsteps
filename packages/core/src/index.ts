@@ -275,6 +275,9 @@ export {
   type BridgeReply,
   type BridgeRequest,
   type BridgeStoreMethod,
+  BRIDGE_CAPABILITIES,
+  type BridgeCapability,
+  type HelloReply,
 } from './bridge.js';
 export { toBase64 } from './export/model.js';
 export {

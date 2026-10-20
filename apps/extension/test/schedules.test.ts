@@ -67,6 +67,8 @@ function harness(guide = makeGuide()) {
   let guides: Record<string, Guide> = { [guide.id]: guide };
   let attention = false;
   let stops = 0;
+  /** While set, taking a screenshot waits for it (to hold a run mid-update). */
+  let gate: Promise<void> | undefined;
   const logs = new RunLogStore(new IDBFactory());
   const scheduler = new Scheduler({
     now: () => new Date(),
@@ -86,7 +88,10 @@ function harness(guide = makeGuide()) {
     startGuidance: async (run) => void started.push({ approved: run.approved, values: run.values }),
     stopGuidance: async () => void stops++,
     closeWindow: async (id) => void closed.push(id),
-    capture: async () => new Blob(['jpeg'], { type: 'image/jpeg' }),
+    capture: async () => {
+      await gate;
+      return new Blob(['jpeg'], { type: 'image/jpeg' });
+    },
     logs,
     notify: (n) => void notices.push(n),
     attention: (on) => void (attention = on),
@@ -124,6 +129,15 @@ function harness(guide = makeGuide()) {
     setGuides: (g: Record<string, Guide>) => void (guides = g),
     attention: () => attention,
     stops: () => stops,
+    /** Hold screenshots until the returned function is called. */
+    hold: () => {
+      let release: () => void = () => undefined;
+      gate = new Promise<void>((r) => (release = r));
+      return () => {
+        gate = undefined;
+        release();
+      };
+    },
   };
 }
 
@@ -374,6 +388,25 @@ describe('unattended runs', () => {
     await h2.scheduler.startup();
     const logs = await h2.logs.list('sched');
     expect(logs.find((l) => l.reason === 'interrupted')?.outcome).toBe('stopped');
+  });
+
+  it('keeps a completed run completed when the Schedules page clears the badge meanwhile', async () => {
+    const h = await running();
+    // The run finishes, but its last screenshot takes a while.
+    const release = h.hold();
+    const finishing = h.scheduler.onGuidance(h.state({ status: 'done', index: 3 }));
+    // Meanwhile the open Schedules page clears the badge: it must wait for the run to be logged,
+    // or it writes back the state from before and the finished run comes back.
+    let seen = false;
+    const clearing = h.scheduler.seen().then(() => (seen = true));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seen).toBe(false);
+    release();
+    await Promise.all([finishing, clearing]);
+    // Run for me resets to idle afterwards: nothing changes the log.
+    await h.scheduler.onGuidance({ ...GUIDANCE_IDLE, scheduleId: 'sched' });
+    const logs = await h.logs.list('sched');
+    expect(logs.map((l) => l.outcome)).toEqual(['completed']);
   });
 
   it('ignores guidance that is not its run, and is busy while a run goes', async () => {
