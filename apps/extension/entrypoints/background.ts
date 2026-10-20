@@ -8,7 +8,6 @@ import {
   type CaptureEvent,
   type Guide,
 } from '@showsteps/core';
-import { strings } from '@showsteps/ui/strings';
 import { BridgeClient, bridgeStore, switchableStore } from '../lib/bridge';
 import { FrameRegistry } from '../lib/frames';
 import { Guidance, type PersistedGuidance, type StartOptions } from '../lib/guidance';
@@ -42,6 +41,7 @@ import {
 } from '../lib/recorder';
 import { recaptureStep } from '../lib/recapture';
 import { RUNLOGS_DB, RunLogStore } from '../lib/runlogs';
+import { noticeText } from '../lib/notices';
 import { installSamples } from '../lib/samples';
 import { Scheduler, SCHEDULES_KEY, type Notice } from '../lib/schedules';
 import { encodeLogShot, encodeScreenshot } from '../lib/shots';
@@ -253,36 +253,18 @@ export default defineBackground(() => {
   // ---------- Scheduled runs ----------
 
   const runLogs = new RunLogStore(indexedDB);
-  const n = strings.schedules.notify;
-
-  function noticeText(notice: Notice): { message: string; buttons: string[] } {
-    switch (notice.kind) {
-      case 'paused':
-        return {
-          message: n.paused[notice.reason](notice.name, notice.step),
-          buttons: [n.open],
-        };
-      case 'due':
-        return { message: n.due(notice.name), buttons: [n.start] };
-      case 'finished':
-        return { message: n.finished[notice.outcome](notice.name), buttons: [] };
-      case 'check-failed':
-        return { message: n.checkFailed(notice.name, notice.step), buttons: [] };
-    }
-  }
-
   /** Chrome's notifications, when the person allowed them; the badge covers stops otherwise. */
   async function notify(notice: Notice): Promise<void> {
     const allowed = await browser.permissions
       .contains({ permissions: ['notifications'] })
       .catch(() => false);
     if (!allowed) return;
-    const { message, buttons } = noticeText(notice);
+    const { title, message, buttons } = noticeText(notice);
     await browser.notifications
       .create(`ss|${notice.kind}|${notice.scheduleId}|${Date.now()}`, {
         type: 'basic',
         iconUrl: browser.runtime.getURL('/icon/128.png'),
-        title: n.title,
+        title,
         message,
         ...(buttons.length ? { buttons: buttons.map((title) => ({ title })) } : {}),
         requireInteraction: notice.kind === 'paused' || notice.kind === 'due',

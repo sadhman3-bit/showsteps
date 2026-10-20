@@ -5,12 +5,15 @@ import { fileURLToPath } from 'node:url';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { startCaptureOn } from './helpers';
+import { saveSchedule, scheduledGuide } from './schedule-helpers';
 
 type Hook = {
   installSamples(): Promise<string[]>;
   store: { listGuides(): Promise<{ id: string; title: string }[]> };
-  startGuidance(msg: object): Promise<unknown>;
+  startGuidance(msg: object, options?: object): Promise<unknown>;
   guidance: { current: { phase: string }; control(a: string): Promise<unknown> };
+  scheduler: { onAlarm(name: string): Promise<void> };
+  runLogs: { list(id: string): Promise<{ id: string; outcome?: string }[]> };
   recorder: { control(a: string): Promise<unknown> };
 };
 declare const __showsteps: Hook;
@@ -103,5 +106,40 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   await guide.waitForTimeout(800);
   await both([guide], 'guide-me');
   await both([panel], 'sidepanel-guiding');
+  await sw.evaluate(() => __showsteps.guidance.control('stop'));
+
+  // Schedules (1.1): a real run that completes, and one that stops at Submit.
+  const sched = await scheduledGuide(sw);
+  const scheduleId = await saveSchedule(sw, sched.id, sched.steps, { approve: true });
+  const outcome = () =>
+    sw.evaluate(async (s) => (await __showsteps.runLogs.list(s))[0]?.outcome, scheduleId);
+  await sw.evaluate((n) => __showsteps.scheduler.onAlarm(n), `schedule:${scheduleId}`);
+  await expect.poll(outcome, { timeout: 150_000 }).toBe('completed');
+  await lib.goto(`chrome-extension://${extensionId}/library.html#/guide/${sched.id}/view`);
+  await lib.getByRole('button', { name: 'More actions' }).click();
+  await lib.getByRole('menuitem', { name: 'Schedule…' }).click();
+  await lib.getByRole('dialog').waitFor();
+  await both([lib], 'schedule-dialog');
+  await lib.keyboard.press('Escape');
+  await lib.goto(`chrome-extension://${extensionId}/library.html#/schedules`);
+  await lib.getByText(/Run history/).click();
+  await lib.getByRole('button', { name: 'The page after step 1', exact: true }).waitFor();
+  await both([lib], 'schedules');
+
+  // The side panel while a scheduled run goes (paused after its first step).
+  await guide.goto('http://localhost:5173/login.html');
+  await sw.evaluate(
+    async ({ id, tabId }) => {
+      const tab = await chrome.tabs.get(tabId);
+      await __showsteps.startGuidance(
+        { type: 'guide-start', guideId: id, mode: 'run', tabId, stepThrough: true },
+        { scheduleId: 'design', windowId: tab.windowId },
+      );
+    },
+    { id: sched.id, tabId },
+  );
+  await expect.poll(() => sw.evaluate(() => __showsteps.guidance.current.phase)).toBe('paused');
+  await panel.waitForTimeout(800);
+  await both([panel], 'sidepanel-scheduled');
   await sw.evaluate(() => __showsteps.guidance.control('stop'));
 });

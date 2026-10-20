@@ -172,11 +172,12 @@ function Idle({
           size="lg"
           class="ss-startcard__go"
           onClick={() => void start()}
-          disabled={busy}
+          disabled={busy || !!scheduled}
           aria-keyshortcuts={shortcut}
         >
           <Icon name="capture" size={20} /> {s.start}
         </Button>
+        {scheduled ? <p class="ss-muted">{strings.schedules.recordingWaits}</p> : null}
         <p class="ss-muted ss-startcard__keys">
           {s.shortcutLabel}: <kbd>{shortcut}</kbd>
         </p>

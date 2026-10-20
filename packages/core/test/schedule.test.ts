@@ -9,7 +9,10 @@ import {
   createGuide,
   createSchedule,
   createStep,
+  exportGuideArchive,
   guideVersion,
+  importGuideArchive,
+  IndexedDbStore,
   hostMatches,
   isSignInHost,
   missedRun,
@@ -340,6 +343,25 @@ describe('schedule schema', () => {
     expect(imported).not.toHaveProperty('schedules');
     expect(imported).not.toHaveProperty('runLogs');
     expect(serializeGuide(imported)).not.toContain(s.id);
+  });
+
+  it('never arrives inside an imported .showsteps file', async () => {
+    const { IDBFactory } = await import('fake-indexeddb');
+    const { strFromU8, strToU8, unzipSync, zipSync } = await import('fflate');
+    const g = guide();
+    const s = createSchedule(g, { recurrence: { kind: 'daily' }, time: '09:00' });
+    const from = new IndexedDbStore(new IDBFactory());
+    await from.saveGuide(g);
+    // A file someone tampered with: a schedule inside guide.json and as a file of its own.
+    const files = unzipSync(await exportGuideArchive(from, g.id));
+    const raw = JSON.parse(strFromU8(files['guide.json']!)) as Record<string, unknown>;
+    files['guide.json'] = strToU8(JSON.stringify({ ...raw, schedules: [s] }));
+    files['schedules.json'] = strToU8(JSON.stringify([s]));
+    const to = new IndexedDbStore(new IDBFactory());
+    const { guideId } = await importGuideArchive(to, zipSync(files));
+    const imported = await to.getGuide(guideId);
+    expect(imported).toBeDefined();
+    expect(JSON.stringify(imported)).not.toContain(s.id);
   });
 
   it('knows which guides can be scheduled and which need the person', () => {

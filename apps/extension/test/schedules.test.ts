@@ -12,6 +12,7 @@ import {
 } from '@showsteps/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GUIDANCE_IDLE, type GuidanceState } from '../lib/guideMessages';
+import { noticeText } from '../lib/notices';
 import { RunLogStore } from '../lib/runlogs';
 import {
   BUSY_GIVE_UP_MS,
@@ -414,6 +415,29 @@ describe('unattended runs', () => {
     await h.scheduler.onGuidance(h.state({ scheduleId: undefined, phase: 'confirm', index: 2 }));
     expect(h.notices.filter((n) => n.kind === 'paused')).toHaveLength(0);
     expect(await h.scheduler.startNow('sched')).toEqual({ error: 'busy' });
+  });
+});
+
+describe('notifications', () => {
+  it('never show a typed value', async () => {
+    const h = harness();
+    await h.scheduler.save(daily(makeGuide(), { values: { s2: 'Account 4417-SECRET-55' } }));
+    vi.setSystemTime(new Date('2026-10-18T22:00:00Z'));
+    await h.fire();
+    const st = h.state;
+    await h.scheduler.onGuidance(st({ index: 1, phase: 'manual', reason: 'secret' }));
+    await h.scheduler.onGuidance(st({ index: 2, phase: 'confirm' }));
+    await h.scheduler.onGuidance(st({ index: 2, phase: 'failed', reason: 'sign-in' }));
+    await h.scheduler.onGuidance(st({ index: 2, phase: 'failed', reason: 'not-found' }));
+    await h.scheduler.onGuidance({ ...GUIDANCE_IDLE, scheduleId: 'sched' });
+    expect(h.notices.length).toBeGreaterThan(3);
+    for (const notice of h.notices) {
+      const { title, message, buttons } = noticeText(notice);
+      expect([title, message, ...buttons].join(' ')).not.toContain('SECRET');
+      expect(message).toContain('Create an invoice');
+    }
+    // The log does keep what was typed, for the person's own history.
+    expect((await h.logs.list('sched'))[0]?.values).toEqual({ s2: 'Account 4417-SECRET-55' });
   });
 });
 

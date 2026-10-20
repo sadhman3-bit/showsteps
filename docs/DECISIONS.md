@@ -280,3 +280,5 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Start with Windows** is off by default and applies only to the installed app (never to a development or test copy). The Schedule dialog shows a tip to turn it on when a desktop app 1.1 is connected without it.
 - **Why a run ended early** is logged: stopped by the person, its window closed, or another Guide Me or Run for me started.
 - **Scheduler state changes are queued:** every change to schedules and run state, including clearing the badge, runs one at a time. Clearing the badge outside the queue once revived a finished run and logged it as stopped.
+- **Date and time fields** show the focus ring whenever focus is inside them (`:focus-within`), because Tab also stops on their calendar button, where `:focus-visible` lapses.
+- **Notification wording** lives in `apps/extension/lib/notices.ts`, built only from a schedule's name, a step number and fixed text, so a test can prove no typed value reaches the screen.

@@ -541,6 +541,8 @@ export const strings = {
     started: 'Running in its own window.',
     scheduledRun: 'Scheduled run',
     showWindow: 'Show window',
+    recordingWaits: 'You can record again when the scheduled run has finished.',
+    when: 'When',
     guideMissing: 'Deleted guide',
     suggestStartWithWindows:
       'Tip: turn on Start with Windows in the ShowSteps desktop app’s Settings, so it can open Chrome for this schedule even after the computer restarts.',

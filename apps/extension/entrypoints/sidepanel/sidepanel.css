@@ -530,6 +530,7 @@
   gap: var(--ss-space-1);
   margin: 0 var(--ss-space-4) var(--ss-space-4);
   padding: var(--ss-space-3) var(--ss-space-4) var(--ss-space-4);
+  border: 1px solid var(--ss-chrome-line);
   border-radius: var(--ss-radius-lg);
   background: var(--ss-chrome-bg);
   color: var(--ss-chrome-fg);

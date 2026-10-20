@@ -133,7 +133,7 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
         {!props.desktopConnected ? <p class="ss-muted">{s.chromeOnlyNote}</p> : null}
 
         <fieldset class="ss-fieldset">
-          <legend>{s.repeat}</legend>
+          <legend>{s.when}</legend>
           <label class="ss-field">
             {s.repeat}
             <select
