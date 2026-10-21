@@ -14,10 +14,19 @@ export default defineConfig({
     // Public key only: pins the extension ID ("Load unpacked" from any folder) so the desktop
     // app's native messaging host can name it. Nothing is published.
     key: extensionKey.key,
-    permissions: ['sidePanel', 'storage', 'unlimitedStorage', 'scripting', 'webNavigation'],
+    // `alarms` starts scheduled runs; it shows no warning, so updating asks people nothing.
+    permissions: [
+      'sidePanel',
+      'storage',
+      'unlimitedStorage',
+      'scripting',
+      'webNavigation',
+      'alarms',
+    ],
     optional_host_permissions: ['<all_urls>'],
-    // Asked for when the person connects the desktop app (Settings).
-    optional_permissions: ['nativeMessaging'],
+    // nativeMessaging: asked for when the person connects the desktop app (Settings).
+    // notifications: asked for when the person saves a schedule.
+    optional_permissions: ['nativeMessaging', 'notifications'],
     // Test build: as if the user already granted access at capture start and connected the app.
     ...(mode === 'e2e'
       ? {
@@ -28,7 +37,9 @@ export default defineConfig({
             'unlimitedStorage',
             'scripting',
             'webNavigation',
+            'alarms',
             'nativeMessaging',
+            'notifications',
           ],
         }
       : {}),

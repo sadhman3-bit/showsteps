@@ -338,6 +338,7 @@ function DesktopSettings({
                 aiEnabled: draft.aiEnabled,
                 defaultInputMode: draft.defaultInputMode,
                 theme: draft.theme,
+                startWithWindows: draft.startWithWindows,
                 libraryPath: draft.libraryPath,
                 sharedPath: draft.sharedPath,
                 ...(draft.sharedPath ? {} : { active: 'personal' as const }),
@@ -399,6 +400,17 @@ function DesktopSettings({
             onChange={(mode) => setDraft({ ...draft, defaultInputMode: mode })}
           />
           <small class="ss-muted">{s.inputModeHint}</small>
+        </label>
+        <label class="ss-check">
+          <input
+            type="checkbox"
+            checked={draft.startWithWindows}
+            onChange={(e) => setDraft({ ...draft, startWithWindows: e.currentTarget.checked })}
+          />{' '}
+          <span>
+            {d.startWithWindows}
+            <small class="ss-muted ss-block-text">{d.startWithWindowsHint}</small>
+          </span>
         </label>
         <label class="ss-check">
           <input

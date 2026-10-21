@@ -155,12 +155,13 @@ test('editor: reorder, headings, callouts, text, selection, merge, split, undo a
   const firstStep = before.findIndex((t) => !t.startsWith('#') && !t.startsWith('!'));
   const firstLabel = `Step 1`;
   await menu(firstLabel, 'Merge with next step');
-  // After deleting the selected originals, step 1 is the typing step.
-  expect((await outline(page))[firstStep]).toBe(
-    'Type alex into Username now, then enter your password',
-  );
+  // After deleting the selected originals, step 1 is the typing step. (Polled: the editor
+  // re-renders after the merge, which takes longer on slower machines such as CI on Linux.)
+  await expect
+    .poll(async () => (await outline(page))[firstStep])
+    .toBe('Type alex into Username now, then enter your password');
   await menu(firstLabel, 'Split step');
-  expect((await outline(page)).length).toBe(before.length);
+  await expect.poll(async () => (await outline(page)).length).toBe(before.length);
 
   // Keyboard: Ctrl+Enter adds a step; ? opens the shortcut sheet (E6)
   const count = (await outline(page)).length;

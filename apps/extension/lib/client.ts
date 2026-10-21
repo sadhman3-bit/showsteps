@@ -1,6 +1,7 @@
 // Helpers for extension pages (side panel, library) to talk to the background.
 import { IndexedDbStore, type GuideStore } from '@showsteps/core';
 import { BridgeClient, bridgeStore, switchableStore } from './bridge';
+import { closeRunLogs } from './scheduleClient';
 import { readSettings } from './settings';
 import type { StepCheckView } from '@showsteps/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -44,6 +45,8 @@ function desktopLibraryOn(): Promise<boolean> {
  * pins, and delete the guide database in this browser.
  */
 export async function deleteAllData(): Promise<void> {
+  // Let go of the run-log database so the background can delete it.
+  await closeRunLogs();
   const msg: PageMessage = { type: 'delete-all' };
   await browser.runtime.sendMessage(msg).catch(() => undefined);
   await local?.close();

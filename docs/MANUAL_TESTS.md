@@ -384,3 +384,14 @@ Run `pnpm release`. On a clean Windows user account, follow the README's **Insta
 - **MT-P-5 PDF export:** open an exported PDF in Acrobat or Edge: navy cover band with the pink Trail and the white title; File → Properties → Fonts lists FunnelSans and FunnelDisplay as embedded subsets.
 - **MT-P-6 Pink interface:** record a step on a pink or red page (for example a red "Delete" banner): the highlight ring in the editor and in exports is navy; the image editor's Highlight colour menu can switch it back to pink.
 - **MT-P-7 Screen reader spot check:** with Narrator, tab through the side panel and the editor top bar: every icon button announces its name (Pause, Live Blur, More actions, Undo, Redo, Share).
+
+## Update 1.1: schedules
+
+- **MT-S-1 Notifications:** with notifications allowed, set a schedule on the demo invoice guide (its Submit step not pre-approved) a few minutes ahead and switch to another app. **Expected:** a Chrome notification "ShowSteps paused Scheduled invoice: needs your confirmation" appears and stays; clicking it (or **Open**) brings the run's window to the front, stopped at Submit invoice.
+- **MT-S-2 No notifications:** block ShowSteps's notifications in Chrome's site settings and let a run stop. **Expected:** the toolbar icon shows `!` until the Schedules page is opened.
+- **MT-S-3 Sign-in stop:** run the scheduled guide after visiting `http://localhost:5173/auth/expire`. **Expected:** the run window shows the Demo ID password page with "Sign in, then press Continue." across the top; after signing in, **Continue** finishes the run.
+- **MT-S-4 Unfocused window:** while a scheduled run goes, keep typing in another window. **Expected:** focus never moves to the run's window, and the run log's pictures show the run's pages, not yours.
+- **MT-S-5 Schedule screens:** open a guide, ⋯ → **Schedule…**, set a weekly schedule with two days and a skip date, a value with **Insert a date → Last day of last month**, and save. **Expected:** the "next runs" line and the value preview match the calendar; the Schedules page shows "Every Mon, Wed at …" with the next run; switching it off shows "Off".
+- **MT-S-6 Dark theme:** with Settings → Colours → Dark, open the Schedule dialog, the Schedules page with a run history, and the side panel during a run. **Expected:** all readable, the outcome labels tinted (green completed, amber stopped, red failed).
+- **MT-S-7 Start with Windows:** in the installed desktop app 1.1, turn on Settings → **Start with Windows**, restart Windows. **Expected:** ShowSteps starts in the tray without a window. Task Manager → Startup apps lists ShowSteps. Turning it off removes it.
+- **MT-S-8 Chrome opens for a run:** with the desktop app connected and a schedule a few minutes ahead, close every Chrome window (Chrome not in the tray either). **Expected:** at the run's time Chrome opens on its own, and the run happens in its own window and appears in the run log.

@@ -1,5 +1,6 @@
 import {
   END_OF_GUIDE,
+  canSchedule,
   nowIso,
   parseAnalytics,
   recordView,
@@ -9,6 +10,7 @@ import {
 import { useEffect, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Icon } from '../components/Icon.js';
+import { Menu } from '../components/Menu.js';
 import { ShareDialog } from '../export/ShareDialog.js';
 import { CommentBox, useComments } from '../guidance/Comments.js';
 import { RunDialog, type RunSpeed } from '../guidance/RunDialog.js';
@@ -38,6 +40,8 @@ export interface GuideViewProps {
   stepLink?: (guideId: string, stepId: string) => string;
   /** Bumped by the host when the library changes, to reload. */
   refreshKey?: number;
+  /** Set when a guide's Run for me runs (S3); offered in the ⋯ menu. */
+  onSchedule?: (guide: Guide) => void;
 }
 
 /** Count one view in the viewer's own analytics sidecar. */
@@ -59,6 +63,7 @@ export function GuideView({
   focusStepId,
   stepLink,
   refreshKey,
+  onSchedule,
 }: GuideViewProps) {
   const [guide, setGuide] = useState<Guide | null | undefined>(undefined);
   const [copied, setCopied] = useState<string>();
@@ -105,6 +110,20 @@ export function GuideView({
         ) : null}
         {guide ? <Button onClick={() => setSharing(true)}>{strings.share.button}</Button> : null}
         {guide && onEdit ? <Button onClick={onEdit}>{strings.editor.edit}</Button> : null}
+        {guide && hasSteps && onSchedule ? (
+          <Menu
+            label={strings.editor.more}
+            items={[
+              {
+                label: strings.schedules.schedule,
+                icon: 'clock',
+                onSelect: () => onSchedule(guide),
+                disabled: !canSchedule(guide),
+                ...(canSchedule(guide) ? {} : { hint: strings.schedules.needsWebStep }),
+              },
+            ]}
+          />
+        ) : null}
       </nav>
       {guide === null ? (
         <p class="ss-empty">{s.notFound}</p>

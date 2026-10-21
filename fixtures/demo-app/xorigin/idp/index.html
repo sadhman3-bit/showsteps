@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · Demo ID</title>
+    <style>
+      body {
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        margin: 0;
+        background: #eef2f7;
+        color: #1b2430;
+      }
+      main {
+        max-width: 420px;
+        margin: 64px auto;
+        padding: 32px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 16px;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+      .tile {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        padding: 12px 16px;
+        margin: 0 0 12px;
+        border: 1px solid #c8d1dc;
+        border-radius: 8px;
+        background: #fff;
+        text-align: left;
+      }
+      .tile small {
+        color: #5a6676;
+      }
+      .primary {
+        width: 100%;
+        padding: 10px;
+        border: 0;
+        border-radius: 8px;
+        background: #2457c5;
+        color: #fff;
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px;
+        font: inherit;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Demo ID</h1>
+      <section id="accounts" aria-label="Choose an account">
+        <p>Choose an account to continue to Ledgerline.</p>
+        <button type="button" class="tile" data-user="alex">
+          <strong>Alex Demo</strong><small>alex@ledgerline.example</small>
+        </button>
+        <button type="button" class="primary" data-user="demo">Sign in with Demo</button>
+      </section>
+      <form id="password-form" hidden>
+        <p>Your session has ended. Sign in again to continue.</p>
+        <label for="email">Email</label>
+        <input id="email" name="email" autocomplete="username" value="alex@ledgerline.example" />
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" />
+        <p><button type="submit" class="primary">Sign in</button></p>
+      </form>
+    </main>
+    <script src="/idp/idp.js"></script>
+  </body>
+</html>

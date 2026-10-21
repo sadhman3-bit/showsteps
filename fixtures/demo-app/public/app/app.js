@@ -8,8 +8,9 @@
   const xorigin = 'http://127.0.0.1:' + xoriginPort;
   let lastSubmitted = null;
 
+  const sso = /(?:^|;\s*)demo_session=([^;]*)/.exec(document.cookie);
   document.getElementById('who').textContent =
-    'Signed in as ' + (sessionStorage.getItem('demoUser') || 'guest');
+    'Signed in as ' + (sessionStorage.getItem('demoUser') || (sso && sso[1]) || 'guest');
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {

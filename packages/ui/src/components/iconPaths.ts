@@ -17,6 +17,7 @@ export const ICON_PATHS = {
   undo: 'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   redo: 'M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13',
   history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 3',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3.5 2',
   share: 'M12 15V3M7 8l5-5 5 5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
   blur: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 9h.01M12 9h.01M16 9h.01M8 15h.01M12 15h.01M16 15h.01M10 12h.01M14 12h.01',
   palette:

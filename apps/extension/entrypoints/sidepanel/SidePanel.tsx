@@ -27,6 +27,8 @@ import {
 } from '../../lib/client';
 import { GuidancePanel } from './GuidancePanel';
 import { PagePanel } from './PagePanel';
+import { ScheduledRunCard } from './ScheduledRunCard';
+import type { GuidanceState } from '../../lib/guideMessages';
 import type { CaptureMore, CaptureState, ControlAction, Recapture } from '../../lib/messages';
 
 const s = strings.sidePanel;
@@ -35,21 +37,38 @@ const c = strings.capture;
 const ERRORS: Record<string, string> = {
   'permission-needed': s.permissionDenied,
   'cannot-record-here': s.cannotRecordHere,
+  busy: strings.schedules.busy,
 };
 
 export function SidePanel() {
   const { state, libraryVersion } = useBackground();
   const guidance = useGuidance();
   if (state.status !== 'idle') return <Recording state={state} />;
-  if (guidance.status !== 'idle') return <GuidancePanel state={guidance} />;
-  return <Idle state={state} libraryVersion={libraryVersion} />;
+  // A scheduled run has its own window: this panel keeps its usual screen, with a card on top.
+  const scheduled = guidance.status === 'active' && !!guidance.scheduleId;
+  if (guidance.status !== 'idle' && !guidance.scheduleId) return <GuidancePanel state={guidance} />;
+  return (
+    <Idle
+      state={state}
+      libraryVersion={libraryVersion}
+      {...(scheduled ? { scheduled: guidance } : {})}
+    />
+  );
 }
 
 function openLibrary(guideId?: string) {
   void browser.tabs.create({ url: libraryUrl(guideId) });
 }
 
-function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: number }) {
+function Idle({
+  state,
+  libraryVersion,
+  scheduled,
+}: {
+  state: CaptureState;
+  libraryVersion: number;
+  scheduled?: GuidanceState;
+}) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [more, setMore] = useState<CaptureMore>();
@@ -121,6 +140,7 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
         </h1>
       </header>
       <p class="ss-hero__tagline">{strings.app.tagline}</p>
+      {scheduled ? <ScheduledRunCard state={scheduled} /> : null}
 
       {state.lastFinishedGuideId ? (
         <p class="ss-notice" role="status">
@@ -152,11 +172,12 @@ function Idle({ state, libraryVersion }: { state: CaptureState; libraryVersion: 
           size="lg"
           class="ss-startcard__go"
           onClick={() => void start()}
-          disabled={busy}
+          disabled={busy || !!scheduled}
           aria-keyshortcuts={shortcut}
         >
           <Icon name="capture" size={20} /> {s.start}
         </Button>
+        {scheduled ? <p class="ss-muted">{strings.schedules.recordingWaits}</p> : null}
         <p class="ss-muted ss-startcard__keys">
           {s.shortcutLabel}: <kbd>{shortcut}</kbd>
         </p>

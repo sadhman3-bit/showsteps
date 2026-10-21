@@ -5,6 +5,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { saveSchedule, scheduledGuide } from './schedule-helpers';
 import { startCaptureOn } from './helpers';
 
 const OUT = fileURLToPath(new URL('../docs/webstore/images/', import.meta.url));
@@ -66,6 +67,26 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
   await lib.evaluate(() => scrollTo(0, 0));
   await lib.waitForTimeout(500);
   await lib.screenshot({ path: `${OUT}3-agent.png` });
+
+  // 4. Schedules (1.1): a real scheduled run, completed, with its history open.
+  const sched = await scheduledGuide(serviceWorker);
+  const scheduleId = await saveSchedule(serviceWorker, sched.id, sched.steps, { approve: true });
+  await serviceWorker.evaluate(
+    (n) =>
+      (
+        globalThis as unknown as {
+          __showsteps: { scheduler: { onAlarm(n: string): Promise<void> } };
+        }
+      ).__showsteps.scheduler.onAlarm(n),
+    `schedule:${scheduleId}`,
+  );
+  await lib.goto(`chrome-extension://${extensionId}/library.html#/schedules`);
+  const card = lib.getByRole('listitem').filter({ hasText: 'Scheduled invoice' });
+  await expect(card).toContainText('Completed', { timeout: 150_000 });
+  await card.getByText(/Run history/).click();
+  await lib.getByRole('button', { name: 'The page after step 16', exact: true }).waitFor();
+  await lib.waitForTimeout(800);
+  await lib.screenshot({ path: `${OUT}4-schedules.png` });
 
   // 1. Recording: the page with its toolbar, and the side panel listing the steps.
   const page = await context.newPage();

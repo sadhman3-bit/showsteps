@@ -39,7 +39,9 @@ export async function recordShortGuide(
   await page.waitForURL(/\/app\/$/);
   await page.waitForTimeout(650);
   // Let the last events from the page that just unloaded arrive before ending the capture.
-  await expect.poll(() => sw.evaluate(() => __showsteps.recorder.current.stepCount)).toBe(4);
+  await expect
+    .poll(() => sw.evaluate(() => __showsteps.recorder.current.stepCount), { timeout: 15_000 })
+    .toBe(4);
   await sw.evaluate(() => __showsteps.recorder.control('finish'));
   return { id, page };
 }

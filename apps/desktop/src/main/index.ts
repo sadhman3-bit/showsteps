@@ -1,4 +1,10 @@
-import { BRIDGE_STORE_METHODS, FolderStore, parseGuide, type GuideStore } from '@showsteps/core';
+import {
+  BRIDGE_CAPABILITIES,
+  BRIDGE_STORE_METHODS,
+  FolderStore,
+  parseGuide,
+  type GuideStore,
+} from '@showsteps/core';
 import { nodeFileSystem } from '@showsteps/core/node';
 import {
   BrowserWindow,
@@ -15,7 +21,7 @@ import {
   shell,
 } from 'electron';
 import { mkdirSync } from 'node:fs';
-import { readFile, readdir, rm } from 'node:fs/promises';
+import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BridgeServer } from './bridge';
@@ -36,6 +42,7 @@ import {
   type DesktopSettings,
 } from './settings';
 import { ExtensionSink } from './sinks';
+import { ScheduleWake, chromePath, isRunningForUser, startDetached } from './wake';
 
 const SHORTCUT = 'Control+Alt+R';
 const E2E = process.env.SHOWSTEPS_E2E === '1';
@@ -47,6 +54,9 @@ const hostSetup = process.argv.includes('--register-native-host')
     ? 'unregister'
     : undefined;
 
+// A test copy keeps its data apart, and so its single-instance lock: set before taking the lock,
+// so tests run even while the installed app is open.
+if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 if (!hostSetup && !app.requestSingleInstanceLock()) app.quit();
 
 // ---------- Paths ----------
@@ -64,7 +74,6 @@ const trayImage = () =>
       nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? 'tray-dark.png' : 'tray.png',
     ),
   );
-if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 const settingsFile = () => join(app.getPath('userData'), 'settings.json');
 const shotDir = () => join(app.getPath('temp'), 'showsteps-shots');
 
@@ -102,7 +111,48 @@ function broadcast(channel: string, payload?: unknown): void {
 const bridge = new BridgeServer(activeStore, () => ({
   user: settings.userName,
   library: settings.active === 'shared' && shared ? settings.sharedPath : settings.libraryPath,
+  appVersion: app.getVersion(),
+  capabilities: [...BRIDGE_CAPABILITIES],
+  startWithWindows: settings.startWithWindows,
 }));
+
+// ---------- Scheduled runs (S4) ----------
+
+/** Desktop e2e only: a harmless stand-in for Chrome, so the owner's Chrome is never touched. */
+const testChrome = E2E ? process.env.SHOWSTEPS_TEST_CHROME : undefined;
+const testChromeProcess = E2E ? process.env.SHOWSTEPS_TEST_CHROME_PROCESS : undefined;
+
+const wake = new ScheduleWake({
+  now: () => Date.now(),
+  setTimer: (fn, ms) => setTimeout(fn, ms),
+  clearTimer: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+  isRunning: (name) => isRunningForUser(testChromeProcess ?? name),
+  async launch() {
+    const path = testChrome ?? (await chromePath());
+    if (path) startDetached(path);
+  },
+});
+
+/** The next due time survives an app restart (Windows restarted while Chrome was closed). */
+const wakeFile = () => join(app.getPath('userData'), 'schedule-next.json');
+async function setNextDue(at: number | undefined): Promise<void> {
+  wake.next(at);
+  await writeFile(wakeFile(), `${JSON.stringify({ at: at ?? null })}\n`).catch(() => undefined);
+}
+async function restoreNextDue(): Promise<void> {
+  try {
+    const raw = JSON.parse(await readFile(wakeFile(), 'utf8')) as { at?: unknown };
+    if (typeof raw.at === 'number') wake.next(raw.at);
+  } catch {
+    // nothing saved yet
+  }
+}
+
+/** Start with Windows (installed app only; never for a development or test copy). */
+function applyLoginItem(): void {
+  if (!app.isPackaged || E2E) return;
+  app.setLoginItemSettings({ openAtLogin: settings.startWithWindows, args: ['--hidden'] });
+}
 
 // ---------- Capture ----------
 
@@ -290,6 +340,11 @@ bridge.on('event', (name, data) => {
     case 'desktop-step-clear':
       void guide.stop();
       break;
+    case 'schedule-next': {
+      const at = typeof d.at === 'string' ? Date.parse(d.at) : NaN;
+      void setNextDue(Number.isFinite(at) ? at : undefined);
+      break;
+    }
   }
 });
 bridge.on('connected', (on) => broadcast('bridge-state', { connected: on }));
@@ -399,7 +454,12 @@ function registerIpc(): void {
       ...DesktopSettingsSchema.partial().parse(value),
     });
     await saveSettings(settingsFile(), next);
+    const login = next.startWithWindows !== settings.startWithWindows;
     settings = next;
+    if (login) {
+      applyLoginItem();
+      bridge.sendEvent('desktop-info', { startWithWindows: settings.startWithWindows });
+    }
     openStores();
     broadcast('library-changed');
     return { ...settings, sharedAvailable: !!shared };
@@ -461,6 +521,8 @@ void app.whenReady().then(async () => {
   );
   openStores();
   registerIpc();
+  applyLoginItem();
+  await restoreNextDue();
 
   // Exports save straight to Downloads (the renderer uses download links).
   session.defaultSession.on('will-download', (_e, item) => {
@@ -506,6 +568,7 @@ if (E2E) {
       finishCapture,
       startGuide,
       store: () => activeStore(),
+      wake,
     },
   });
 }

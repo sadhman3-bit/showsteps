@@ -1,7 +1,9 @@
 import {
   canPerform,
+  deepElements,
   describeElement,
   failedExpectations,
+  isSensitiveField,
   pageKey,
   performStep,
   toActionable,
@@ -154,6 +156,7 @@ export class GuidePage {
   private refinding = false;
   private ring: HTMLElement | undefined;
   private tip: HTMLElement | undefined;
+  private notice: HTMLElement | undefined;
   private cursor: HTMLElement | undefined;
   private watch: AbortController | undefined;
   private finder: AbortController | undefined;
@@ -279,8 +282,10 @@ export class GuidePage {
     this.finder = undefined;
     this.ring?.remove();
     this.tip?.remove();
+    this.notice?.remove();
     this.ring = undefined;
     this.tip = undefined;
+    this.notice = undefined;
     this.target = null;
   }
 
@@ -740,6 +745,30 @@ export class GuidePage {
         this.pick(msg.on);
         sendResponse({ ok: true });
         return undefined;
+      case 'guide-signin':
+        if (!this.isTop) return undefined;
+        sendResponse({
+          host: location.hostname,
+          secretField: deepElements(document).some((e) => isSensitiveField(e) && isVisible(e)),
+        });
+        return undefined;
+      case 'guide-notice':
+        if (!this.isTop) return undefined;
+        this.showNotice();
+        sendResponse({ ok: true });
+        return undefined;
     }
   };
+
+  /** Run for me stopped at a sign-in page: say so across the top, with Continue. */
+  private showNotice(): void {
+    this.clearStep();
+    const banner = el('div', { class: 'banner', role: 'alert' });
+    banner.append(el('span', {}, g.signIn));
+    const go = el('button', { type: 'button', class: 'primary' }, g.continue);
+    go.addEventListener('click', () => this.control('retry'));
+    banner.append(go);
+    this.notice = banner;
+    this.ensureRoot().append(banner);
+  }
 }

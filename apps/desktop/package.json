@@ -1,7 +1,7 @@
 {
   "name": "@showsteps/desktop",
   "productName": "ShowSteps",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
   "description": "ShowSteps for Windows: record desktop and web steps, edit, export and guide.",

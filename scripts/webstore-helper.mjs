@@ -6,6 +6,13 @@ import { fileURLToPath } from 'node:url';
 
 const dir = fileURLToPath(new URL('../docs/webstore/', import.meta.url));
 const md = readFileSync(`${dir}LISTING.md`, 'utf8');
+const version = JSON.parse(
+  readFileSync(fileURLToPath(new URL('../apps/extension/package.json', import.meta.url)), 'utf8'),
+).version;
+/** The store item, live since 1.0.0. */
+const ITEM_ID = 'hlkihjibgiehjcaemfhfnfcjphgkcnoa';
+/** Permissions new in this version: their justifications go on the Privacy practices tab. */
+const NEW_PERMISSIONS = ['alarms', 'notifications'];
 const quote = (after) => {
   const start = md.indexOf(after);
   const lines = md.slice(start).split('\n').slice(1);
@@ -64,12 +71,34 @@ button { font: inherit; border: 0; border-radius: 6px; padding: 4px 14px; backgr
 button.done { opacity: 0.6; }
 code { font-family: Consolas, monospace; }
 </style></head><body>
-<h1>ShowSteps: Chrome Web Store fields</h1>
-<p>Open <b>chrome.google.com/webstore/devconsole</b>, click <b>New item</b> and upload <code>dist/showsteps-extension-1.0.0-chrome-web-store.zip</code>. Then copy each field below into the matching box.</p>
+<h1>ShowSteps: update the Chrome Web Store item to ${version}</h1>
+<p>About 10 minutes. Fields that changed have a Copy button below.</p>
+<ol>
+<li>Open the developer dashboard, <b>chrome.google.com/webstore/devconsole</b>, then the ShowSteps item (ID <code>${ITEM_ID}</code>).</li>
+<li><b>Package</b> tab: <b>Upload new package</b>, and choose <code>dist/showsteps-extension-${version}-chrome-web-store.zip</code>.</li>
+<li><b>Store listing</b> tab: paste the new <b>Description</b> (below) and add screenshot <code>docs/webstore/images/4-schedules.png</code>.</li>
+<li><b>Privacy practices</b> tab: add the <b>alarms</b> and <b>notifications</b> justifications (below) and check that the data usage ticks are still <b>Website content</b> and <b>User activity</b> with all three statements. The privacy policy URL stays the same; the updated policy is live on <code>main</code>.</li>
+<li><b>Submit for review.</b> To choose when it goes live, untick automatic publishing in the confirmation dialog; after approval you have 30 days to press <b>Publish</b>.</li>
+</ol>
+<h2>Changed in ${version}</h2>
+${fields
+  .map(([sec, label, text], i) => [sec, label, text, i])
+  .filter(
+    ([, label]) =>
+      label === 'Description' ||
+      NEW_PERMISSIONS.some((p) => label.startsWith(`Justification: ${p}`)),
+  )
+  .map(
+    ([, label, text, i]) =>
+      `<div class="f"><div class="h"><b>${esc(label)}</b><button data-i="c${i}">Copy</button></div><pre id="tc${i}">${esc(text)}</pre></div>`,
+  )
+  .join('\n')}
+<details><summary><b>Every field (first-time submission)</b></summary>
+<p>For a new item: <b>New item</b>, upload the Web Store zip, then copy each field below into the matching box.</p>
 <h2>Files to upload</h2>
 <ul>
 <li>Store icon: <code>apps/extension/public/icon/128.png</code></li>
-<li>Screenshots: <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code></li>
+<li>Screenshots: <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code>, <code>4-schedules.png</code></li>
 <li>Small promo tile: <code>docs/webstore/images/promo-440x280.png</code></li>
 </ul>
 ${rows}
@@ -77,6 +106,7 @@ ${rows}
 <p>Tick <b>Website content</b> and <b>User activity</b>, then tick all three statements (not sold; not used for unrelated purposes; not used for creditworthiness or lending). Paste the privacy policy's link into <b>Privacy policy URL</b>.</p>
 <h2>Distribution</h2>
 <p>Visibility <b>Unlisted</b> · all regions · free. Then <b>Submit for review</b>.</p>
+</details>
 <script>
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-i]');

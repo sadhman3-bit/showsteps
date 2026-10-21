@@ -39,6 +39,14 @@ async function sendFile(res, file, status = 200) {
   }
 }
 
+function cookie(req, name) {
+  for (const part of (req.headers.cookie ?? '').split(';')) {
+    const [k, ...v] = part.trim().split('=');
+    if (k === name) return v.join('=');
+  }
+  return undefined;
+}
+
 function mainHandler(xoriginPort) {
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
@@ -65,10 +73,37 @@ function mainHandler(xoriginPort) {
         ]),
       );
     }
+    // Sign-in through the mock identity provider (second port, /idp/): it sends the person
+    // back here with a user name, which becomes the session cookie.
+    if (path === '/auth/callback') {
+      const user = (url.searchParams.get('user') ?? 'demo').replace(/[^\w.-]/g, '') || 'demo';
+      const back = url.searchParams.get('return') ?? '/app/';
+      res.writeHead(302, {
+        'set-cookie': `demo_session=${user}; Path=/; SameSite=Lax`,
+        location: back.startsWith('/') && !back.startsWith('//') ? back : '/app/',
+      });
+      return res.end();
+    }
+    // Tests and manual checks: end the session, so the app sends the person to sign in again.
+    if (path === '/auth/expire') {
+      res.writeHead(200, {
+        'set-cookie': 'demo_session=expired; Path=/; SameSite=Lax',
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      return res.end('Session expired');
+    }
     // SPA routes under /app/ fall back to the shell (history API routing).
     if (path === '/app' || path.startsWith('/app/')) {
       const asset = safePath(ROOT, path);
       if (asset && extname(asset)) return sendFile(res, asset);
+      if (cookie(req, 'demo_session') === 'expired') {
+        const callback = `http://${req.headers.host}/auth/callback?return=${encodeURIComponent(path + url.search)}`;
+        res.writeHead(302, {
+          location: `http://127.0.0.1:${xoriginPort}/idp/?prompt=login&return=${encodeURIComponent(callback)}`,
+        });
+        return res.end();
+      }
       return sendFile(res, join(ROOT, 'app', 'index.html'));
     }
     const file = safePath(ROOT, path);
@@ -82,7 +117,12 @@ function mainHandler(xoriginPort) {
 
 function xoriginHandler() {
   return async (req, res) => {
-    const file = safePath(XORIGIN_ROOT, req.url === '/' ? '/widget.html' : (req.url ?? '/'));
+    const path = new URL(req.url ?? '/', 'http://127.0.0.1').pathname;
+    // `/idp/` is the mock identity provider's page; anything else is the widget and its files.
+    const file = safePath(
+      XORIGIN_ROOT,
+      path === '/' ? '/widget.html' : path.endsWith('/') ? `${path}index.html` : path,
+    );
     if (!file) {
       res.writeHead(400);
       return res.end();

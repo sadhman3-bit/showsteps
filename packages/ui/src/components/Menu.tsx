@@ -12,6 +12,8 @@ export interface MenuItem {
   checked?: boolean;
   danger?: boolean;
   disabled?: boolean;
+  /** Why an item is disabled (shown under it). */
+  hint?: string;
 }
 
 /**
@@ -85,7 +87,14 @@ export function Menu(props: {
               ) : item.icon ? (
                 <Icon name={item.icon} size={16} />
               ) : null}
-              {item.label}
+              {item.hint ? (
+                <span class="ss-popmenu__text">
+                  {item.label}
+                  <small>{item.hint}</small>
+                </span>
+              ) : (
+                item.label
+              )}
             </button>
           ))}
           {props.children}

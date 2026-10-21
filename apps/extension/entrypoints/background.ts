@@ -1,13 +1,16 @@
 import {
   IndexedDbStore,
+  LIGHT,
   guideSteps,
+  guideVersion,
   marksForUrl,
   pageKey,
   type CaptureEvent,
+  type Guide,
 } from '@showsteps/core';
 import { BridgeClient, bridgeStore, switchableStore } from '../lib/bridge';
 import { FrameRegistry } from '../lib/frames';
-import { Guidance, type PersistedGuidance } from '../lib/guidance';
+import { Guidance, type PersistedGuidance, type StartOptions } from '../lib/guidance';
 import { selfCheck, type SelfCheckDeps } from '../lib/selfcheck';
 import {
   GuideContentMessageSchema,
@@ -37,8 +40,11 @@ import {
   type Viewport,
 } from '../lib/recorder';
 import { recaptureStep } from '../lib/recapture';
+import { RUNLOGS_DB, RunLogStore } from '../lib/runlogs';
+import { noticeText } from '../lib/notices';
 import { installSamples } from '../lib/samples';
-import { encodeScreenshot } from '../lib/shots';
+import { Scheduler, SCHEDULES_KEY, type Notice } from '../lib/schedules';
+import { encodeLogShot, encodeScreenshot } from '../lib/shots';
 
 const SCRIPT_ID = 'showsteps-capture';
 const SCRIPT_FILE = '/content-scripts/capture.js';
@@ -66,11 +72,20 @@ export default defineBackground(() => {
     (event, data) => void onDesktopEvent(event, data),
     (connected) => {
       broadcast({ type: 'desktop-state', connected });
-      if (connected) bridge.sendEvent('capture-state', recorder.current);
-      else desktopDisconnected();
+      if (connected) {
+        bridge.sendEvent('capture-state', recorder.current);
+        // S4: a desktop app that can open Chrome for runs learns the next due time.
+        void scheduler.nextDueAt().then(sendNextDue);
+      } else desktopDisconnected();
     },
   );
   const desktop = bridgeStore(bridge);
+
+  /** Tell the desktop app when the next run is due (desktop app 1.0 never gets this). */
+  function sendNextDue(at: Date | undefined): void {
+    if (bridge.can('schedule-wake'))
+      bridge.sendEvent('schedule-next', { at: at ? at.toISOString() : null });
+  }
   /** Guides live in the desktop library once the person chose that and the app is reachable. */
   const store = switchableStore(
     async () => (desktopLibrary && (await bridge.connect()) ? desktop : local),
@@ -213,7 +228,10 @@ export default defineBackground(() => {
     ...pageDeps,
     store,
     userName: async () => (await readSettings()).userName,
-    broadcast: (state) => broadcast({ type: 'guidance', state }),
+    broadcast: (state) => {
+      broadcast({ type: 'guidance', state });
+      if (state.scheduleId) void scheduler.onGuidance(state);
+    },
     async persist(data) {
       if (data) await browser.storage.session.set({ [GUIDANCE_KEY]: data });
       else await browser.storage.session.remove(GUIDANCE_KEY);
@@ -232,12 +250,160 @@ export default defineBackground(() => {
     )
     .catch(() => undefined);
 
+  // ---------- Scheduled runs ----------
+
+  const runLogs = new RunLogStore(indexedDB);
+  /** Chrome's notifications, when the person allowed them; the badge covers stops otherwise. */
+  async function notify(notice: Notice): Promise<void> {
+    const allowed = await browser.permissions
+      .contains({ permissions: ['notifications'] })
+      .catch(() => false);
+    if (!allowed) return;
+    const { title, message, buttons } = noticeText(notice);
+    await browser.notifications
+      .create(`ss|${notice.kind}|${notice.scheduleId}|${Date.now()}`, {
+        type: 'basic',
+        iconUrl: browser.runtime.getURL('/icon/128.png'),
+        title,
+        message,
+        ...(buttons.length ? { buttons: buttons.map((title) => ({ title })) } : {}),
+        requireInteraction: notice.kind === 'paused' || notice.kind === 'due',
+      })
+      .catch(() => undefined);
+  }
+
+  async function attention(on: boolean): Promise<void> {
+    await browser.action.setBadgeBackgroundColor({ color: LIGHT.alert }).catch(() => undefined);
+    await browser.action.setBadgeText({ text: on ? '!' : '' }).catch(() => undefined);
+  }
+
+  /** A window for a scheduled run or check: normal size, not focused, never minimised. */
+  async function backgroundWindow(url: string): Promise<{ windowId: number; tabId: number }> {
+    const win = await browser.windows.create({
+      url,
+      focused: false,
+      state: 'normal',
+      type: 'normal',
+      width: 1280,
+      height: 900,
+    });
+    const tabId = win?.tabs?.[0]?.id;
+    if (win?.id === undefined || tabId === undefined) throw new Error('no-window');
+    await pageDeps.waitLoaded(tabId, 15_000);
+    return { windowId: win.id, tabId };
+  }
+
+  /** U7 dry run for a schedule's "check first", in its own window, closed afterwards. */
+  async function backgroundSelfCheck(guide: Guide): Promise<number[]> {
+    let windowId: number | undefined;
+    try {
+      const checks = await selfCheck(guide, {
+        ...pageDeps,
+        async openTab(url) {
+          const opened = await backgroundWindow(url);
+          windowId = opened.windowId;
+          return opened.tabId;
+        },
+        async waitLoaded(tabId, timeoutMs) {
+          await pageDeps.waitLoaded(tabId, timeoutMs);
+          await injectGuide(tabId);
+        },
+      });
+      return checks.filter((c) => c.status === 'missing').map((c) => c.number);
+    } finally {
+      if (windowId !== undefined) await browser.windows.remove(windowId).catch(() => undefined);
+    }
+  }
+
+  const scheduler = new Scheduler({
+    now: () => new Date(),
+    storage: {
+      get: async (key) => (await browser.storage.local.get(key))[key],
+      set: (key, value) => browser.storage.local.set({ [key]: value }),
+    },
+    getGuide: (id) => store.getGuide(id),
+    alarms: {
+      create: (name, when) => void browser.alarms.create(name, { when }),
+      clear: (name) => browser.alarms.clear(name),
+      names: async () => (await browser.alarms.getAll()).map((a) => a.name),
+    },
+    busy: () => recorder.isActive || guidance.isActive,
+    openWindow: backgroundWindow,
+    async startGuidance(run) {
+      await startGuidance(
+        {
+          type: 'guide-start',
+          guideId: run.guideId,
+          mode: 'run',
+          tabId: run.tabId,
+          windowId: run.windowId,
+          values: run.values,
+        },
+        { approved: run.approved, scheduleId: run.scheduleId, windowId: run.windowId },
+      );
+    },
+    stopGuidance: async () => void (await guidance.control('stop')),
+    closeWindow: (windowId) => browser.windows.remove(windowId),
+    async capture(windowId) {
+      const dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
+      return encodeLogShot(dataUrl);
+    },
+    logs: runLogs,
+    notify: (notice) => void notify(notice),
+    attention: (on) => void attention(on),
+    selfCheck: backgroundSelfCheck,
+    nextDue: sendNextDue,
+    changed: () => broadcast({ type: 'schedules-changed' }),
+  });
+
+  browser.alarms.onAlarm.addListener((alarm) => {
+    void Promise.all([ready, guidanceReady]).then(() => scheduler.onAlarm(alarm.name));
+  });
+  // Alarms are cleared when the extension updates, and runs may have been missed while Chrome
+  // was closed: rebuild and catch up whenever Chrome starts or ShowSteps is installed or updated.
+  browser.runtime.onStartup.addListener(() => {
+    void Promise.all([ready, guidanceReady]).then(() => scheduler.startup());
+  });
+  void scheduler.needsAttention().then((on) => attention(on));
+
+  async function onNotificationClick(id: string, button?: number): Promise<void> {
+    const [, kind, scheduleId = ''] = id.split('|');
+    await browser.notifications.clear(id).catch(() => undefined);
+    if (kind === 'due') {
+      if (button === 0) await scheduler.startNow(scheduleId);
+      return;
+    }
+    const windowId = await scheduler.runWindow();
+    if (windowId !== undefined) {
+      await browser.windows.update(windowId, { focused: true }).catch(() => undefined);
+      return;
+    }
+    await browser.tabs
+      .create({ url: browser.runtime.getURL('/library.html#/schedules') })
+      .catch(() => undefined);
+  }
+  // `notifications` is optional: its events exist only once it is granted.
+  let listening = false;
+  function listenToNotifications(): void {
+    if (listening || !browser.notifications) return;
+    listening = true;
+    browser.notifications.onClicked.addListener((id) => {
+      if (id.startsWith('ss|')) void onNotificationClick(id);
+    });
+    browser.notifications.onButtonClicked.addListener((id, button) => {
+      if (id.startsWith('ss|')) void onNotificationClick(id, button);
+    });
+  }
+  listenToNotifications();
+  browser.permissions.onAdded.addListener(() => listenToNotifications());
+
   // First install: add the sample guides so the library is not empty. (Test profiles skip
   // this so tests start from an empty library; they call installSamples through the hook.)
   browser.runtime.onInstalled.addListener(({ reason }) => {
     if (reason === 'install' && import.meta.env.MODE !== 'e2e') {
       void installSamples(store).then(() => broadcast({ type: 'library-changed' }));
     }
+    void Promise.all([ready, guidanceReady]).then(() => scheduler.startup());
   });
 
   browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error: unknown) => {
@@ -336,7 +502,12 @@ export default defineBackground(() => {
     }
   }
 
+  /** A scheduled run is going (in its own window): nothing else may record or guide. */
+  const scheduledRunGoing = () => guidance.isActive && !!guidance.current.scheduleId;
+
   async function startCapture(msg: Extract<PageMessage, { type: 'start' }>): Promise<CaptureState> {
+    // Recording now would also record the scheduled run's own clicks.
+    if (scheduledRunGoing()) throw new Error('busy');
     const tab = await browser.tabs.get(msg.tabId);
     if (!tab.url || !/^(https?|file):/.test(tab.url)) throw new Error('cannot-record-here');
     const allowed = await browser.permissions.contains({ origins: [tab.url] });
@@ -435,6 +606,14 @@ export default defineBackground(() => {
         await local.close();
         await browser.storage.local.clear();
         await browser.storage.session.clear();
+        // Schedules went with local storage; their alarms, logs and screenshots go too.
+        await browser.alarms.clearAll();
+        await runLogs.close();
+        await new Promise<void>((resolve) => {
+          const req = indexedDB.deleteDatabase(RUNLOGS_DB);
+          req.onsuccess = req.onerror = req.onblocked = () => resolve();
+        });
+        await attention(false);
         return { ok: true };
       case 'start':
         try {
@@ -544,8 +723,13 @@ export default defineBackground(() => {
     }).catch(() => undefined);
   }
 
-  async function startGuidance(msg: Extract<GuidePageMessage, { type: 'guide-start' }>) {
-    const state = await guidance.start(msg);
+  async function startGuidance(
+    msg: Extract<GuidePageMessage, { type: 'guide-start' }>,
+    options?: StartOptions,
+  ) {
+    // Starting another session would end the scheduled run.
+    if (!options?.scheduleId && scheduledRunGoing()) throw new Error('busy');
+    const state = await guidance.start(msg, options);
     if (state.tabId !== undefined) await injectGuide(state.tabId);
     return state;
   }
@@ -611,8 +795,33 @@ export default defineBackground(() => {
         await notifyTabs({ type: 'marks-changed' });
         void syncDesktop().then(() => broadcast({ type: 'library-changed' }));
         return { ok: true };
-      case 'desktop-get':
-        return { connected: await syncDesktop() };
+      case 'desktop-get': {
+        const connected = await syncDesktop();
+        return {
+          connected,
+          // For the Schedule dialog's tip (S4); undefined with desktop app 1.0.
+          ...(bridge.can('schedule-wake')
+            ? { startWithWindows: bridge.startWithWindows === true }
+            : {}),
+        };
+      }
+      case 'schedule-save':
+        try {
+          return { schedule: await scheduler.save(msg.schedule) };
+        } catch (error) {
+          return { error: error instanceof Error ? error.message : 'error' };
+        }
+      case 'schedule-delete':
+        await scheduler.remove(msg.id);
+        return { ok: true };
+      case 'schedule-enable':
+        await scheduler.setEnabled(msg.id, msg.enabled);
+        return { ok: true };
+      case 'schedule-run':
+        return await scheduler.startNow(msg.id);
+      case 'schedule-seen':
+        await scheduler.seen();
+        return { ok: true };
     }
   }
 
@@ -770,8 +979,8 @@ export default defineBackground(() => {
     return out;
   }
 
-  browser.tabs.onActivated.addListener(({ tabId }) => {
-    void guidanceReady.then(() => guidance.tabActivated(tabId));
+  browser.tabs.onActivated.addListener(({ tabId, windowId }) => {
+    void guidanceReady.then(() => guidance.tabActivated(tabId, windowId));
     void ready.then(() => {
       if (!recorder.isActive) return;
       // Typing in the tab the user left has no "change" event yet: collect it from every frame
@@ -819,6 +1028,10 @@ export default defineBackground(() => {
         startGuidance,
         readMarks,
         syncDesktop,
+        scheduler,
+        runLogs,
+        schedulesKey: SCHEDULES_KEY,
+        guideVersion,
       },
     });
   }
