@@ -54,6 +54,9 @@ const hostSetup = process.argv.includes('--register-native-host')
     ? 'unregister'
     : undefined;
 
+// A test copy keeps its data apart, and so its single-instance lock: set before taking the lock,
+// so tests run even while the installed app is open.
+if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 if (!hostSetup && !app.requestSingleInstanceLock()) app.quit();
 
 // ---------- Paths ----------
@@ -71,7 +74,6 @@ const trayImage = () =>
       nativeTheme.shouldUseDarkColorsForSystemIntegratedUI ? 'tray-dark.png' : 'tray.png',
     ),
   );
-if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 const settingsFile = () => join(app.getPath('userData'), 'settings.json');
 const shotDir = () => join(app.getPath('temp'), 'showsteps-shots');
 
