@@ -13,12 +13,48 @@ button { font: inherit; border: 0; border-radius: 6px; padding: 4px 14px; backgr
 button.done { opacity: 0.6; }
 code { font-family: Consolas, monospace; }
 </style></head><body>
-<h1>ShowSteps: Chrome Web Store fields</h1>
-<p>Open <b>chrome.google.com/webstore/devconsole</b>, click <b>New item</b> and upload <code>dist/showsteps-extension-1.0.0-chrome-web-store.zip</code>. Then copy each field below into the matching box.</p>
+<h1>ShowSteps: update the Chrome Web Store item to 1.1.0</h1>
+<p>About 10 minutes. Fields that changed have a Copy button below.</p>
+<ol>
+<li>Open the developer dashboard, <b>chrome.google.com/webstore/devconsole</b>, then the ShowSteps item (ID <code>hlkihjibgiehjcaemfhfnfcjphgkcnoa</code>).</li>
+<li><b>Package</b> tab: <b>Upload new package</b>, and choose <code>dist/showsteps-extension-1.1.0-chrome-web-store.zip</code>.</li>
+<li><b>Store listing</b> tab: paste the new <b>Description</b> (below) and add screenshot <code>docs/webstore/images/4-schedules.png</code>.</li>
+<li><b>Privacy practices</b> tab: add the <b>alarms</b> and <b>notifications</b> justifications (below) and check that the data usage ticks are still <b>Website content</b> and <b>User activity</b> with all three statements. The privacy policy URL stays the same; the updated policy is live on <code>main</code>.</li>
+<li><b>Submit for review.</b> To choose when it goes live, untick automatic publishing in the confirmation dialog; after approval you have 30 days to press <b>Publish</b>.</li>
+</ol>
+<h2>Changed in 1.1.0</h2>
+<div class="f"><div class="h"><b>Description</b><button data-i="c2">Copy</button></div><pre id="tc2">Show a process once, and ShowSteps writes the how-to guide for you.
+
+Click Start, do the task as usual, then click Finish. Every click, entry and choice becomes a step with a written instruction and a screenshot that highlights what you clicked. Steps appear in the side panel as you go, and you can delete any of them before you finish.
+
+PRIVATE BY DESIGN
+• Everything stays on your computer. No account, no cloud, no tracking.
+• Values typed into password, one-time-code and payment-card fields are never stored.
+• Secure Blur helps you find emails, phone numbers, and card, bank and tax numbers in your screenshots so you can blur them before sharing.
+
+EDIT AND SHARE
+• Reorder steps, add sections, tips and warnings, crop and annotate screenshots.
+• Export to PDF, Word, Markdown or HTML, or copy into a document or wiki.
+• Version history: go back to any earlier version.
+
+GUIDE PEOPLE THROUGH IT
+• Guide Me shows each step on the real page, one at a time.
+• Run for me does the steps for you, and stops at passwords, at steps you mark for confirmation and whenever something unexpected happens.
+• Scheduled runs: Run for me runs a guide at the times you set (daily, weekdays, chosen days or a day of the month) in its own window, pauses and tells you when it needs you, and keeps a log of each run with a screenshot per step.
+• Pin guides and notes to the pages where they are needed.
+
+FOR AUTOMATION
+• Each guide also holds a precise, machine-readable procedure that automation tools and AI agents can follow, with a ready-made Playwright test.
+
+Free for personal and non-commercial use (PolyForm Noncommercial License 1.0.0); the source code is available. ShowSteps is an independent project and is not affiliated with Google or with any other guide or documentation product.</pre></div>
+<div class="f"><div class="h"><b>Justification: alarms</b><button data-i="c12">Copy</button></div><pre id="tc12">Starts a guide's Run for me at the times the user sets in a schedule.</pre></div>
+<div class="f"><div class="h"><b>Justification: notifications (optional)</b><button data-i="c13">Copy</button></div><pre id="tc13">Tells the user when a scheduled run finishes, needs a confirmation or a sign-in. Requested only when the user creates a schedule.</pre></div>
+<details><summary><b>Every field (first-time submission)</b></summary>
+<p>For a new item: <b>New item</b>, upload the Web Store zip, then copy each field below into the matching box.</p>
 <h2>Files to upload</h2>
 <ul>
 <li>Store icon: <code>apps/extension/public/icon/128.png</code></li>
-<li>Screenshots: <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code></li>
+<li>Screenshots: <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code>, <code>4-schedules.png</code></li>
 <li>Small promo tile: <code>docs/webstore/images/promo-440x280.png</code></li>
 </ul>
 <h2>Store listing</h2><div class="f"><div class="h"><b>Name</b><button data-i="0">Copy</button></div><pre id="t0">ShowSteps</pre></div>
@@ -64,6 +100,7 @@ Free for personal and non-commercial use (PolyForm Noncommercial License 1.0.0);
 <p>Tick <b>Website content</b> and <b>User activity</b>, then tick all three statements (not sold; not used for unrelated purposes; not used for creditworthiness or lending). Paste the privacy policy's link into <b>Privacy policy URL</b>.</p>
 <h2>Distribution</h2>
 <p>Visibility <b>Unlisted</b> · all regions · free. Then <b>Submit for review</b>.</p>
+</details>
 <script>
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-i]');
