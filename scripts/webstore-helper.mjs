@@ -108,11 +108,32 @@ ${rows}
 <p>Visibility <b>Unlisted</b> · all regions · free. Then <b>Submit for review</b>.</p>
 </details>
 <script>
+// Pages opened from a file may not get the clipboard API: fall back to selecting and copying.
+function copyText(text) {
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.append(area);
+  area.select();
+  const ok = document.execCommand('copy');
+  area.remove();
+  return ok;
+}
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-i]');
   if (!b) return;
-  await navigator.clipboard.writeText(document.getElementById('t' + b.dataset.i).textContent);
-  b.textContent = 'Copied'; b.classList.add('done');
+  const text = document.getElementById('t' + b.dataset.i).textContent;
+  let ok = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    ok = true;
+  } catch {
+    ok = copyText(text);
+  }
+  b.textContent = ok ? 'Copied' : 'Select and copy';
+  b.classList.add('done');
 });
 </script>
 </body></html>
