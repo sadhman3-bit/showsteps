@@ -213,4 +213,4 @@ Fixes found while testing:
 
 ### Deferred (1.1)
 
-- Nothing yet.
+- **Next, 1.2: attach the file a run downloaded** (owner request, 21 October 2026). Today Run for me always stops at an upload step for the person to pick a file. Plan: in the editor, mark an upload step "Use the file downloaded in step N"; when Run for me does that download click it keeps a private copy of the file for the run (fetched the way the page would, so no new permission if possible; otherwise an optional `downloads` permission asked only when used), and at the upload step it sets that copy on the site's file field without opening a picker. Only a file the same run downloaded, only on marked steps, its name in the run log. Falls back to stopping for the person when the file can't be fetched (files built in the page, extra security checks). Works for webmail (Outlook on the web, Gmail); Outlook desktop still needs the person.
