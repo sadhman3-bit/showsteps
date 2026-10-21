@@ -207,10 +207,9 @@ Fixes found while testing:
 
 ### Waiting on the owner (1.1)
 
-1. **Chrome Web Store update** (about 10 minutes): open `docs/webstore/submit.html` and follow the five steps at the top (upload `dist/showsteps-extension-1.1.0-chrome-web-store.zip`, paste the new description, add `4-schedules.png`, add the `alarms` and `notifications` justifications, submit for review).
-2. **While it's in review:** nothing to do. If it's rejected, fix what the reviewer names, raise the version to 1.1.1 and resubmit.
-3. **After it's published, smoke test the store copy:** the store page shows 1.1.0; `chrome://extensions` shows 1.1.0, still on, no permission prompt; a schedule set 2 minutes ahead runs in its own window and appears in the run log; a confirm step pauses with a notification; an expired sign-in stops the run; with Chrome closed and desktop app 1.1 running, a due run opens Chrome and runs.
-4. **Manual tests MT-S-1 to MT-S-8** (`docs/MANUAL_TESTS.md`) when convenient.
+- **Waiting on the owner: Chrome Web Store review.** Version 1.1.0 was submitted for review on 21 October 2026. If it's rejected, fix what the reviewer names, raise the version to 1.1.1 and resubmit (the store needs a higher version than the last upload).
+- **After it's published, smoke test the store copy:** the store page shows 1.1.0; `chrome://extensions` shows 1.1.0, still on, no permission prompt; a schedule set 2 minutes ahead runs in its own window and appears in the run log; a confirm step pauses with a notification; an expired sign-in stops the run; with Chrome closed and desktop app 1.1 running, a due run opens Chrome and runs.
+- **Manual tests MT-S-1 to MT-S-8** (`docs/MANUAL_TESTS.md`) when convenient.
 
 ### Deferred (1.1)
 
