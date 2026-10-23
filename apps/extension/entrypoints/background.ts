@@ -2,9 +2,11 @@ import {
   IndexedDbStore,
   LIGHT,
   guideSteps,
+  guideStartUrl,
   guideVersion,
   marksForUrl,
   pageKey,
+  parseStartLink,
   type CaptureEvent,
   type Guide,
 } from '@showsteps/core';
@@ -293,6 +295,69 @@ export default defineBackground(() => {
       if (saved) await guidance.restore(saved);
     })
     .catch(() => undefined);
+
+  // ---------- Guide Me and Run for me links in exported files (1.2) ----------
+
+  /** When each tab last showed the start window: at most one every 10 seconds. */
+  const linkPrompts = new Map<number, number>();
+  const LINK_PROMPT_MS = 10_000;
+
+  /**
+   * A top-frame page opened with the ShowSteps marker in its fragment: offer to start, in a
+   * small ShowSteps window the page can't cover or click. Nothing starts until Start is pressed.
+   */
+  async function onLinkNavigation(details: { tabId: number; frameId: number; url: string }) {
+    if (details.frameId !== 0 || details.tabId < 0) return;
+    const link = parseStartLink(details.url);
+    if (!link) return;
+    const last = linkPrompts.get(details.tabId) ?? 0;
+    if (Date.now() - last < LINK_PROMPT_MS) return;
+    const guide = await store.getGuide(link.guideId).catch(() => undefined);
+    // Only on the guide's own start page (a guide not in the library can't be checked, so the
+    // window says it isn't there).
+    if (guide) {
+      const start = guideStartUrl(guide);
+      if (!start || pageKey(start) !== pageKey(details.url)) return;
+    }
+    linkPrompts.set(details.tabId, Date.now());
+    const query = new URLSearchParams({
+      mode: link.mode,
+      tab: String(details.tabId),
+      v: link.version,
+    });
+    await browser.windows
+      .create({
+        url: browser.runtime.getURL(
+          `/library.html#/start/${encodeURIComponent(link.guideId)}?${query.toString()}`,
+        ),
+        type: 'popup',
+        width: 440,
+        height: 600,
+        focused: true,
+      })
+      .catch(() => undefined);
+  }
+  browser.webNavigation.onCommitted.addListener((d) => void onLinkNavigation(d));
+  browser.webNavigation.onReferenceFragmentUpdated.addListener((d) => void onLinkNavigation(d));
+  browser.tabs.onRemoved.addListener((tabId) => linkPrompts.delete(tabId));
+
+  /** Not now: take the marker out of the address bar without reloading (with site access). */
+  async function dismissStartLink(tabId: number): Promise<void> {
+    const tab = await browser.tabs.get(tabId).catch(() => undefined);
+    if (!tab?.url || !parseStartLink(tab.url)) return;
+    const origin = new URL(tab.url).origin;
+    if (!(await browser.permissions.contains({ origins: [`${origin}/*`] }).catch(() => false)))
+      return;
+    await browser.scripting
+      .executeScript({
+        target: { tabId },
+        func: () => {
+          if (location.hash.startsWith('#showsteps='))
+            history.replaceState(history.state, '', location.href.split('#')[0]);
+        },
+      })
+      .catch(() => undefined);
+  }
 
   // `downloads` is optional: its events exist only once it is granted.
   let watchingDownloads = false;
@@ -803,7 +868,8 @@ export default defineBackground(() => {
     switch (msg.type) {
       case 'guide-start':
         try {
-          return { guidance: await startGuidance(msg) };
+          const { fromLink, ...start } = msg;
+          return { guidance: await startGuidance(start, fromLink ? { fromLink } : undefined) };
         } catch (error) {
           return {
             guidance: guidance.current,
@@ -886,6 +952,9 @@ export default defineBackground(() => {
         return await scheduler.startNow(msg.id);
       case 'schedule-seen':
         await scheduler.seen();
+        return { ok: true };
+      case 'start-link-dismiss':
+        await dismissStartLink(msg.tabId);
         return { ok: true };
     }
   }

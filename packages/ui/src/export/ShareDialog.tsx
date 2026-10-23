@@ -8,7 +8,7 @@ import type { ExportInput } from '@showsteps/core/export';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
-import { downloadBytes, safeFileName } from '../hooks.js';
+import { downloadBytes, safeFileName, usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
 import { prepareExport } from './flatten.js';
 import { canPickFolder, pickFolder, rememberedFolder, saveFiles } from './folder.js';
@@ -65,13 +65,19 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [folder, setFolder] = useState<Awaited<ReturnType<typeof rememberedFolder>>>();
+  // 1.2: Guide Me and Run for me links under the title (web guides only); on unless turned off.
+  const [links, setLinks] = usePreference<'on' | 'off'>('share.startLinks', 'on');
+  const hasWebStep = guide.blocks.some((b) => b.kind === 'step' && b.app.kind === 'web');
 
   useEffect(() => {
     void rememberedFolder().then(setFolder);
   }, []);
 
   /** Pictures are flattened once per dialog and shared by every export. */
-  const input = () => (prepared.current ??= prepareExport(store, guide));
+  const input = async (): Promise<ExportInput> => ({
+    ...(await (prepared.current ??= prepareExport(store, guide))),
+    startLinks: hasWebStep && links === 'on',
+  });
 
   async function bytesFor(format: Format): Promise<Uint8Array> {
     if (format === 'showsteps') return exportGuideArchive(store, guide.id);
@@ -155,6 +161,16 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
     <Dialog title={s.title} onClose={onClose}>
       <div class="ss-share" aria-busy={busy}>
         <p class="ss-muted">{s.privacy}</p>
+        {hasWebStep ? (
+          <label class="ss-check">
+            <input
+              type="checkbox"
+              checked={links === 'on'}
+              onChange={(e) => setLinks(e.currentTarget.checked ? 'on' : 'off')}
+            />{' '}
+            {s.startLinks}
+          </label>
+        ) : null}
         <h3>{s.download}</h3>
         <ul class="ss-share__grid">
           {(Object.keys(s.formats) as Format[]).map((f) => (

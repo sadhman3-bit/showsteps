@@ -142,7 +142,11 @@ export const GuidePageMessageSchema = z.discriminatedUnion('type', [
     stepThrough: z.boolean().optional(),
     /** Start at this step (0-based). */
     from: z.number().int().nonnegative().optional(),
+    /** Started from a link in an exported file (1.2): the tab goes to the start page first. */
+    fromLink: z.boolean().optional(),
   }),
+  /** The start window's Not now (1.2): take the ShowSteps marker out of the tab's address. */
+  z.object({ type: z.literal('start-link-dismiss'), tabId: z.number().int() }),
   z.object({ type: z.literal('guide-control'), action: GuideControlSchema }),
   z.object({ type: z.literal('guide-goto'), index: z.number().int().nonnegative() }),
   /** U9: the current step could not be found; record it again in place. */

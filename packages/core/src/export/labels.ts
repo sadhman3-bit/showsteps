@@ -20,6 +20,11 @@ export const EXPORT_LABELS = {
   /** U3: the visible line in every export that carries the structured procedure. */
   agentFooter: 'Agent-readable procedure embedded (ShowSteps schema v1).',
   agentProcedure: 'Agent procedure',
+  /** 1.2: links that open the guide's first page and offer to start it in ShowSteps. */
+  openIn: 'Open in ShowSteps:',
+  guideMe: 'Guide Me',
+  runForMe: 'Run for me',
+  linksNote: 'Needs Chrome with the ShowSteps extension and this guide in its library.',
   months: [
     'January',
     'February',

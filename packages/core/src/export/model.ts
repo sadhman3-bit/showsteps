@@ -1,4 +1,5 @@
 import { stepNumbers } from '../editor/ops.js';
+import { buildStartLink } from '../guidance/links.js';
 import { toPlainText } from '../richText.js';
 import type { CalloutTone, Guide, RichText } from '../schema.js';
 import { EXPORT_LABELS, formatDate, type ExportLabels } from './labels.js';
@@ -17,6 +18,8 @@ export interface ExportInput {
   images: ReadonlyMap<string, ExportImage>;
   logo?: ExportImage;
   labels?: ExportLabels;
+  /** Add "Open in ShowSteps: Guide Me · Run for me" links under the title (1.2). */
+  startLinks?: boolean;
 }
 
 export type ExportItem =
@@ -46,6 +49,8 @@ export interface ExportDocument {
   stepCount: number;
   items: ExportItem[];
   labels: ExportLabels;
+  /** Guide Me and Run for me links: the start page with the ShowSteps marker (web guides). */
+  links?: { guide: string; run: string };
 }
 
 export function extensionFor(image: ExportImage): string {
@@ -88,6 +93,8 @@ export function exportDocument(input: ExportInput): ExportDocument {
     };
   });
   const date = formatDate(guide.updatedAt, labels);
+  const guideLink = input.startLinks ? buildStartLink(guide, 'guide') : undefined;
+  const runLink = input.startLinks ? buildStartLink(guide, 'run') : undefined;
   return {
     title: guide.title,
     ...(guide.description?.trim() ? { description: guide.description.trim() } : {}),
@@ -99,6 +106,7 @@ export function exportDocument(input: ExportInput): ExportDocument {
     stepCount: numbers.size,
     items,
     labels,
+    ...(guideLink && runLink ? { links: { guide: guideLink, run: runLink } } : {}),
   };
 }
 

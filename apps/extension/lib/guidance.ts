@@ -87,6 +87,11 @@ export interface StartOptions {
   /** The schedule this run is for. It stays in `windowId` and doesn't follow other tabs. */
   scheduleId?: string;
   windowId?: number;
+  /**
+   * Started from a link in an exported file (1.2): the tab goes to the exact start page first,
+   * which drops the link's marker and restores the site's own fragment.
+   */
+  fromLink?: boolean;
 }
 
 /** Pause between Run for me steps, and how long the cursor takes to travel. */
@@ -217,7 +222,10 @@ export class Guidance {
 
     let tabId = msg.tabId;
     const currentUrl = tabId === undefined ? undefined : await this.deps.tabUrl(tabId);
-    if (options.scheduleId && tabId !== undefined) {
+    if (options.fromLink && tabId !== undefined) {
+      await this.deps.navigate(tabId, startUrl);
+      await this.deps.waitLoaded(tabId, PAGE_LOAD_TIMEOUT);
+    } else if (options.scheduleId && tabId !== undefined) {
       // A scheduled run's window was opened on the first page for it: stay in that tab even if
       // the site redirected it (to sign in, say). The first step takes it where it should be.
     } else if (tabId === undefined || !currentUrl || !/^(https?|file):/.test(currentUrl)) {
