@@ -6,6 +6,7 @@ import {
   RunAttachments,
   htmlAllowed,
   nameFromUrl,
+  withExtension,
   sameSite,
   type DownloadInfo,
 } from '../lib/attachments';
@@ -181,6 +182,9 @@ describe('helpers', () => {
     expect(nameFromUrl('https://x.test/files/report.pdf?x=1')).toBe('report.pdf');
     expect(nameFromUrl('https://x.test/api/export')).toBe('');
     expect(nameFromUrl('blob:https://x.test/abc')).toBe('');
+    expect(withExtension('7c0f5f52', 'application/pdf')).toBe('7c0f5f52.pdf');
+    expect(withExtension('report.pdf', 'application/pdf')).toBe('report.pdf');
+    expect(withExtension('data', 'application/x-unknown')).toBe('data');
     expect(linkFileName('invoices.csv', 'blob:x')).toBe('invoices.csv');
     expect(linkFileName('', 'https://x.test/a/b%20c.pdf')).toBe('b c.pdf');
     expect(linkFileName(null, 'data:text/plain,hi')).toBe('download');

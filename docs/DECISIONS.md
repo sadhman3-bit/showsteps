@@ -312,3 +312,4 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **The start window opens even for a guide that isn't in the library** (the start page can't be checked without the guide), and says to import the ShowSteps file. For a guide in the library, a marker on any other page is ignored.
 - **Not now removes the marker only with site access** (it runs `history.replaceState` in the page); without it the address keeps the marker until the person navigates.
 - **Navigation events keep the fragment:** `webNavigation.onCommitted` and `onReferenceFragmentUpdated` report the address with its `#showsteps=…` marker (checked in `e2e/start-links.spec.ts`, where the window opens only from that marker).
+- **A downloaded file's name without an extension** gets one from its type (`application/pdf` → `.pdf`), because upload fields often check the extension. Found by the desktop e2e test, where Chrome saves downloads under random names.

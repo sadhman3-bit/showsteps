@@ -61,6 +61,27 @@ export function nameFromUrl(url: string): string {
   }
 }
 
+const EXTENSIONS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'text/csv': 'csv',
+  'text/plain': 'txt',
+  'application/json': 'json',
+  'application/zip': 'zip',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls',
+  'application/msword': 'doc',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+};
+
+/** A name without an extension gets one from the file's type (upload fields often check it). */
+export function withExtension(name: string, mime: string | undefined): string {
+  if (/\.[a-z0-9]{1,8}$/i.test(name)) return name;
+  const ext = EXTENSIONS[(mime ?? '').split(';')[0]?.trim().toLowerCase() ?? ''];
+  return ext ? `${name}.${ext}` : name;
+}
+
 /** The host of a URL, or ''. */
 export function hostOf(url: string | undefined): string {
   try {
@@ -184,7 +205,10 @@ export class RunAttachments {
       this.problems.set(p.stepId, { problem: 'failed', ...(p.name ? { name: p.name } : {}) });
       return;
     }
-    const name = nameFromUrl(item.finalUrl || item.url) || baseName(item.filename) || 'download';
+    const name = withExtension(
+      nameFromUrl(item.finalUrl || item.url) || baseName(item.filename) || 'download',
+      item.mime,
+    );
     if ((item.fileSize ?? 0) > MAX_FILE_BYTES) {
       this.problems.set(p.stepId, { problem: 'big', name });
       return;

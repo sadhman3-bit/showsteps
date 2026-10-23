@@ -52,7 +52,12 @@ test('a form download is read by the desktop app and attached (R4)', async ({
   );
   await expect
     .poll(() => sw.evaluate(() => __showsteps.guidance.current.status), { timeout: 60_000 })
-    .toBe('done');
+    .toBe('done')
+    .catch(async (e: Error) => {
+      const s = await sw.evaluate(() => JSON.stringify(__showsteps.guidance.current));
+      throw new Error(`${e.message}
+STATE ${s}`);
+    });
   await expect(page).toHaveURL(new RegExp(`^${SEND}`));
   await expect(page.getByRole('list', { name: 'Attached files' })).toContainText(
     /\(\d+ bytes, starts %PDF-\)/,
