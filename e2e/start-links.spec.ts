@@ -30,7 +30,16 @@ async function openLink(
   const page = await context.newPage();
   await page.goto(url);
   const isPrompt = (p: Page) => !before.has(p) && p.url().includes('/library.html#/start/');
-  await expect.poll(() => context.pages().some(isPrompt), { timeout: 15_000 }).toBe(true);
+  await expect
+    .poll(() => context.pages().some(isPrompt), { timeout: 15_000 })
+    .toBe(true)
+    .catch((e: Error) => {
+      throw new Error(`${e.message}
+PAGES ${context
+        .pages()
+        .map((p) => p.url())
+        .join(' | ')}`);
+    });
   return { page, prompt: context.pages().find(isPrompt)! };
 }
 
@@ -99,6 +108,8 @@ test('a guide that isn’t in the library, and one that changed since the file w
   serviceWorker: sw,
 }) => {
   const { guide } = attachGuide();
+  // Let ShowSteps finish starting in this new profile first (see PROGRESS, Deferred (1.2)).
+  await sw.evaluate(() => __showsteps.store.getGuide('warm-up').catch(() => undefined));
   // Not imported: the window says so.
   const missing = await openLink(context, buildStartLink(guide, 'guide')!);
   await expect(missing.prompt.getByText(/isn’t in your ShowSteps library/)).toBeVisible();

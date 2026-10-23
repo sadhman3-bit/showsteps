@@ -238,4 +238,4 @@ Fixes found while testing:
 
 ### Deferred (1.2)
 
-- Nothing yet.
+- **A start link opened in the first moments after ShowSteps starts in a brand-new profile** sometimes opens no window (seen only under parallel e2e load; a library lookup takes under 1 s, so the cause isn't the store). `e2e/start-links.spec.ts` waits until ShowSteps has started before the first link. Worth checking by hand: click a link right after starting Chrome (part of MT-R-3).
