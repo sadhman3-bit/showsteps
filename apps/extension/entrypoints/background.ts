@@ -312,6 +312,8 @@ export default defineBackground(() => {
     if (!link) return;
     const last = linkPrompts.get(details.tabId) ?? 0;
     if (Date.now() - last < LINK_PROMPT_MS) return;
+    linkPrompts.set(details.tabId, Date.now());
+    await Promise.all([ready, guidanceReady]);
     const guide = await store.getGuide(link.guideId).catch(() => undefined);
     // Only on the guide's own start page (a guide not in the library can't be checked, so the
     // window says it isn't there).
@@ -319,7 +321,6 @@ export default defineBackground(() => {
       const start = guideStartUrl(guide);
       if (!start || pageKey(start) !== pageKey(details.url)) return;
     }
-    linkPrompts.set(details.tabId, Date.now());
     const query = new URLSearchParams({
       mode: link.mode,
       tab: String(details.tabId),

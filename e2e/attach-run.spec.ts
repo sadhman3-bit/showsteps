@@ -208,3 +208,29 @@ test('after a worker restart mid-run, the kept file is still attached', async ({
   await expect(page.getByRole('list', { name: 'Attached files' })).toContainText('report.pdf (');
   await expect.poll(() => storedFiles(worker)).toBe(0);
 });
+
+test('a 25 MB file is attached within the step’s timeout (R8)', async ({
+  context,
+  serviceWorker: sw,
+}) => {
+  test.setTimeout(120_000);
+  // 25,000 KB: just under the 25 MB cap. The upload step's timeout is 15 s.
+  const { page } = await run(context, sw, {
+    download: 'link',
+    from: 'step',
+    exportsQuery: 'kb=25000',
+  });
+  await expect.poll(async () => (await state(sw)).index, { timeout: 60_000 }).toBe(4);
+  const started = Date.now();
+  await expect
+    .poll(async () => (await state(sw)).index, { timeout: 15_000 })
+    .toBeGreaterThanOrEqual(5);
+  const ms = Date.now() - started;
+  test.info().annotations.push({ type: 'attach 25 MB', description: `${ms} ms` });
+  expect(ms).toBeLessThan(15_000);
+  await expect(page.getByRole('list', { name: 'Attached files' })).toContainText(
+    `report.pdf (${25_000 * 1024} bytes, starts %PDF-)`,
+  );
+  await expect.poll(async () => (await state(sw)).status, { timeout: 30_000 }).toBe('done');
+  await expect.poll(() => storedFiles(sw)).toBe(0);
+});

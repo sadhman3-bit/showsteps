@@ -1,6 +1,6 @@
 # ShowSteps privacy policy
 
-_Last updated: 21 October 2026_
+_Last updated: 24 October 2026_
 
 ShowSteps is a browser extension, with an optional Windows app, that records a process you perform and turns it into a step-by-step guide. This policy covers both. It is published by the ShowSteps developer (contact below).
 
@@ -41,6 +41,20 @@ If you allow notifications, ShowSteps uses Chrome's notifications to tell you wh
 
 If the desktop app is connected, the only thing the extension tells it about schedules is **when** the next scheduled run is due, so the desktop app can start Chrome at that time if it is closed. It starts Chrome without a web address. If you turn on **Start with Windows** in the desktop app, Windows starts it in the tray when you sign in.
 
+## Files a run attaches
+
+If you set an upload step to use a file the run downloaded, Run for me keeps a copy of that file **for that run only**, so it can put it into the upload field later in the same run:
+
+- Only files that Run for me's own clicks downloaded in that run, at most 25 MB each and 50 MB per run.
+- The copy is kept in the extension's own storage on this device and deleted when the run finishes, is stopped or is replaced (and, if Chrome closed mid-run, the next time ShowSteps starts). It is never written anywhere else, and never put into guides, exports, notifications or usage counts. A scheduled run's log keeps only the file's name, size, the site it came from and the step that downloaded it.
+- To get the file, ShowSteps reads it in the page (for files the page builds itself), or fetches the download's own address again with that site's cookies, using the website access you gave it. It fetches only the address the download itself came from, and keeps the result only if it matches the download's size and isn't a web page standing in for the file (such as a sign-in page).
+- With **download access** (Chrome's optional `downloads` permission, asked only when you choose a downloaded file for an upload step), ShowSteps sees the downloads Chrome makes while such a run goes, to find the one its click started. It ignores downloads made by other extensions or from other sites.
+- If the desktop app 1.2 is connected, the extension may ask it to read the downloaded file from your Downloads folder, on this computer. The app reads only a file Chrome has just saved, of the size Chrome reported, at most 25 MB.
+
+## Links in exported files
+
+When **Include Guide Me and Run for me links** is on in the Share dialog, exported PDF, Word, web page, embed and Markdown files contain two links to the guide's first page. The link adds the guide's ID and version after a `#`, which browsers never send to the website. When such a link opens in Chrome with ShowSteps, ShowSteps notices it and offers to start; nothing starts until you press **Start**.
+
 ## Where your data is kept
 
 - **In the browser:** in the extension's own storage on this device, including schedules and run logs.
@@ -66,8 +80,10 @@ Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web 
 
 - Website access is requested when you first record, run a guide or save a schedule, not at install. You can withdraw it in Chrome's extension settings at any time.
 - Notifications are asked for only when you save a schedule, and are optional. You can turn them off in Chrome's settings at any time.
+- Download access is asked for only when you set an upload step to use a downloaded file, and is optional. You can withdraw it in Chrome's extension settings at any time.
+- You can turn off the links in exported files in the Share dialog.
 - You can switch a schedule off or delete it on the Schedules page. Deleting it deletes its run logs and screenshots.
-- You can delete any guide, note or comment, or everything at once with Settings → **Delete all ShowSteps data**, which also deletes schedules, run logs and their screenshots.
+- You can delete any guide, note or comment, or everything at once with Settings → **Delete all ShowSteps data**, which also deletes schedules, run logs and their screenshots, and any file a run was keeping.
 - Removing the extension removes the data it stored in the browser. Uninstalling the desktop app leaves your library folder in place so your guides are not lost; delete the folder if you no longer want them.
 - Because the developer never receives your data, there is nothing held by the developer to access, correct or delete. Everything is on your computer or in folders you control.
 

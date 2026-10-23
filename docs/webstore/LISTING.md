@@ -53,6 +53,8 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 > GUIDE PEOPLE THROUGH IT
 > • Guide Me shows each step on the real page, one at a time.
 > • Run for me does the steps for you, and stops at passwords, at steps you mark for confirmation and whenever something unexpected happens.
+> • Downloads and uploads: Run for me can attach a file it downloaded earlier in the same run to a later upload field, such as an email attachment.
+> • Start Guide Me or Run for me from a library card, the editor or the side panel, or from the links in an exported PDF, Word or web page.
 > • Scheduled runs: Run for me runs a guide at the times you set (daily, weekdays, chosen days or a day of the month) in its own window, pauses and tells you when it needs you, and keeps a log of each run with a screenshot per step.
 > • Pin guides and notes to the pages where they are needed.
 >
@@ -72,14 +74,15 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 | Permission                              | Justification                                                                                                                                                                                                                                               |
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sidePanel`                             | The side panel is ShowSteps's main control: start and finish a recording, see the steps as they are recorded, and follow guides.                                                                                                                            |
-| `storage`                               | Saves the user's settings, page notes, schedules and the state of a recording in progress, on this device.                                                                                                                                                  |
+| `storage`                               | Saves the user's settings, page notes, schedules and the state of a recording or run in progress, on this device.                                                                                                                                           |
 | `unlimitedStorage`                      | Guides and scheduled-run logs contain many screenshots; they are kept on this device, and they can exceed the default storage quota.                                                                                                                        |
 | `scripting`                             | While the user records or follows a guide, ShowSteps adds its recording or guidance script to that page to see clicks and typing, or to highlight the next step. Nothing is added to other pages or at other times.                                         |
-| `webNavigation`                         | Notices when the recorded tab goes to a new page, so the page change becomes a step and its frames are mapped correctly.                                                                                                                                    |
+| `webNavigation`                         | Notices when the recorded tab goes to a new page, so the page change becomes a step and its frames are mapped correctly; and notices when a page opens from a Guide Me or Run for me link in an exported guide, to offer to start it.                       |
 | Host permission `<all_urls>` (optional) | Requested only when the user first starts a recording or a walkthrough, or saves a schedule, because guides can be recorded on any website the user chooses. Used to take screenshots of the visible tab and to run the recording or guidance script on it. |
 | `nativeMessaging` (optional)            | Requested only if the user turns on the connection to the ShowSteps desktop app, to record Windows programs into the same guide. It talks only to that app, on the same computer.                                                                           |
 | `alarms`                                | Starts a guide's Run for me at the times the user sets in a schedule.                                                                                                                                                                                       |
 | `notifications` (optional)              | Tells the user when a scheduled run finishes, needs a confirmation or a sign-in. Requested only when the user creates a schedule.                                                                                                                           |
+| `downloads` (optional)                  | Optional, asked only when the user sets an upload step to use a file the run downloaded. Used to find the file that Run for me's own click downloaded so it can attach it to the next upload field.                                                         |
 
 **Are you using remote code?** No. All code is in the package, including the OCR engine and its language data.
 

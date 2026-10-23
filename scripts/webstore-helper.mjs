@@ -12,7 +12,7 @@ const version = JSON.parse(
 /** The store item, live since 1.0.0. */
 const ITEM_ID = 'hlkihjibgiehjcaemfhfnfcjphgkcnoa';
 /** Permissions new in this version: their justifications go on the Privacy practices tab. */
-const NEW_PERMISSIONS = ['alarms', 'notifications'];
+const NEW_PERMISSIONS = ['downloads', 'webNavigation'];
 const quote = (after) => {
   const start = md.indexOf(after);
   const lines = md.slice(start).split('\n').slice(1);
@@ -76,8 +76,8 @@ code { font-family: Consolas, monospace; }
 <ol>
 <li>Open the developer dashboard, <b>chrome.google.com/webstore/devconsole</b>, then the ShowSteps item (ID <code>${ITEM_ID}</code>).</li>
 <li><b>Package</b> tab: <b>Upload new package</b>, and choose <code>dist/showsteps-extension-${version}-chrome-web-store.zip</code>.</li>
-<li><b>Store listing</b> tab: paste the new <b>Description</b> (below) and add screenshot <code>docs/webstore/images/4-schedules.png</code>.</li>
-<li><b>Privacy practices</b> tab: add the <b>alarms</b> and <b>notifications</b> justifications (below) and check that the data usage ticks are still <b>Website content</b> and <b>User activity</b> with all three statements. The privacy policy URL stays the same; the updated policy is live on <code>main</code>.</li>
+<li><b>Store listing</b> tab: paste the new <b>Description</b> (below), and replace the four screenshots with the new <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code> and <code>4-schedules.png</code>.</li>
+<li><b>Privacy practices</b> tab: add the new <b>downloads</b> justification and replace the <b>webNavigation</b> one (both below), and check that the data usage ticks are still <b>Website content</b> and <b>User activity</b> with all three statements. The privacy policy URL stays the same; the updated policy is live on <code>main</code> once 1.2 is merged.</li>
 <li><b>Submit for review.</b> To choose when it goes live, untick automatic publishing in the confirmation dialog; after approval you have 30 days to press <b>Publish</b>.</li>
 </ol>
 <h2>Changed in ${version}</h2>
