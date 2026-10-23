@@ -211,6 +211,7 @@ function RunRow(props: {
   const { log } = props;
   const values = Object.entries(log.values);
   const shots = log.steps.filter((st) => st.screenshot);
+  const files = log.steps.filter((st) => st.file);
   return (
     <li class="ss-run">
       <p class="ss-run__head">
@@ -229,6 +230,18 @@ function RunRow(props: {
             <dd key={key}>{value}</dd>
           ))}
         </dl>
+      ) : null}
+      {files.length ? (
+        <ul class="ss-run__files">
+          {files.map((st) =>
+            st.file ? (
+              <li key={st.stepId}>
+                <Icon name="upload" size={16} />{' '}
+                {s.attachedFile(st.file.name, fileSize(st.file.size), st.file.step)}
+              </li>
+            ) : null,
+          )}
+        </ul>
       ) : null}
       {shots.length ? (
         <ul class="ss-run__shots">
@@ -249,6 +262,13 @@ function RunRow(props: {
       ) : null}
     </li>
   );
+}
+
+/** "240 KB", "1.2 MB": a file's size for the run history. */
+export function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} bytes`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /** A run-log picture, loaded from the extension's storage when shown. */

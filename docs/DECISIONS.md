@@ -301,3 +301,8 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Downloads in progress aren't kept across a worker restart:** the run keeps the files it already has (their names and sizes are in the saved run); a download still going when the worker stopped is treated as not arrived.
 - **A form POST download without the desktop app** is fetched again from its final address, which for a POST usually fails, so the run stops with "Choose … from your Downloads folder (downloaded in step N)". The desktop app (R4) reads the file Chrome saved instead.
 - **A file's name** comes from the link's `download` attribute, else the address's last part with an extension, else the saved file's name.
+- **A scheduled run's missing file** pauses it as a step for the person (pause reason `file`, notification "step N needs the downloaded file"); the run log keeps the detailed `file-…` reason.
+- **The Schedule dialog names upload steps a run will stop at** (those not set to a downloaded file), so people set them before relying on an unattended run.
+- **Guide Me and Run for me buttons** use the trail icon and the play icon; where many guides are listed (cards, Recent guides) their names include the guide's title ("Run for me: Approve invoice").
+- **The editor's buttons start inside the click** (so Chrome's site-access prompt and the side panel work) and the guidance waits until pending edits are saved, so a run uses what's on screen.
+- **Recent guides in the side panel** start on the guide's first page in a new tab when the current tab isn't already there, as the reader's buttons do; Guides for this site start in the current tab.

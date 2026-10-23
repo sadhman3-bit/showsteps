@@ -28,7 +28,7 @@ export const BUSY_GIVE_UP_MS = 30 * 60_000;
 export const CHECK_AHEAD_MS = 60 * 60_000;
 
 /** Why an unattended run paused for the person. */
-export type PauseReason = 'confirm' | 'manual' | 'sign-in' | 'not-found' | 'failed';
+export type PauseReason = 'confirm' | 'manual' | 'sign-in' | 'not-found' | 'failed' | 'file';
 
 /** What the person is told (notifications, and the toolbar badge for stops and failures). */
 export type Notice =
@@ -61,6 +61,8 @@ interface ActiveRun {
   /** The stop being waited on, as `index:phase:reason`. */
   pauseKey?: string;
   pauseReason?: PauseReason;
+  /** An attach step's `file-…` reason (why the downloaded file couldn't be attached). */
+  pauseDetail?: string;
   pausedIndex?: number;
   pausedPhase?: string;
 }
@@ -117,6 +119,8 @@ export interface SchedulerDeps {
   nextDue?(at: Date | undefined): void;
   /** Schedules or run logs changed (open pages refresh). */
   changed?(): void;
+  /** The file Run for me attached at a step of the current run (1.2), for the run log. */
+  attachedFile?(stepId: string): RunStepLog['file'];
 }
 
 const PAUSE_PHASES: Record<string, PauseReason | undefined> = {
@@ -424,12 +428,19 @@ export class Scheduler {
       if (!a || g.scheduleId !== a.scheduleId) return;
       if (g.status === 'active') {
         if (g.index > a.lastIndex) await this.logSteps(a, g.index);
-        const reason =
-          g.phase === 'failed' && g.reason === 'sign-in' ? 'sign-in' : PAUSE_PHASES[g.phase];
+        const file = g.phase === 'manual' && !!g.reason?.startsWith('file-');
+        const reason: PauseReason | undefined =
+          g.phase === 'failed' && g.reason === 'sign-in'
+            ? 'sign-in'
+            : file
+              ? 'file'
+              : PAUSE_PHASES[g.phase];
         const key = reason ? `${g.index}:${g.phase}:${g.reason ?? ''}` : undefined;
-        if (key && key !== a.pauseKey) {
+        if (reason && key && key !== a.pauseKey) {
           a.pauseKey = key;
           a.pauseReason = reason;
+          if (file && g.reason) a.pauseDetail = g.reason;
+          else delete a.pauseDetail;
           a.pausedIndex = g.index;
           a.pausedPhase = g.phase;
           if (a.unattended) {
@@ -438,7 +449,7 @@ export class Scheduler {
             this.deps.alarms.create(`wait:${a.runId}`, this.now.getTime() + wait);
             this.deps.notify({
               kind: 'paused',
-              reason: reason as PauseReason,
+              reason,
               scheduleId: a.scheduleId,
               name: s?.name ?? g.title ?? '',
               step: g.index + 1,
@@ -448,6 +459,7 @@ export class Scheduler {
           // The person dealt with it: the run goes on.
           delete a.pauseKey;
           delete a.pauseReason;
+          delete a.pauseDetail;
           delete a.pausedIndex;
           delete a.pausedPhase;
           await this.deps.alarms.clear(`wait:${a.runId}`);
@@ -466,7 +478,7 @@ export class Scheduler {
       // Stopped by the person, its tab was closed, or another session replaced it.
       const why =
         g.reason === 'closed' ? 'window-closed' : g.reason === 'replaced' ? 'replaced' : 'stopped';
-      await this.end(a, 'stopped', a.pauseReason ?? why, false);
+      await this.end(a, 'stopped', a.pauseDetail ?? a.pauseReason ?? why, false);
     });
   }
 
@@ -486,7 +498,8 @@ export class Scheduler {
             : a.confirmIds.includes(stepId) && a.approved.includes(stepId)
               ? 'confirmed'
               : 'done';
-      log.steps.push({ stepId, number: i + 1, status, at });
+      const file = this.deps.attachedFile?.(stepId);
+      log.steps.push({ stepId, number: i + 1, status, at, ...(file ? { file } : {}) });
     }
     a.lastIndex = Math.max(a.lastIndex, Math.min(upTo, a.stepIds.length));
     const last = log.steps[log.steps.length - 1];
@@ -506,7 +519,7 @@ export class Scheduler {
   private async waitOver(runId: string): Promise<void> {
     const a = (await this.state()).active;
     if (!a || a.runId !== runId || !a.pauseKey) return;
-    await this.end(a, 'stopped', a.pauseReason ?? 'stopped', true);
+    await this.end(a, 'stopped', a.pauseDetail ?? a.pauseReason ?? 'stopped', true);
     await this.deps.stopGuidance();
   }
 

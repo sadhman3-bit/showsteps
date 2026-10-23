@@ -106,7 +106,16 @@ export async function selfCheck(
         if (frameId !== undefined) {
           const parsed = ProbeReplySchema.safeParse(
             await deps
-              .send(tabId, { type: 'guide-probe', step, timeoutMs: FIND_TIMEOUT }, frameId)
+              .send(
+                tabId,
+                {
+                  type: 'guide-probe',
+                  step,
+                  timeoutMs: FIND_TIMEOUT,
+                  ...(step.action === 'upload' ? { fileField: true } : {}),
+                },
+                frameId,
+              )
               .catch(() => undefined),
           );
           if (parsed.success) reply = parsed.data;

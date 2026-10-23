@@ -1,8 +1,9 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { attachGuide, saveGuide as saveAttachGuide } from './attach-helpers';
 import { saveSchedule, scheduledGuide, titleOf, type Hook, type RunLog } from './schedule-helpers';
 
-declare const __showsteps: Hook;
+declare const __showsteps: Hook & { runFiles: { count(): Promise<number> } };
 
 /** Make the schedule due now (what its alarm does at the set time). */
 const due = (sw: Worker, id: string) =>
@@ -161,4 +162,86 @@ test('an expired session stops the run for sign-in, and Continue finishes it', a
   await expect
     .poll(async () => (await logs(sw, id))[0]?.outcome, { timeout: 120_000 })
     .toBe('completed');
+});
+
+/** A schedule for a guide from `attachGuide` (no values, no approvals). */
+async function attachSchedule(sw: Worker, guideId: string): Promise<string> {
+  return sw.evaluate(async (guideId) => {
+    const id = `sched-${Math.random().toString(36).slice(2)}`;
+    await __showsteps.scheduler.save({
+      id,
+      guideId,
+      name: 'Send the monthly report',
+      enabled: true,
+      createdAt: new Date().toISOString(),
+      guideVersion: 'stamped-on-save',
+      recurrence: { kind: 'daily' },
+      time: '09:00',
+      skipDates: [],
+      missedRun: 'run-at-start',
+      values: {},
+      dateFormat: 'dd/MM/yyyy',
+      approvedConfirmSteps: { guideVersion: '', stepIds: [] },
+      waitMinutes: 30,
+      keepWindowOpen: false,
+      checkFirst: false,
+    });
+    return id;
+  }, guideId);
+}
+
+test('a scheduled run downloads a file in one step and attaches it in a later one, without stopping (1.2)', async ({
+  context,
+  serviceWorker: sw,
+  extensionId,
+}) => {
+  test.setTimeout(120_000);
+  const { guide } = attachGuide({ download: 'link', from: 'step' });
+  await saveAttachGuide(sw, guide);
+  const id = await attachSchedule(sw, guide.id);
+  await due(sw, id);
+  await expect
+    .poll(async () => (await logs(sw, id))[0]?.outcome, { timeout: 90_000 })
+    .toBe('completed');
+  const [log] = await logs(sw, id);
+  const attach = (log!.steps as { number: number; status: string; file?: object }[]).find(
+    (s) => s.number === 5,
+  );
+  expect(attach).toMatchObject({
+    status: 'done',
+    file: { name: 'report.pdf', from: 'localhost', step: 2 },
+  });
+  expect(await sw.evaluate(() => __showsteps.runFiles.count())).toBe(0);
+
+  // The run history names the file and its size.
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/library.html#/schedules`);
+  await page.getByText('Run history (1 run)').click();
+  await expect(page.locator('.ss-run__files')).toContainText(
+    /Attached report\.pdf \(\d+ bytes\), downloaded in step 2/,
+  );
+});
+
+test('a scheduled run whose download never arrives stops at the attach step with that reason (1.2)', async ({
+  serviceWorker: sw,
+}) => {
+  test.setTimeout(120_000);
+  // The upload is set to use step 1's download, but step 1 only opens a page.
+  const { guide, steps } = attachGuide({ download: 'link', from: 'step' });
+  const upload = steps[4]!;
+  upload.input = { ...upload.input!, from: { download: steps[0]!.id } };
+  await saveAttachGuide(sw, guide);
+  const id = await attachSchedule(sw, guide.id);
+  await due(sw, id);
+  await expect
+    .poll(async () => `${(await guidance(sw)).phase}:${(await guidance(sw)).reason}`, {
+      timeout: 60_000,
+    })
+    .toBe('manual:file-none');
+  await expect
+    .poll(async () => (await notifications(sw)).some((n) => n.startsWith(`ss|paused|${id}`)))
+    .toBe(true);
+  await sw.evaluate(() => __showsteps.guidance.control('stop'));
+  await expect.poll(async () => (await logs(sw, id))[0]?.outcome).toBe('stopped');
+  expect((await logs(sw, id))[0]!.reason).toBe('file-none');
 });

@@ -220,6 +220,14 @@
   font: var(--ss-text-small);
 }
 
+/* Guide Me and Run for me on each card (1.2) */
+.ss-card__run {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+  margin-top: auto;
+}
+
 .ss-card__body {
   display: flex;
   flex: 1;
@@ -902,6 +910,18 @@
 .ss-run__head time {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.ss-run__files {
+  list-style: none;
+  margin: 0 0 var(--ss-space-2);
+  padding: 0;
+}
+
+.ss-run__files li {
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-1);
 }
 
 .ss-run__values {

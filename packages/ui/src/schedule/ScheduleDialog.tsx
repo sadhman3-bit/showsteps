@@ -7,7 +7,9 @@ import {
   needsPerson,
   nextRun,
   nextRuns,
+  planGuideStep,
   resolveTokens,
+  stepNumbers,
   runFields,
   toPlainText,
   unknownPlaceholders,
@@ -25,6 +27,19 @@ import { strings } from '../strings.js';
 import { formatWhen } from './format.js';
 
 const s = strings.schedules;
+
+/** Upload steps a run stops at (not set to use a downloaded file), as "3" or "3, 7". */
+function uploadStops(guide: Guide): string {
+  const numbers = stepNumbers(guide);
+  return guideSteps(guide)
+    .filter((st) => {
+      const plan = planGuideStep(guide, st);
+      return plan.kind === 'manual' && plan.reason === 'upload';
+    })
+    .map((st) => numbers.get(st.id))
+    .join(', ');
+}
+
 const KINDS: Recurrence['kind'][] = [
   'daily',
   'weekdays',
@@ -128,6 +143,12 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
           <p class="ss-callout">
             <Icon name="info" />
             <span>{s.desktopNote}</span>
+          </p>
+        ) : null}
+        {uploadStops(guide) ? (
+          <p class="ss-callout">
+            <Icon name="info" />
+            <span>{s.uploadNote(uploadStops(guide))}</span>
           </p>
         ) : null}
         {!props.desktopConnected ? <p class="ss-muted">{s.chromeOnlyNote}</p> : null}
