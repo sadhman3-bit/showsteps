@@ -179,6 +179,11 @@ export const StepInputSchema = z.object({
   value: z.string().optional(),
   variable: z.string().optional(),
   sensitive: z.boolean(),
+  /**
+   * Upload steps only: attach a file this run downloaded, the newest (`'latest'`) or the one an
+   * earlier step (its ID) downloaded, instead of stopping for the person. Ignored on other steps.
+   */
+  from: z.object({ download: z.union([z.literal('latest'), z.string().min(1)]) }).optional(),
 });
 export type StepInput = z.infer<typeof StepInputSchema>;
 

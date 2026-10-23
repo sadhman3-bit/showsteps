@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Send · Ledgerline</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>Ledgerline</strong>
+      <nav aria-label="Main"><a href="/app/">Dashboard</a> <a href="/exports.html">Exports</a></nav>
+    </header>
+    <main>
+      <section class="panel" aria-labelledby="send-h">
+        <h1 id="send-h">Send to accounts</h1>
+        <div class="field">
+          <label for="to">To</label>
+          <input id="to" type="email" value="accounts@ledgerline.test" />
+        </div>
+        <!-- Like webmail: the file field is hidden behind an Attach button. -->
+        <input id="file" type="file" accept=".pdf,.csv" aria-label="Attachment" hidden />
+        <button type="button" id="attach">Attach</button>
+        <ul id="attached" aria-label="Attached files"></ul>
+        <button type="button" class="primary" id="send">Send</button>
+        <p id="out" role="status"></p>
+      </section>
+    </main>
+    <script src="/scramble.js"></script>
+    <script>
+      (function () {
+        'use strict';
+        const file = document.getElementById('file');
+        const attach = document.getElementById('attach');
+        const list = document.getElementById('attached');
+        const out = document.getElementById('out');
+        // ?accept=.png: a field that only takes pictures (tests a file of the wrong type).
+        const accept = new URLSearchParams(location.search).get('accept');
+        if (accept) file.accept = accept;
+        window.demoScramble(document);
+        attach.addEventListener('click', function () {
+          file.click();
+        });
+        file.addEventListener('change', async function () {
+          list.textContent = '';
+          for (const f of file.files) {
+            // Read the start of the file, so tests see its real contents arrived.
+            const head = new TextDecoder().decode(await f.slice(0, 5).arrayBuffer());
+            const li = document.createElement('li');
+            li.textContent = f.name + ' (' + f.size + ' bytes, starts ' + head.trim() + ')';
+            list.append(li);
+          }
+        });
+        document.getElementById('send').addEventListener('click', function () {
+          out.textContent = file.files.length
+            ? 'Sent with ' + file.files.length + ' attachment.'
+            : 'Attach a file first.';
+        });
+      })();
+    </script>
+  </body>
+</html>

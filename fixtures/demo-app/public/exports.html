@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Exports · Ledgerline</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>Ledgerline</strong>
+      <nav aria-label="Main"><a href="/app/">Dashboard</a> <a href="/send.html">Send</a></nav>
+    </header>
+    <main>
+      <section class="panel" aria-labelledby="exports-h">
+        <h1 id="exports-h">Exports</h1>
+        <p>Three ways sites hand over a file.</p>
+        <ul class="downloads">
+          <li><a href="/files/report.pdf" download>Download PDF</a> (a plain link)</li>
+          <li><a id="csv" download="invoices.csv">Export CSV</a> (a file built in the page)</li>
+          <li>
+            <form method="post" action="/api/export">
+              <button type="submit" class="primary">Export statement</button> (a form that returns a
+              PDF)
+            </form>
+          </li>
+        </ul>
+      </section>
+    </main>
+    <script src="/scramble.js"></script>
+    <script>
+      (function () {
+        'use strict';
+        const csv = document.getElementById('csv');
+        window.demoScramble(document);
+        const rows = [
+          'number,supplier,amount',
+          'INV-1042,Harbour Paper Co.,1280.50',
+          'INV-1041,Gumtree Logistics,432.00',
+        ];
+        csv.href = URL.createObjectURL(new Blob([rows.join('\n') + '\n'], { type: 'text/csv' }));
+      })();
+    </script>
+  </body>
+</html>

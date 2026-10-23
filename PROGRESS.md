@@ -220,7 +220,7 @@ Fixes found while testing:
 ## Update 1.2
 
 - [x] R0: branch `update-1.2` from `main`, this section, baseline on 23 October 2026: lint and typecheck clean; unit 318 (core 220, ui 27, desktop 18, extension 42, demo 11); build OK; e2e 43 (full run: 40 passed, 2 timing failures under parallel load that pass when re-run alone, listed below, and 1 skipped after them)
-- [ ] R1: core (upload `from`, `attach` plan, start-link marker, procedure and replay, run-log `file`, demo pages)
+- [x] R1: core: `StepInputSchema.from` (`latest` or a step ID; upload steps only); `planStep` `attach`, `planGuideStep` (a missing or later source step falls back to a plain upload) and `attachAhead`; start links (`packages/core/src/guidance/links.ts`: `buildStartLink`, `parseStartLink`, `withoutStartLink`, `guideStartUrl`); procedure `input.from` with step numbers, Agent Pack "Input: the file downloaded in step N"; `replay.ts` collects downloads (`page.on('download')`) and saves the chosen one for `setInputFiles`, `TM_FILE_STEP_<n>` still overrides; `RunStepLogSchema.file`; demo `/exports.html` (plain link, `blob:` link, form POST) and `/send.html` (hidden file field behind Attach, `?accept=` variant). Run for me still stops at attach steps until R3. Tests: core 230, demo 13, e2e `agent-replay.spec.ts` attach case
 - [ ] R2: editor (File control, suggestion, warnings, download access)
 - [ ] R3: Run for me attaches the file
 - [ ] R4: desktop app reads the download

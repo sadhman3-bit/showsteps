@@ -285,3 +285,14 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Docs for 1.1:** the README and the installation guide now lead with the Chrome Web Store (unpacked stays as the alternative), name the 1.1.0 files, and tell desktop users to install the new setup over the old one. Release notes live in `docs/release-notes/<version>.md` and are the GitHub release's notes.
 - **Guides with Windows-app steps** can only ask "Start now?" through a notification, so the Schedule dialog and README say to allow notifications for them.
 - **Test copies of the desktop app** set their data folder before taking the single-instance lock, so `pnpm e2e:desktop` starts even while the installed app runs. The extension bridge's pipe is still one per Windows user, so the mixed web-and-desktop test needs the installed app closed while it runs.
+
+## Update 1.2
+
+- **`input.from` needs no schema version bump:** it's an optional field, so 1.1 reads a 1.2 guide (Zod drops the field). A guide saved again by 1.1, for example in a shared folder, loses the setting and its upload step goes back to "Choose it yourself".
+- **A broken file source** (the step it names was deleted or moved after the upload) makes the step a plain upload everywhere: Run for me, the procedure, the replay and schedules (`planGuideStep`).
+- **The run log's `file` entry** also keeps the step number the file was downloaded in, so the history can say "downloaded in step 4" after the guide changes.
+- **Demo pages for 1.2** are new (`/exports.html` with three downloads, `/send.html` with a hidden file field behind Attach) rather than changes to `/reports.html`, which older tests use. A signed-out session gets the sign-in page with status 200 in place of the file, so tests can prove a sign-in page is never attached.
+- **The replay waits for a source step's download** before going on, so a download that arrives late is still credited to the step that started it.
+- **The File control replaces nothing:** the input-mode select was already shown only for typed and chosen values, so upload steps get the File control on its own.
+- **"Looks like a download"** goes by the clicked element's name, text or label (Download, Export, or a file type such as PDF, CSV or XLSX) and a `[download]` selector, because the `download` attribute itself isn't recorded. "Use it" picks the nearest such step before the upload.
+- **`downloads` is declared optional in R2** (not R3), because the editor's Allow download access button can only request a permission the manifest lists.

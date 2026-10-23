@@ -10,6 +10,7 @@ import {
   type GuideStore,
   type Run,
   type Step,
+  type StepPlan,
 } from '@showsteps/core';
 import type { z } from 'zod';
 import {
@@ -332,7 +333,10 @@ export class Guidance {
     const step = this.step;
     const tabId = this.state.tabId;
     if (!step || tabId === undefined) return;
-    const plan = planStep(step);
+    const planned = planStep(step);
+    // An attach step is an upload the person does until Run for me can attach files.
+    const plan: StepPlan =
+      planned.kind === 'attach' ? { kind: 'manual', reason: 'upload' } : planned;
 
     if (plan.kind === 'navigate') {
       const url = await this.deps.tabUrl(tabId);

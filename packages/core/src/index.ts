@@ -156,12 +156,26 @@ export {
 } from './guidance/marks.js';
 export {
   planStep,
+  planGuideStep,
   guideSteps,
+  attachSourceValid,
+  attachAhead,
   runFields,
   valueFor,
   type StepPlan,
+  type AttachSource,
   type RunField,
 } from './guidance/plan.js';
+export {
+  MAX_LINK_ID,
+  guideStartUrl,
+  buildStartLink,
+  parseStartLink,
+  withoutStartLink,
+  type StartLink,
+  type StartMode,
+} from './guidance/links.js';
+export { looksLikeDownload, suggestAttachSource, setAttachSource } from './guidance/attach.js';
 export {
   END_OF_GUIDE,
   REACTIONS,

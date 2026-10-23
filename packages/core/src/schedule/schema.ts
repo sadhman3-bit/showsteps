@@ -87,6 +87,17 @@ export const RunStepLogSchema = z.object({
   at: z.string(),
   /** Name of the screenshot in the run-log store, taken after the step. */
   screenshot: z.string().optional(),
+  /** An attach step: the file put in the upload field (never its contents). */
+  file: z
+    .object({
+      name: z.string().max(255),
+      size: z.number().int().nonnegative(),
+      /** The host the file was downloaded from. */
+      from: z.string().max(255).optional(),
+      /** The step number that downloaded it. */
+      step: z.number().int().positive().optional(),
+    })
+    .optional(),
 });
 export type RunStepLog = z.infer<typeof RunStepLogSchema>;
 

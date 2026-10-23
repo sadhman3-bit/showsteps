@@ -96,6 +96,10 @@ function describeWhere(e: Expectation): string {
 function inputLine(step: ProcedureStep, p: Procedure): string | undefined {
   const input = step.input;
   if (!input) return undefined;
+  if (input.from)
+    return input.from.download === 'latest'
+      ? 'Input: the most recent file this run downloaded'
+      : `Input: the file downloaded in step ${input.from.download}`;
   if (input.variable) {
     const v = p.variables.find((x) => x.name === input.variable);
     const how =
