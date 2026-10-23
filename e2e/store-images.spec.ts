@@ -57,7 +57,9 @@ test('Chrome Web Store images', async ({ context, serviceWorker, extensionId }) 
   await lib.goto(`chrome-extension://${extensionId}/library.html`);
   await lib.getByRole('button', { name: 'Add the sample guides' }).click();
   const list = lib.getByRole('list', { name: 'Library' });
-  await list.getByRole('button', { name: 'Create a supplier invoice in Ledgerline' }).click();
+  await list
+    .getByRole('button', { name: 'Create a supplier invoice in Ledgerline', exact: true })
+    .click();
   await lib.getByRole('button', { name: 'Preview' }).click();
   await expect(lib.locator('.ss-reader .ss-step svg[role="img"]').first()).toBeVisible();
   await toSection(lib);

@@ -42,7 +42,7 @@ export { ImageLayers, blurRadius } from './guide/Screenshot.js';
 export { PrintView } from './guide/PrintView.js';
 export { ShareDialog, fileNameFor, type ShareDialogProps } from './export/ShareDialog.js';
 export { flattenStepImage, prepareExport } from './export/flatten.js';
-export { RunDialog, type RunSpeed } from './guidance/RunDialog.js';
+export { RunDialog, type RunOptions, type RunSpeed } from './guidance/RunDialog.js';
 export { CommentBox, useComments, type CommentsApi } from './guidance/Comments.js';
 export { Insights } from './guidance/Insights.js';
 export { ScheduleDialog, type ScheduleDialogProps } from './schedule/ScheduleDialog.js';

@@ -44,9 +44,9 @@ test('design screenshots', async ({ context, serviceWorker: sw, extensionId }) =
   await sw.evaluate(() => __showsteps.installSamples());
   await lib.reload();
   const list = lib.getByRole('list', { name: 'Library' });
-  await expect(list.getByRole('button', { name: INVOICE })).toBeVisible();
+  await expect(list.getByRole('button', { name: INVOICE, exact: true })).toBeVisible();
   await both([lib], 'library');
-  await list.getByRole('button', { name: INVOICE }).click();
+  await list.getByRole('button', { name: INVOICE, exact: true }).click();
   await lib.waitForTimeout(800);
   await both([lib], 'editor');
   await lib.getByRole('button', { name: 'Preview' }).click();

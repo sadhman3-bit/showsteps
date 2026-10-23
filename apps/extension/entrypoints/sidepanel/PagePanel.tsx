@@ -1,3 +1,4 @@
+import { useStartGuide } from './StartGuide';
 import {
   createId,
   fromMarkdown,
@@ -49,6 +50,12 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState('');
   const page = pageKey(tab.url ?? '');
+  // Run for me on this page: its dialog first, then it starts in this tab.
+  const starter = useStartGuide(tab);
+  const runForMe = (guideId: string) => {
+    setError('');
+    starter.runForMe(guideId);
+  };
 
   useEffect(() => {
     void getStore()
@@ -184,11 +191,12 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
         {strings.settings.guidance}
       </label>
 
-      {error ? (
+      {error || starter.error ? (
         <p class="ss-error" role="alert">
-          {error}
+          {error || starter.error}
         </p>
       ) : null}
+      {starter.runDialog}
 
       {settings?.guidanceEnabled !== false ? (
         <section aria-labelledby="discover-h" class="ss-recent">
@@ -200,7 +208,12 @@ export function PagePanel({ libraryVersion }: { libraryVersion: number }) {
               {relevant.slice(0, 8).map((x) => (
                 <li key={x.id} class="ss-discover">
                   <span>{x.title}</span>
-                  <Button onClick={() => void guideMe(x.id)}>{g.guideMe}</Button>
+                  <span class="ss-discover__actions">
+                    <Button onClick={() => void guideMe(x.id)}>{g.guideMe}</Button>
+                    <Button aria-label={g.runForMeFor(x.title)} onClick={() => runForMe(x.id)}>
+                      {g.runForMe}
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>

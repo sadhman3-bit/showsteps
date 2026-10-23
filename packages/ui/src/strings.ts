@@ -280,6 +280,7 @@ export const strings = {
     button: 'Share',
     title: 'Share this guide',
     privacy: 'Files are made on this computer. Nothing is uploaded.',
+    startLinks: 'Include Guide Me and Run for me links',
     download: 'Download',
     formats: {
       pdf: ['PDF', 'For printing and attaching to email'],
@@ -789,6 +790,23 @@ export const strings = {
     variable: (name: string) => `Variable {{${name}}}`,
     suggest: 'Looks like a value that changes.',
     suggestApply: 'Ask every run',
+  },
+  /** The window a Guide Me or Run for me link in an exported file opens (1.2). */
+  startLink: {
+    title: 'Open in ShowSteps',
+    guideMe: (title: string) =>
+      `Guide Me shows each step of “${title}” on the page and moves on when you do it.`,
+    runForMe: (title: string) =>
+      `Run for me does the steps of “${title}” in that tab. It stops for steps marked to confirm, for passwords and other secrets, and if something unexpected happens.`,
+    changed: (mode: 'guide' | 'run') =>
+      `This guide has changed since this file was made. ${mode === 'run' ? 'Run for me' : 'Guide Me'} uses your current copy.`,
+    start: 'Start',
+    notNow: 'Not now',
+    missing:
+      'This guide isn’t in your ShowSteps library. Ask whoever sent the file for the ShowSteps file (.showsteps) and import it.',
+    openLibrary: 'Open library',
+    close: 'Close',
+    tabGone: 'The page this link opened has been closed.',
   },
   /** Upload steps: where Run for me gets the file (1.2). */
   fileSource: {

@@ -4,6 +4,7 @@ import { BridgeClient, bridgeStore, switchableStore } from './bridge';
 import { closeRunLogs } from './scheduleClient';
 import { readSettings } from './settings';
 import type { DownloadAccess, StepCheckView } from '@showsteps/ui';
+import { strings } from '@showsteps/ui/strings';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   GUIDANCE_IDLE,
@@ -257,6 +258,17 @@ export async function selfCheckGuide(guideId: string): Promise<StepCheckView[] |
   return parsed.success ? parsed.data : undefined;
 }
 
+/** The message for a guidance start that didn't happen. */
+export function startError(error: string): string {
+  return error === 'permission-needed'
+    ? strings.guidance.permission
+    : error === 'no-web-steps'
+      ? strings.guidance.noWebSteps
+      : error === 'busy'
+        ? strings.schedules.busy
+        : strings.guidance.startFailed;
+}
+
 /**
  * Start Guide Me or Run for me from a click. Website access is requested first (it needs the
  * click), then the side panel opens in that window so the step list is beside the page.
@@ -269,9 +281,15 @@ export async function startGuide(opts: {
   values?: Record<string, string>;
   speed?: Speed;
   stepThrough?: boolean;
+  /** Settles when the editor has saved pending edits (the run uses the saved guide). */
+  saved?: Promise<unknown>;
+  /** Started from a link in an exported file: the tab goes to the exact start page first. */
+  fromLink?: boolean;
 }): Promise<string | undefined> {
+  const { saved, ...start } = opts;
   const granted = await browser.permissions.request({ origins: ['<all_urls>'] });
   if (!granted) return 'permission-needed';
-  const reply = await guideRequest({ type: 'guide-start', ...opts });
+  await saved?.catch(() => undefined);
+  const reply = await guideRequest({ type: 'guide-start', ...start });
   return reply.error;
 }

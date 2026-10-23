@@ -38,6 +38,7 @@ import { mimeFor, usePreference } from '../hooks.js';
 import { readAround } from '../ocr/ocr.js';
 import { strings } from '../strings.js';
 import { ShareDialog } from '../export/ShareDialog.js';
+import { RunDialog, type RunOptions } from '../guidance/RunDialog.js';
 import { AgentView, type StepCheckView } from './AgentView.js';
 import { AiTools } from './AiTools.js';
 import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs.js';
@@ -74,6 +75,13 @@ export interface GuideEditorProps {
   refreshKey?: number;
   /** Chrome's optional download permission (the extension); absent in the desktop app. */
   downloadAccess?: DownloadAccess;
+  /**
+   * Start Guide Me (1.2). Called inside the click; `saved` settles once pending edits are saved,
+   * so the run uses what is on screen.
+   */
+  onGuideMe?: (guide: Guide, saved: Promise<void>) => void;
+  /** Start Run for me with the Run dialog's choices (1.2). */
+  onRunForMe?: (guide: Guide, run: RunOptions, saved: Promise<void>) => void;
 }
 
 type SaveState = 'saved' | 'saving' | 'failed';
@@ -111,6 +119,8 @@ export function GuideEditor({
   readOnlyToggle,
   refreshKey,
   downloadAccess,
+  onGuideMe,
+  onRunForMe,
 }: GuideEditorProps) {
   const history = useRef<History<Guide> | null>(null);
   const [guide, setGuide] = useState<Guide | null | undefined>(undefined);
@@ -142,6 +152,9 @@ export function GuideEditor({
   const dropRef = useRef<{ id: string; after: boolean } | null>(null);
   const typing = useRef(false);
   const pending = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /** The save under way, if any. */
+  const saving = useRef<Promise<void> | undefined>(undefined);
+  const [running, setRunning] = useState<Promise<void>>();
   const lastSaved = useRef<Guide | null>(null);
   const lastVersionAt = useRef(0);
   const dirtySinceVersion = useRef(false);
@@ -192,7 +205,19 @@ export function GuideEditor({
   }, [refreshKey]);
 
   const save = useCallback(
-    async (g: Guide, forceVersion = false) => {
+    (g: Guide, forceVersion = false): Promise<void> => {
+      const run = saveNow(g, forceVersion);
+      saving.current = run;
+      void run.finally(() => {
+        if (saving.current === run) saving.current = undefined;
+      });
+      return run;
+    },
+    [store],
+  );
+
+  const saveNow = useCallback(
+    async (g: Guide, forceVersion: boolean) => {
       const now = Date.now();
       const snapshot = forceVersion || now - lastVersionAt.current > VERSION_EVERY_MS;
       setSaveState('saving');
@@ -212,6 +237,17 @@ export function GuideEditor({
     },
     [store],
   );
+
+  /** Save edits still waiting for the autosave now; settles when everything is saved. */
+  const flush = (): Promise<void> => {
+    const g = history.current?.current;
+    if (g && pending.current) {
+      clearTimeout(pending.current);
+      pending.current = undefined;
+      return save(g);
+    }
+    return saving.current ?? Promise.resolve();
+  };
 
   const schedule = (g: Guide) => {
     clearTimeout(pending.current);
@@ -313,6 +349,7 @@ export function GuideEditor({
   };
 
   const numbers = useMemo(() => (guide ? stepNumbers(guide) : new Map<string, number>()), [guide]);
+  const hasWebStep = !!guide?.blocks.some((b) => b.kind === 'step' && b.app.kind === 'web');
 
   if (guide === undefined) return <main class="ss-page" aria-busy="true" />;
   if (guide === null) {
@@ -540,6 +577,7 @@ export function GuideEditor({
           ) : null}
           {onCaptureMore ? (
             <Button
+              title={strings.guide.captureMore}
               onClick={() =>
                 onCaptureMore(
                   guide,
@@ -549,7 +587,26 @@ export function GuideEditor({
                 )
               }
             >
-              <Icon name="capture" /> {strings.guide.captureMore}
+              <Icon name="capture" />{' '}
+              <span class="ss-editor__label">{strings.guide.captureMore}</span>
+            </Button>
+          ) : null}
+          {onGuideMe ? (
+            <Button
+              disabled={!hasWebStep}
+              title={hasWebStep ? strings.guidance.guideMeHint : strings.guidance.noWebSteps}
+              onClick={() => onGuideMe(guide, flush())}
+            >
+              <Icon name="trail" /> <span class="ss-editor__label">{strings.guidance.guideMe}</span>
+            </Button>
+          ) : null}
+          {onRunForMe ? (
+            <Button
+              disabled={!hasWebStep}
+              title={hasWebStep ? strings.guidance.runForMeHint : strings.guidance.noWebSteps}
+              onClick={() => setRunning(flush())}
+            >
+              <Icon name="play" /> <span class="ss-editor__label">{strings.guidance.runForMe}</span>
             </Button>
           ) : null}
           <Button variant="primary" onClick={() => setModal('share')}>
@@ -786,6 +843,16 @@ export function GuideEditor({
                 },
               }
             : {})}
+        />
+      ) : null}
+      {running && onRunForMe ? (
+        <RunDialog
+          guide={guide}
+          onClose={() => setRunning(undefined)}
+          onStart={(opts) => {
+            setRunning(undefined);
+            onRunForMe(guide, opts, running.then(flush));
+          }}
         />
       ) : null}
       {modal === 'versions' ? (
