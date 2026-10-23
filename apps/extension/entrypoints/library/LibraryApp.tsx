@@ -23,6 +23,7 @@ import {
   getStore,
   deleteAllData,
   selfCheckGuide,
+  downloadAccess,
   stepUrl,
   startGuide,
   useBackground,
@@ -291,6 +292,7 @@ export function LibraryApp() {
         stepLink={stepUrl}
         onPrint={() => go(printRoute(route.id))}
         onSelfCheck={selfCheckGuide}
+        downloadAccess={downloadAccess}
         aiEnabled={settings.aiEnabled}
         onOpenGuide={(id) => go(`#/guide/${encodeURIComponent(id)}`)}
         onBack={() => go('#/')}

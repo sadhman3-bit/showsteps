@@ -32,6 +32,7 @@ export { GuideView, type GuideViewProps } from './guide/GuideView.js';
 export { Screenshot } from './guide/Screenshot.js';
 export { GuideReader, type GuideReaderProps } from './guide/GuideReader.js';
 export { GuideEditor, type GuideEditorProps } from './editor/GuideEditor.js';
+export { FileControls, type DownloadAccess } from './editor/FileControls.js';
 export { ImageEditor, type ImageEditorProps } from './editor/ImageEditor.js';
 export { RichTextField, parseRichText } from './editor/RichTextField.js';
 export { encodeImage, clipboardImage } from './editor/imageio.js';

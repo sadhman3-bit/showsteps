@@ -194,6 +194,8 @@ Fixes found while testing:
 
 - `e2e/performance.spec.ts` can miss its time limits when it runs beside another Playwright worker on this machine; it passes when run alone (`node scripts/playwright.mjs test e2e/performance.spec.ts --project=chromium`).
 
+- `e2e/secure-blur.spec.ts` "Secure Blur finds every planted value…" timed out once (5 s) waiting for a region in a full run during R2; it passes when re-run alone.
+
 - Seen in the 1.2 baseline (23 October 2026), both pass when re-run alone: `e2e/capture.spec.ts` "records the create-invoice flow…" (the iframe step's `frames` read before the frame finished loading) and `e2e/controller.spec.ts` "capture follows the active tab (C6)" (the controller still in the old tab after 5 s).
 
 ## Update 1.1: schedules
@@ -221,7 +223,7 @@ Fixes found while testing:
 
 - [x] R0: branch `update-1.2` from `main`, this section, baseline on 23 October 2026: lint and typecheck clean; unit 318 (core 220, ui 27, desktop 18, extension 42, demo 11); build OK; e2e 43 (full run: 40 passed, 2 timing failures under parallel load that pass when re-run alone, listed below, and 1 skipped after them)
 - [x] R1: core: `StepInputSchema.from` (`latest` or a step ID; upload steps only); `planStep` `attach`, `planGuideStep` (a missing or later source step falls back to a plain upload) and `attachAhead`; start links (`packages/core/src/guidance/links.ts`: `buildStartLink`, `parseStartLink`, `withoutStartLink`, `guideStartUrl`); procedure `input.from` with step numbers, Agent Pack "Input: the file downloaded in step N"; `replay.ts` collects downloads (`page.on('download')`) and saves the chosen one for `setInputFiles`, `TM_FILE_STEP_<n>` still overrides; `RunStepLogSchema.file`; demo `/exports.html` (plain link, `blob:` link, form POST) and `/send.html` (hidden file field behind Attach, `?accept=` variant). Run for me still stops at attach steps until R3. Tests: core 230, demo 13, e2e `agent-replay.spec.ts` attach case
-- [ ] R2: editor (File control, suggestion, warnings, download access)
+- [x] R2: editor: upload steps get a File control (`packages/ui/src/editor/FileControls.tsx`: Choose it yourself, the file this run downloaded last, the file downloaded in step N), "Attach the file this run downloaded? Use it" after a download-looking step (`suggestAttachSource`), a warning when the source step was deleted or moved after the upload, the download-access note with Allow download access (`permissions.request({ permissions: ['downloads'] })` inside the click, through the `downloadAccess` prop) and the line shown after declining; the desktop app's editor says "Download access is set in Chrome". `downloads` added to the optional permissions. Tests: ui 31, core 232, e2e `attach-editor.spec.ts`; full e2e 41 passed with 2 timing failures under load (capture, Secure Blur) that pass when re-run alone
 - [ ] R3: Run for me attaches the file
 - [ ] R4: desktop app reads the download
 - [ ] R5: scheduled runs

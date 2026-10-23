@@ -24,7 +24,11 @@ test('release manifest asks for no host permissions at install', () => {
   expect([...manifest.permissions].sort()).toEqual(
     ['alarms', 'scripting', 'sidePanel', 'storage', 'unlimitedStorage', 'webNavigation'].sort(),
   );
-  expect([...manifest.optional_permissions].sort()).toEqual(['nativeMessaging', 'notifications']);
+  expect([...manifest.optional_permissions].sort()).toEqual([
+    'downloads',
+    'nativeMessaging',
+    'notifications',
+  ]);
   // The content security policy is the same as 1.0's: no remote code, no eval.
   expect(manifest.content_security_policy).toEqual({
     extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",

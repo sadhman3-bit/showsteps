@@ -3,7 +3,7 @@ import { IndexedDbStore, type GuideStore } from '@showsteps/core';
 import { BridgeClient, bridgeStore, switchableStore } from './bridge';
 import { closeRunLogs } from './scheduleClient';
 import { readSettings } from './settings';
-import type { StepCheckView } from '@showsteps/ui';
+import type { DownloadAccess, StepCheckView } from '@showsteps/ui';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   GUIDANCE_IDLE,
@@ -239,6 +239,13 @@ export function useActiveTab(): ActiveTab {
   }, []);
   return tab;
 }
+
+/** Chrome's optional `downloads` permission, for the editor's File control (1.2). */
+export const downloadAccess: DownloadAccess = {
+  has: () => browser.permissions.contains({ permissions: ['downloads'] }).catch(() => false),
+  // The request is the first thing the click does: Chrome shows its prompt only then.
+  request: () => browser.permissions.request({ permissions: ['downloads'] }).catch(() => false),
+};
 
 /** U7: dry-run a guide in a new tab (website access is requested first; it needs the click). */
 export async function selfCheckGuide(guideId: string): Promise<StepCheckView[] | undefined> {

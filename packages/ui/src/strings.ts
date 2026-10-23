@@ -373,6 +373,35 @@ export const strings = {
       'sign-in': 'Sign in, then press Continue.',
     } as Record<string, string>,
     expectFailed: (what: string) => `What should have happened did not: ${what}.`,
+    /** Attach steps (1.2): which file to choose. */
+    chooseFile: (step?: number) =>
+      step ? `Choose the file you downloaded in step ${step}.` : 'Choose the file you just downloaded.',
+    chooseFileNamed: (name: string, step?: number) =>
+      `Choose ${name} from your Downloads folder${step ? ` (downloaded in step ${step})` : ''}.`,
+    /** Why Run for me waits or stops at an attach step (`file-…` reasons). */
+    fileReason: (reason: string, file: { name?: string; step?: number } = {}): string => {
+      const name = file.name ?? 'the file';
+      const from = file.step ? ` from step ${file.step}` : '';
+      const choose = file.name
+        ? `Choose ${file.name} from your Downloads folder${file.step ? ` (downloaded in step ${file.step})` : ''}.`
+        : `Choose the file${file.step ? ` downloaded in step ${file.step}` : ''} from your Downloads folder.`;
+      switch (reason) {
+        case 'file-wait':
+          return `Waiting for ${name} to download…`;
+        case 'file-none':
+          return `The download${from} didn’t arrive. ${choose}`;
+        case 'file-slow':
+          return `${name} didn’t finish downloading in time. ${choose}`;
+        case 'file-big':
+          return `${name} is larger than 25 MB, so ShowSteps doesn’t attach it. ${choose}`;
+        case 'file-ambiguous':
+          return `More than one file was downloaded${from}. ${choose}`;
+        case 'file-type':
+          return `This field doesn’t take ${name}.`;
+        default:
+          return choose;
+      }
+    },
     openPage: 'Open the page',
     done: 'All steps done.',
     doneTitle: (title: string) => `You finished “${title}”.`,
@@ -740,6 +769,24 @@ export const strings = {
     variable: (name: string) => `Variable {{${name}}}`,
     suggest: 'Looks like a value that changes.',
     suggestApply: 'Ask every run',
+  },
+  /** Upload steps: where Run for me gets the file (1.2). */
+  fileSource: {
+    label: 'File',
+    choose: 'Choose it yourself',
+    latest: 'The file this run downloaded last',
+    fromStep: (n: number, title: string) =>
+      `The file downloaded in step ${n}${title ? `: ${title}` : ''}`,
+    attaches: 'Run for me attaches the file instead of stopping.',
+    suggest: 'Attach the file this run downloaded?',
+    suggestApply: 'Use it',
+    broken:
+      'The step this file came from was deleted or moved after this one, so Run for me stops here for the person. Choose again.',
+    access: 'Lets Run for me see the file its own click downloaded, so it can attach it.',
+    allow: 'Allow download access',
+    declined:
+      'Without download access, ShowSteps can only attach files from simple download links.',
+    inChrome: 'Download access is set in Chrome.',
   },
   ai: {
     menu: 'AI',

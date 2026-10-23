@@ -26,7 +26,8 @@ export default defineConfig({
     optional_host_permissions: ['<all_urls>'],
     // nativeMessaging: asked for when the person connects the desktop app (Settings).
     // notifications: asked for when the person saves a schedule.
-    optional_permissions: ['nativeMessaging', 'notifications'],
+    // downloads: asked for when the person sets an upload step to use a file the run downloaded.
+    optional_permissions: ['nativeMessaging', 'notifications', 'downloads'],
     // Test build: as if the user already granted access at capture start and connected the app.
     ...(mode === 'e2e'
       ? {
@@ -40,6 +41,7 @@ export default defineConfig({
             'alarms',
             'nativeMessaging',
             'notifications',
+            'downloads',
           ],
         }
       : {}),

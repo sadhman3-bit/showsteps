@@ -41,6 +41,7 @@ import { ShareDialog } from '../export/ShareDialog.js';
 import { AgentView, type StepCheckView } from './AgentView.js';
 import { AiTools } from './AiTools.js';
 import { BrandingDialog, ShortcutsDialog, VersionsDialog } from './EditorDialogs.js';
+import { FileControls, type DownloadAccess, type DownloadAccessView } from './FileControls.js';
 import { ImageEditor } from './ImageEditor.js';
 import { clipboardImage, encodeImage } from './imageio.js';
 import { RichTextField } from './RichTextField.js';
@@ -71,6 +72,8 @@ export interface GuideEditorProps {
   readOnlyToggle?: boolean;
   /** Bumped when the guide may have changed elsewhere (e.g. re-captured); reloads if idle. */
   refreshKey?: number;
+  /** Chrome's optional download permission (the extension); absent in the desktop app. */
+  downloadAccess?: DownloadAccess;
 }
 
 type SaveState = 'saved' | 'saving' | 'failed';
@@ -107,6 +110,7 @@ export function GuideEditor({
   onOpenGuide,
   readOnlyToggle,
   refreshKey,
+  downloadAccess,
 }: GuideEditorProps) {
   const history = useRef<History<Guide> | null>(null);
   const [guide, setGuide] = useState<Guide | null | undefined>(undefined);
@@ -120,6 +124,19 @@ export function GuideEditor({
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [drop, setDrop] = useState<{ id: string; after: boolean } | null>(null);
   const [copied, setCopied] = useState<string>();
+  const [access, setAccess] = useState<DownloadAccessView['state']>('missing');
+  useEffect(() => {
+    void downloadAccess?.has().then((on) => on && setAccess('granted'));
+  }, [downloadAccess]);
+  const accessView: DownloadAccessView | undefined = downloadAccess
+    ? {
+        state: access,
+        onAllow: () => {
+          // Straight from the click: Chrome shows its prompt only for a user action.
+          void downloadAccess.request().then((on) => setAccess(on ? 'granted' : 'declined'));
+        },
+      }
+    : undefined;
   const dragIds = useRef<string[]>([]);
   // The drop target is read in the drop handler, which can run before a re-render.
   const dropRef = useRef<{ id: string; after: boolean } | null>(null);
@@ -647,6 +664,7 @@ export function GuideEditor({
                   block={b}
                   label={blockLabel(b, numbers)}
                   num={numbers.get(b.id) ?? 0}
+                  access={accessView}
                   selected={selected.has(b.id)}
                   dropMark={drop?.id === b.id ? (drop.after ? 'after' : 'before') : undefined}
                   collapsed={collapsed.has(b.id)}
@@ -846,6 +864,7 @@ function BlockCard(props: {
   block: Block;
   label: string;
   num: number;
+  access: DownloadAccessView | undefined;
   selected: boolean;
   dropMark: 'before' | 'after' | undefined;
   collapsed: boolean;
@@ -997,6 +1016,7 @@ function StepFields(props: {
   guide: Guide;
   step: Step;
   num: number;
+  access: DownloadAccessView | undefined;
   onChange: (change: (latest: Block) => Block, how: 'push' | 'type') => void;
   onGuide: (edit: (latest: Guide) => Guide) => void;
   onEndTyping: () => void;
@@ -1034,6 +1054,15 @@ function StepFields(props: {
       />
       {s.input && (s.action === 'type' || s.action === 'select') ? (
         <InputControls step={s} num={num} onGuide={props.onGuide} onChange={props.onChange} />
+      ) : null}
+      {s.action === 'upload' && s.app.kind === 'web' ? (
+        <FileControls
+          guide={props.guide}
+          step={s}
+          num={num}
+          access={props.access}
+          onGuide={props.onGuide}
+        />
       ) : null}
       {s.human.screenshot ? (
         <div class="ss-eblock__shot">
