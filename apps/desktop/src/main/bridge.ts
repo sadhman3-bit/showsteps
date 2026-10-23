@@ -44,6 +44,8 @@ export class BridgeServer extends EventEmitter<{
   constructor(
     private readonly store: () => GuideStore,
     private readonly info: () => { user: string; library: string },
+    /** Methods beyond the library, announced as capabilities (e.g. `readDownload`). */
+    private readonly methods: Record<string, (...args: unknown[]) => Promise<unknown>> = {},
   ) {
     super();
   }
@@ -139,6 +141,8 @@ export class BridgeServer extends EventEmitter<{
       if (!fn) throw new Error(`unknown method ${method}`);
       return fn.apply(this.store(), msg.args);
     }
+    const method = Object.hasOwn(this.methods, msg.method) ? this.methods[msg.method] : undefined;
+    if (method) return method(...msg.args);
     throw new Error(`unknown method ${msg.method}`);
   }
 }

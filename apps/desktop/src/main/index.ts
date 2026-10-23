@@ -25,6 +25,7 @@ import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BridgeServer } from './bridge';
+import { readDownload } from './downloads';
 import { DesktopGuide, type OverlayView } from './guide';
 import { UiaHelper } from './helper';
 import { registerNativeHost, unregisterNativeHost } from './nativeHost';
@@ -108,13 +109,17 @@ function broadcast(channel: string, payload?: unknown): void {
 
 // ---------- Bridge ----------
 
-const bridge = new BridgeServer(activeStore, () => ({
-  user: settings.userName,
-  library: settings.active === 'shared' && shared ? settings.sharedPath : settings.libraryPath,
-  appVersion: app.getVersion(),
-  capabilities: [...BRIDGE_CAPABILITIES],
-  startWithWindows: settings.startWithWindows,
-}));
+const bridge = new BridgeServer(
+  activeStore,
+  () => ({
+    user: settings.userName,
+    library: settings.active === 'shared' && shared ? settings.sharedPath : settings.libraryPath,
+    appVersion: app.getVersion(),
+    capabilities: [...BRIDGE_CAPABILITIES],
+    startWithWindows: settings.startWithWindows,
+  }),
+  { readDownload: (args) => readDownload(args) },
+);
 
 // ---------- Scheduled runs (S4) ----------
 

@@ -162,6 +162,22 @@ export class BridgeClient {
   }
 }
 
+/**
+ * 1.2: the desktop app reads a file Chrome downloaded, for Run for me to attach. Only desktop
+ * app 1.2 and later can (capability `read-download`); older apps are never asked.
+ */
+export async function readDownloadVia(
+  client: BridgeClient,
+  download: { filename: string; fileSize?: number; mime?: string },
+): Promise<Blob | undefined> {
+  const size = download.fileSize ?? -1;
+  if (!client.can('read-download') || !download.filename || size < 0) return undefined;
+  const bytes = await client.call('readDownload', [{ path: download.filename, size }]);
+  return bytes instanceof Uint8Array
+    ? new Blob([bytes as Uint8Array<ArrayBuffer>], { type: download.mime ?? '' })
+    : undefined;
+}
+
 /** The desktop library as a GuideStore, through the bridge. */
 export function bridgeStore(client: BridgeClient): GuideStore {
   const store: Record<string, unknown> = { kind: 'folder' };
