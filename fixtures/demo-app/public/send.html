@@ -34,6 +34,7 @@
         const attach = document.getElementById('attach');
         const list = document.getElementById('attached');
         const out = document.getElementById('out');
+        const send = document.getElementById('send');
         // ?accept=.png: a field that only takes pictures (tests a file of the wrong type).
         const accept = new URLSearchParams(location.search).get('accept');
         if (accept) file.accept = accept;
@@ -51,7 +52,7 @@
             list.append(li);
           }
         });
-        document.getElementById('send').addEventListener('click', function () {
+        send.addEventListener('click', function () {
           out.textContent = file.files.length
             ? 'Sent with ' + file.files.length + ' attachment.'
             : 'Attach a file first.';

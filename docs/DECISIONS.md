@@ -296,3 +296,8 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **The File control replaces nothing:** the input-mode select was already shown only for typed and chosen values, so upload steps get the File control on its own.
 - **"Looks like a download"** goes by the clicked element's name, text or label (Download, Export, or a file type such as PDF, CSV or XLSX) and a `[download]` selector, because the `download` attribute itself isn't recorded. "Use it" picks the nearest such step before the upload.
 - **`downloads` is declared optional in R2** (not R3), because the editor's Allow download access button can only request a permission the manifest lists.
+- **Reading a `blob:` link in the page works:** the content script can fetch a `blob:` address the page made (checked in `e2e/attach-run.spec.ts`), so files built in the page are read before the click, with or without download access.
+- **A hidden file field shows no highlight** when Run for me stops at an attach step, as for any upload today: the side panel says which file to choose, and the person presses "I did it" after picking it.
+- **Downloads in progress aren't kept across a worker restart:** the run keeps the files it already has (their names and sizes are in the saved run); a download still going when the worker stopped is treated as not arrived.
+- **A form POST download without the desktop app** is fetched again from its final address, which for a POST usually fails, so the run stops with "Choose … from your Downloads folder (downloaded in step N)". The desktop app (R4) reads the file Chrome saved instead.
+- **A file's name** comes from the link's `download` attribute, else the address's last part with an extension, else the saved file's name.

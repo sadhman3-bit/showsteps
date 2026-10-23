@@ -1,6 +1,11 @@
+import { Window } from 'happy-dom';
 import { describe, expect, it } from 'vitest';
 import {
   RunStepLogSchema,
+  acceptsFile,
+  attachProblem,
+  fileInputFor,
+  setInputFile,
   StepInputSchema,
   attachAhead,
   buildStartLink,
@@ -225,7 +230,11 @@ describe('editor help for attach steps (1.2)', () => {
         createStep({
           action: 'click',
           app,
-          target: { ...target, name: 'Get it', selectors: [{ type: 'css', value: 'a[download]', score: 1 }] },
+          target: {
+            ...target,
+            name: 'Get it',
+            selectors: [{ type: 'css', value: 'a[download]', score: 1 }],
+          },
         }),
       ),
     ).toBe(true);
@@ -246,5 +255,54 @@ describe('editor help for attach steps (1.2)', () => {
     const cleared = setAttachSource(set, upload.id, undefined);
     expect((cleared.blocks.find((b) => b.id === upload.id) as Step).input?.from).toBeUndefined();
     expect(setAttachSource(g, download.id, { download: 'latest' }).blocks).toEqual(g.blocks);
+  });
+});
+
+describe('attaching a file to the page (1.2)', () => {
+  const page = (html: string) => {
+    const w = new Window({ url: 'https://send.test/' });
+    w.document.body.innerHTML = html;
+    return w.document as unknown as Document;
+  };
+
+  it('finds the file field behind a button, a label, or alone in its form', () => {
+    const doc = page(`
+      <form><button id="b">Attach</button><input id="f" type="file" hidden></form>
+      <label id="l" for="g">Photo</label><input id="g" type="file">`);
+    expect(fileInputFor(doc.getElementById('f')!)?.id).toBe('f');
+    expect(fileInputFor(doc.getElementById('l')!)?.id).toBe('g');
+    expect(fileInputFor(doc.getElementById('b')!)?.id).toBe('f');
+    const two = page('<button id="b">Attach</button><input type="file"><input type="file">');
+    expect(fileInputFor(two.getElementById('b')!)).toBeUndefined();
+    const none = page('<button id="b">Attach</button>');
+    expect(fileInputFor(none.getElementById('b')!)).toBeUndefined();
+  });
+
+  it('checks the accept list', () => {
+    expect(acceptsFile('', 'a.exe', '')).toBe(true);
+    expect(acceptsFile('.pdf,.csv', 'Report.PDF', 'application/pdf')).toBe(true);
+    expect(acceptsFile('.png', 'report.pdf', 'application/pdf')).toBe(false);
+    expect(acceptsFile('image/*', 'a.png', 'image/png')).toBe(true);
+    expect(acceptsFile('image/*', 'a.pdf', 'application/pdf')).toBe(false);
+    expect(acceptsFile('application/pdf', 'a', 'application/pdf')).toBe(true);
+  });
+
+  it('sets the file and tells the page, unless the field is disabled or refuses it', () => {
+    const doc = page('<input id="f" type="file" accept=".pdf">');
+    const input = doc.getElementById('f') as HTMLInputElement;
+    const w = doc.defaultView as unknown as typeof globalThis;
+    const seen: string[] = [];
+    input.addEventListener('input', () => seen.push('input'));
+    input.addEventListener('change', () => seen.push('change'));
+    const pdf = new w.File(['%PDF-'], 'report.pdf', { type: 'application/pdf' });
+    expect(attachProblem(input, pdf)).toBeUndefined();
+    expect(attachProblem(input, new w.File(['x'], 'a.png', { type: 'image/png' }))).toBe(
+      'file-type',
+    );
+    setInputFile(input, pdf);
+    expect(input.files?.[0]?.name).toBe('report.pdf');
+    expect(seen).toEqual(['input', 'change']);
+    input.disabled = true;
+    expect(attachProblem(input, pdf)).toBe('file-type');
   });
 });

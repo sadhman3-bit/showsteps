@@ -8,7 +8,7 @@ import {
   type CaptureEvent,
   type Guide,
 } from '@showsteps/core';
-import { BridgeClient, bridgeStore, switchableStore } from '../lib/bridge';
+import { BridgeClient, bridgeStore, readDownloadVia, switchableStore } from '../lib/bridge';
 import { FrameRegistry } from '../lib/frames';
 import { Guidance, type PersistedGuidance, type StartOptions } from '../lib/guidance';
 import { selfCheck, type SelfCheckDeps } from '../lib/selfcheck';
@@ -41,6 +41,8 @@ import {
 } from '../lib/recorder';
 import { recaptureStep } from '../lib/recapture';
 import { RUNLOGS_DB, RunLogStore } from '../lib/runlogs';
+import { MAX_FILE_BYTES, RUNFILES_DB, RunFileStore } from '../lib/runfiles';
+import { htmlAllowed, type DownloadInfo } from '../lib/attachments';
 import { noticeText } from '../lib/notices';
 import { installSamples } from '../lib/samples';
 import { Scheduler, SCHEDULES_KEY, type Notice } from '../lib/schedules';
@@ -224,8 +226,47 @@ export default defineBackground(() => {
         : browser.tabs.sendMessage(tabId, msg, { frameId }),
     sleep,
   };
+  // ---------- Files a run downloaded (1.2) ----------
+
+  const runFiles = new RunFileStore(indexedDB);
+  const hasDownloadAccess = () =>
+    browser.permissions.contains({ permissions: ['downloads'] }).catch(() => false);
+  /**
+   * Fetch a finished download's own address again, with the site's cookies (ShowSteps's site
+   * access makes Chrome send them). Only http(s), only with access to that site, and only when
+   * the size matches and it isn't an HTML page standing in for the file (a sign-in page).
+   */
+  async function refetch(d: DownloadInfo): Promise<Blob | undefined> {
+    const url = d.finalUrl || d.url;
+    let origin: string;
+    try {
+      const u = new URL(url);
+      if (!/^https?:$/.test(u.protocol)) return undefined;
+      origin = u.origin;
+    } catch {
+      return undefined;
+    }
+    if (!(await browser.permissions.contains({ origins: [`${origin}/*`] }).catch(() => false)))
+      return undefined;
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) return undefined;
+    if (/text\/html/i.test(res.headers.get('content-type') ?? '') && !htmlAllowed(d))
+      return undefined;
+    const blob = await res.blob();
+    if (blob.size > MAX_FILE_BYTES) return undefined;
+    if (d.fileSize && d.fileSize > 0 && blob.size !== d.fileSize) return undefined;
+    return blob;
+  }
+
   const guidance = new Guidance({
     ...pageDeps,
+    attach: {
+      files: runFiles,
+      hasDownloadAccess,
+      refetch,
+      // Desktop app 1.2: reads the file Chrome saved (works for form posts and one-time links).
+      readDownload: (d) => readDownloadVia(bridge, d),
+    },
     store,
     userName: async () => (await readSettings()).userName,
     broadcast: (state) => {
@@ -245,10 +286,31 @@ export default defineBackground(() => {
   });
   const guidanceReady = browser.storage.session
     .get(GUIDANCE_KEY)
-    .then((r) =>
-      r[GUIDANCE_KEY] ? guidance.restore(r[GUIDANCE_KEY] as PersistedGuidance) : undefined,
-    )
+    .then(async (r) => {
+      const saved = r[GUIDANCE_KEY] as PersistedGuidance | undefined;
+      // Files left by a run that isn't going any more (Chrome closed mid-run) are deleted.
+      await runFiles.deleteExcept(saved?.files ? saved.run.id : undefined).catch(() => undefined);
+      if (saved) await guidance.restore(saved);
+    })
     .catch(() => undefined);
+
+  // `downloads` is optional: its events exist only once it is granted.
+  let watchingDownloads = false;
+  function watchDownloads(): void {
+    if (watchingDownloads || !browser.downloads) return;
+    watchingDownloads = true;
+    browser.downloads.onCreated.addListener((item) => guidance.downloadCreated(item));
+    browser.downloads.onChanged.addListener((delta) => {
+      const state = delta.state?.current;
+      if (state !== 'complete' && state !== 'interrupted') return;
+      void browser.downloads
+        .search({ id: delta.id })
+        .then(([item]) => item && guidance.downloadEnded(item))
+        .catch(() => undefined);
+    });
+  }
+  watchDownloads();
+  browser.permissions.onAdded.addListener(() => watchDownloads());
 
   // ---------- Scheduled runs ----------
 
@@ -352,6 +414,7 @@ export default defineBackground(() => {
     notify: (notice) => void notify(notice),
     attention: (on) => void attention(on),
     selfCheck: backgroundSelfCheck,
+    attachedFile: (stepId) => guidance.attachedFile(stepId),
     nextDue: sendNextDue,
     changed: () => broadcast({ type: 'schedules-changed' }),
   });
@@ -609,10 +672,12 @@ export default defineBackground(() => {
         // Schedules went with local storage; their alarms, logs and screenshots go too.
         await browser.alarms.clearAll();
         await runLogs.close();
-        await new Promise<void>((resolve) => {
-          const req = indexedDB.deleteDatabase(RUNLOGS_DB);
-          req.onsuccess = req.onerror = req.onblocked = () => resolve();
-        });
+        await runFiles.close();
+        for (const name of [RUNLOGS_DB, RUNFILES_DB])
+          await new Promise<void>((resolve) => {
+            const req = indexedDB.deleteDatabase(name);
+            req.onsuccess = req.onerror = req.onblocked = () => resolve();
+          });
         await attention(false);
         return { ok: true };
       case 'start':
@@ -1030,6 +1095,7 @@ export default defineBackground(() => {
         syncDesktop,
         scheduler,
         runLogs,
+        runFiles,
         schedulesKey: SCHEDULES_KEY,
         guideVersion,
       },

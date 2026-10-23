@@ -35,12 +35,15 @@ export function attachGuide(
     download?: Download;
     from?: 'step' | 'latest';
     query?: string;
+    /** Added to the Exports page's address (`kb=…` makes the PDF bigger). */
+    exportsQuery?: string;
     title?: string;
     file?: string;
   } = {},
 ): { guide: Guide; steps: Step[] } {
   const d = DOWNLOADS[opts.download ?? 'link'];
-  const exportsApp = { kind: 'web' as const, url: EXPORTS, title: 'Exports · Ledgerline' };
+  const exportsUrl = EXPORTS + (opts.exportsQuery ? `?${opts.exportsQuery}` : '');
+  const exportsApp = { kind: 'web' as const, url: exportsUrl, title: 'Exports · Ledgerline' };
   const sendUrl = SEND + (opts.query ? `?${opts.query}` : '');
   const sendApp = { kind: 'web' as const, url: sendUrl, title: 'Send · Ledgerline' };
   const download = createStep({

@@ -36,7 +36,9 @@ export function GuidancePanel({ state }: { state: GuidanceState }) {
       : g.phase[state.phase];
   const reason =
     state.reason && !signIn && !state.reason.startsWith('expect:')
-      ? g.reasons[state.reason]
+      ? state.reason.startsWith('file-')
+        ? g.fileReason(state.reason, state.file)
+        : g.reasons[state.reason]
       : undefined;
 
   const openPage = () => {

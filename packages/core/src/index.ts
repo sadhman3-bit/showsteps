@@ -209,6 +209,7 @@ export {
   failedExpectations,
   urlMatches,
 } from './dom/act.js';
+export { fileInputFor, acceptsFile, attachProblem, setInputFile } from './dom/attach.js';
 
 // Schedules (local to the browser profile; never inside guides or exports)
 export {

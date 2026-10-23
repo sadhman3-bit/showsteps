@@ -11,6 +11,21 @@ import { z } from 'zod';
 export const SpeedSchema = z.enum(['slow', 'normal', 'fast']);
 export type Speed = z.infer<typeof SpeedSchema>;
 
+/** Which file an attach step wants, for messages: its name when known, and the step it came from. */
+export const FileHintSchema = z.object({
+  name: z.string().max(255).optional(),
+  step: z.number().int().positive().optional(),
+});
+export type FileHint = z.infer<typeof FileHintSchema>;
+
+/** A file going to or coming from a page: base64 (the 25 MB cap keeps it under Chrome's limit). */
+export const FilePayloadSchema = z.object({
+  name: z.string().min(1).max(255),
+  type: z.string().max(255),
+  data: z.string(),
+});
+export type FilePayload = z.infer<typeof FilePayloadSchema>;
+
 export const GuidanceStateSchema = z.object({
   status: z.enum(['idle', 'active', 'done']),
   mode: z.enum(['guide', 'run']),
@@ -38,6 +53,8 @@ export const GuidanceStateSchema = z.object({
     'failed',
   ]),
   reason: z.string().optional(),
+  /** The file an attach step waits for or couldn't attach (with a `file-…` reason). */
+  file: FileHintSchema.optional(),
   speed: SpeedSchema,
   stepThrough: z.boolean(),
   /** Set while Run for me runs for a schedule (in its own window). */
@@ -182,6 +199,8 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
     /** What the tooltip offers: Guide Me waits for the person; Run for me asks to confirm. */
     phase: z.enum(['showing', 'manual', 'confirm']),
     timeoutMs: z.number().int().positive(),
+    /** An attach step: which file to choose. */
+    hint: FileHintSchema.optional(),
   }),
   z.object({
     type: z.literal('guide-run'),
@@ -189,6 +208,13 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
     value: z.string().max(10_000).optional(),
     speed: SpeedSchema,
     timeoutMs: z.number().int().positive(),
+    /**
+     * A later step attaches this click's download: read a `blob:` or `data:` link's file first
+     * (and, with `fetchLink`, a same-site link with a `download` attribute).
+     */
+    grab: z.object({ fetchLink: z.boolean() }).optional(),
+    /** An attach step: put this file in the step's file field. */
+    attach: FilePayloadSchema.optional(),
   }),
   z.object({ type: z.literal('guide-clear') }),
   /** Top frame: scroll the iframe that holds the next target into view. */
@@ -203,6 +229,8 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
     type: z.literal('guide-probe'),
     step: StepSchema,
     timeoutMs: z.number().int().positive(),
+    /** An upload step: find its file field, which may be hidden behind a button (1.2). */
+    fileField: z.boolean().optional(),
   }),
   z.object({ type: z.literal('marks-changed') }),
   z.object({ type: z.literal('pick'), on: z.boolean() }),
@@ -214,7 +242,14 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
 export type GuideToContent = z.infer<typeof GuideToContentSchema>;
 
 export const ShowReplySchema = z.object({ found: z.boolean() });
-export const RunReplySchema = z.object({ result: z.enum(['acted', 'not-found', 'cannot']) });
+export const RunReplySchema = z.object({
+  result: z.enum(['acted', 'not-found', 'cannot']),
+  /** `file-type`: the field doesn't take this file (or is disabled). */
+  reason: z.enum(['file-type']).optional(),
+  /** `grab`: the file the link holds, or its name when it is over the size cap. */
+  file: FilePayloadSchema.optional(),
+  tooBig: z.object({ name: z.string().max(255) }).optional(),
+});
 /** How the self-check fared on one step (U7). */
 export const ProbeReplySchema = z.object({
   status: z.enum(['found', 'ambiguous', 'missing']),

@@ -1,6 +1,9 @@
 import {
+  attachProblem,
   canPerform,
   deepElements,
+  fileInputFor,
+  setInputFile,
   describeElement,
   failedExpectations,
   isSensitiveField,
@@ -15,10 +18,16 @@ import {
 import { iconSvg } from '@showsteps/ui/icons';
 import { strings } from '@showsteps/ui/strings';
 import { CHROME_BASE_CSS } from './chromeStyle';
+import { base64ToBytes, blobToBase64, linkFileName } from '../fileData';
+import { MAX_FILE_BYTES } from '../runfiles';
+import type { z } from 'zod';
 import {
   GuideToContentSchema,
+  type FilePayload,
+  type RunReplySchema,
   type GuideContentMessage,
   type GuideControl,
+  type FileHint,
   type GuideToContent,
   type ProbeReply,
   type Speed,
@@ -31,6 +40,49 @@ const CURSOR_MS: Record<Speed, number> = { slow: 900, normal: 450, fast: 150 };
 
 function send(msg: GuideContentMessage): Promise<unknown> {
   return browser.runtime.sendMessage(msg).catch(() => undefined);
+}
+
+type RunReply = z.infer<typeof RunReplySchema>;
+
+/** "Choose the file you downloaded in step 2" (Guide Me), or with its name when known. */
+function fileHintText(hint: FileHint): string {
+  return hint.name ? g.chooseFileNamed(hint.name, hint.step) : g.chooseFile(hint.step);
+}
+
+/**
+ * The file a link holds, read in the page before Run for me clicks it: a `blob:` or `data:`
+ * address, or (`fetchLink`, when ShowSteps has no download access) a same-site link with a
+ * `download` attribute, fetched with the page's own cookies. Nothing else is fetched.
+ */
+async function grabLinkFile(
+  target: Element,
+  fetchLink: boolean,
+): Promise<Pick<RunReply, 'file' | 'tooBig'> | undefined> {
+  const link = target.closest('a[href]');
+  if (!(link instanceof HTMLAnchorElement)) return undefined;
+  const href = link.href;
+  const inPage = /^(blob|data):/i.test(href);
+  const sameSite = /^https?:$/.test(link.protocol) && link.origin === location.origin;
+  if (!inPage && !(fetchLink && sameSite && link.hasAttribute('download'))) return undefined;
+  const name = linkFileName(link.getAttribute('download'), href);
+  try {
+    const res = await fetch(href, inPage ? undefined : { credentials: 'include' });
+    if (!res.ok) return undefined;
+    // A sign-in page instead of the file: not something to attach.
+    if (
+      !inPage &&
+      /text\/html/i.test(res.headers.get('content-type') ?? '') &&
+      !/\.html?$/i.test(name)
+    )
+      return undefined;
+    if (Number(res.headers.get('content-length') ?? 0) > MAX_FILE_BYTES)
+      return { tooBig: { name } };
+    const blob = await res.blob();
+    if (blob.size > MAX_FILE_BYTES) return { tooBig: { name } };
+    return { file: { name, type: blob.type, data: await blobToBase64(blob) } };
+  } catch {
+    return undefined;
+  }
 }
 
 /** Visible on screen: has boxes and is not visibility:hidden. */
@@ -302,11 +354,21 @@ export class GuidePage {
   }
 
   /** U7: find a step's element and ring it, never acting on it. */
-  private async probe(step: Step, timeoutMs: number): Promise<ProbeReply> {
+  private async probe(step: Step, timeoutMs: number, fileField = false): Promise<ProbeReply> {
     this.clearStep();
     if (!step.target) return { status: 'missing' };
-    const found = await waitForTarget(document, step.target, { timeoutMs, isVisible });
-    if (!found) return { status: 'missing' };
+    // An upload step's file field is often hidden behind a button: it counts when it's there.
+    const found = await waitForTarget(document, step.target, {
+      timeoutMs,
+      isVisible: fileField ? () => true : isVisible,
+    });
+    if (!found || (fileField && !fileInputFor(found.element))) return { status: 'missing' };
+    if (!isVisible(found.element))
+      return {
+        status: found.ambiguous ? 'ambiguous' : 'found',
+        strategy: found.strategy,
+        confidence: Math.round(found.confidence * 100) / 100,
+      };
     this.reveal(found.element);
     this.target = found.element;
     this.ring = el('div', { class: 'ring', part: 'ring' });
@@ -368,6 +430,7 @@ export class GuidePage {
         ),
       );
     }
+    if (msg.hint) tip.append(el('p', { class: 'note' }, fileHintText(msg.hint)));
     if (msg.phase !== 'showing') {
       tip.append(el('p', { class: 'note' }, g.phase[msg.phase]));
     }
@@ -493,13 +556,14 @@ export class GuidePage {
 
   // ---------- Run for me ----------
 
-  private async run(
-    msg: Extract<GuideToContent, { type: 'guide-run' }>,
-  ): Promise<{ result: 'acted' | 'not-found' | 'cannot' }> {
+  private async run(msg: Extract<GuideToContent, { type: 'guide-run' }>): Promise<RunReply> {
     this.clearStep();
+    if (msg.attach) return this.attach(msg.step, msg.attach, msg.timeoutMs, msg.speed);
     const target = await this.find(msg.step, msg.timeoutMs);
     if (!target) return { result: 'not-found' };
     if (!canPerform(target, msg.step, msg.value)) return { result: 'cannot' };
+    // Read the link's file before the click: pages often revoke a blob: address right after.
+    const grabbed = msg.grab ? await grabLinkFile(target, msg.grab.fetchLink) : undefined;
     this.reveal(target);
     await this.moveCursor(target, CURSOR_MS[msg.speed]);
     // Reply first: the action may replace this page before a reply could get out.
@@ -508,6 +572,37 @@ export class GuidePage {
       performStep(target, msg.step, msg.value);
       setTimeout(() => this.cursor?.classList.remove('clicking'), 400);
     }, 30);
+    return { result: 'acted', ...grabbed };
+  }
+
+  /**
+   * An attach step: find the field (a hidden file input counts) and set the run's file on it.
+   * A synthetic click can't open Chrome's file chooser, so nothing else is clicked.
+   */
+  private async attach(
+    step: Step,
+    file: FilePayload,
+    timeoutMs: number,
+    speed: Speed,
+  ): Promise<RunReply> {
+    if (!step.target) return { result: 'not-found' };
+    const found = await waitForTarget(document, step.target, {
+      timeoutMs,
+      isVisible: () => true,
+    });
+    if (!found) return { result: 'not-found' };
+    const input = fileInputFor(found.element);
+    if (!input) return { result: 'cannot' };
+    const w = input.ownerDocument.defaultView ?? window;
+    const chosen = new w.File([base64ToBytes(file.data)], file.name, { type: file.type });
+    if (attachProblem(input, chosen)) return { result: 'cannot', reason: 'file-type' };
+    // The pointer goes to whatever shows on screen: the field, or the element the step names.
+    const shown = isVisible(input) ? input : isVisible(found.element) ? found.element : undefined;
+    if (shown) {
+      this.reveal(shown);
+      await this.moveCursor(shown, CURSOR_MS[speed]);
+    }
+    setInputFile(input, chosen);
     return { result: 'acted' };
   }
 
@@ -723,7 +818,7 @@ export class GuidePage {
         sendResponse({ ok: true });
         return undefined;
       case 'guide-probe':
-        void this.probe(msg.step, msg.timeoutMs).then(sendResponse);
+        void this.probe(msg.step, msg.timeoutMs, msg.fileField).then(sendResponse);
         return true;
       case 'guide-check': {
         // The top page checks its own expectations; an iframe checks those marked for it.

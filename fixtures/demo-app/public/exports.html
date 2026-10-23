@@ -16,7 +16,10 @@
         <h1 id="exports-h">Exports</h1>
         <p>Three ways sites hand over a file.</p>
         <ul class="downloads">
-          <li><a href="/files/report.pdf" download>Download PDF</a> (a plain link)</li>
+          <li>
+            <a href="/files/report.pdf" data-stable-id="pdf" download>Download PDF</a> (a plain
+            link)
+          </li>
           <li><a id="csv" download="invoices.csv">Export CSV</a> (a file built in the page)</li>
           <li>
             <form method="post" action="/api/export">
@@ -32,6 +35,9 @@
       (function () {
         'use strict';
         const csv = document.getElementById('csv');
+        // ?kb=: a bigger PDF (tests of the size cap).
+        const kb = new URLSearchParams(location.search).get('kb');
+        if (kb) document.querySelector('[data-stable-id="pdf"]').search = '?kb=' + kb;
         window.demoScramble(document);
         const rows = [
           'number,supplier,amount',

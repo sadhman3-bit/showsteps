@@ -24,8 +24,10 @@ export function suggestAttachSource(guide: Guide, step: Step): Step | undefined 
   if (step.action !== 'upload' || step.app.kind !== 'web' || step.input?.from) return undefined;
   const steps = guideSteps(guide);
   const at = steps.findIndex((s) => s.id === step.id);
-  for (let i = at - 1; i >= 0; i--) if (looksLikeDownload(steps[i]!)) return steps[i];
-  return undefined;
+  return steps
+    .slice(0, Math.max(at, 0))
+    .reverse()
+    .find((s) => looksLikeDownload(s));
 }
 
 /** Set (or clear, with undefined) where an upload step's file comes from. */

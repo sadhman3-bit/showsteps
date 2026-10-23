@@ -395,3 +395,8 @@ Run `pnpm release`. On a clean Windows user account, follow the README's **Insta
 - **MT-S-6 Dark theme:** with Settings → Colours → Dark, open the Schedule dialog, the Schedules page with a run history, and the side panel during a run. **Expected:** all readable, the outcome labels tinted (green completed, amber stopped, red failed).
 - **MT-S-7 Start with Windows:** in the installed desktop app 1.1, turn on Settings → **Start with Windows**, restart Windows. **Expected:** ShowSteps starts in the tray without a window. Task Manager → Startup apps lists ShowSteps. Turning it off removes it.
 - **MT-S-8 Chrome opens for a run:** with the desktop app connected and a schedule a few minutes ahead, close every Chrome window (Chrome not in the tray either). **Expected:** at the run's time Chrome opens on its own, and the run happens in its own window and appears in the run log.
+
+## Update 1.2
+
+- **MT-R-1 Gmail:** record a guide that downloads a PDF from a site you use (a statement, an invoice), then in Gmail clicks Compose, fills To and Subject, clicks the paperclip and picks that file, and sends to yourself. In the editor, set the upload step's **File** to the download step, and allow download access. Run for me. **Expected:** the PDF appears as an attachment in the compose window without a file picker, and the side panel never stops at the upload step. Delete the sent mail afterwards.
+- **MT-R-2 Outlook on the web:** the same as MT-R-1 in Outlook on the web (outlook.office.com), with Attach → Browse this computer. **Expected:** the file is attached to the draft without a picker.
