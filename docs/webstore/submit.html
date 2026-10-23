@@ -13,16 +13,16 @@ button { font: inherit; border: 0; border-radius: 6px; padding: 4px 14px; backgr
 button.done { opacity: 0.6; }
 code { font-family: Consolas, monospace; }
 </style></head><body>
-<h1>ShowSteps: update the Chrome Web Store item to 1.1.0</h1>
+<h1>ShowSteps: update the Chrome Web Store item to 1.2.0</h1>
 <p>About 10 minutes. Fields that changed have a Copy button below.</p>
 <ol>
 <li>Open the developer dashboard, <b>chrome.google.com/webstore/devconsole</b>, then the ShowSteps item (ID <code>hlkihjibgiehjcaemfhfnfcjphgkcnoa</code>).</li>
-<li><b>Package</b> tab: <b>Upload new package</b>, and choose <code>dist/showsteps-extension-1.1.0-chrome-web-store.zip</code>.</li>
+<li><b>Package</b> tab: <b>Upload new package</b>, and choose <code>dist/showsteps-extension-1.2.0-chrome-web-store.zip</code>.</li>
 <li><b>Store listing</b> tab: paste the new <b>Description</b> (below), and replace the four screenshots with the new <code>docs/webstore/images/1-record.png</code>, <code>2-guide.png</code>, <code>3-agent.png</code> and <code>4-schedules.png</code>.</li>
 <li><b>Privacy practices</b> tab: add the new <b>downloads</b> justification and replace the <b>webNavigation</b> one (both below), and check that the data usage ticks are still <b>Website content</b> and <b>User activity</b> with all three statements. The privacy policy URL stays the same; the updated policy is live on <code>main</code> once 1.2 is merged.</li>
 <li><b>Submit for review.</b> To choose when it goes live, untick automatic publishing in the confirmation dialog; after approval you have 30 days to press <b>Publish</b>.</li>
 </ol>
-<h2>Changed in 1.1.0</h2>
+<h2>Changed in 1.2.0</h2>
 <div class="f"><div class="h"><b>Description</b><button data-i="c2">Copy</button></div><pre id="tc2">Show a process once, and ShowSteps writes the how-to guide for you.
 
 Click Start, do the task as usual, then click Finish. Every click, entry and choice becomes a step with a written instruction and a screenshot that highlights what you clicked. Steps appear in the side panel as you go, and you can delete any of them before you finish.
