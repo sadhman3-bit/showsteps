@@ -194,6 +194,8 @@ Fixes found while testing:
 
 - `e2e/performance.spec.ts` can miss its time limits when it runs beside another Playwright worker on this machine; it passes when run alone (`node scripts/playwright.mjs test e2e/performance.spec.ts --project=chromium`).
 
+- Seen in the 1.2 baseline (23 October 2026), both pass when re-run alone: `e2e/capture.spec.ts` "records the create-invoice flow…" (the iframe step's `frames` read before the frame finished loading) and `e2e/controller.spec.ts` "capture follows the active tab (C6)" (the controller still in the old tab after 5 s).
+
 ## Update 1.1: schedules
 
 - [x] S0: branch `schedules`, baseline, progress section. Baseline on 2026-10-20: lint, typecheck and build pass; unit tests 261 (core 194, ui 27, desktop 11, extension 21, demo 8); `pnpm e2e` 34 tests: 31 pass in the parallel run, and capture, library and performance pass when re-run alone (they miss timing limits while the machine is busy; the library helper now waits up to 15 s for slow screenshot encoding)
@@ -214,3 +216,24 @@ Fixes found while testing:
 ### Deferred (1.1)
 
 - **Next, 1.2: attach the file a run downloaded** (owner request, 21 October 2026). Today Run for me always stops at an upload step for the person to pick a file. Plan: in the editor, mark an upload step "Use the file downloaded in step N"; when Run for me does that download click it keeps a private copy of the file for the run (fetched the way the page would, so no new permission if possible; otherwise an optional `downloads` permission asked only when used), and at the upload step it sets that copy on the site's file field without opening a picker. Only a file the same run downloaded, only on marked steps, its name in the run log. Falls back to stopping for the person when the file can't be fetched (files built in the page, extra security checks). Works for webmail (Outlook on the web, Gmail); Outlook desktop still needs the person.
+
+## Update 1.2
+
+- [x] R0: branch `update-1.2` from `main`, this section, baseline on 23 October 2026: lint and typecheck clean; unit 318 (core 220, ui 27, desktop 18, extension 42, demo 11); build OK; e2e 43 (full run: 40 passed, 2 timing failures under parallel load that pass when re-run alone, listed below, and 1 skipped after them)
+- [ ] R1: core (upload `from`, `attach` plan, start-link marker, procedure and replay, run-log `file`, demo pages)
+- [ ] R2: editor (File control, suggestion, warnings, download access)
+- [ ] R3: Run for me attaches the file
+- [ ] R4: desktop app reads the download
+- [ ] R5: scheduled runs
+- [ ] R6: Guide Me and Run for me everywhere
+- [ ] R7: links in exported files
+- [ ] R8: hardening and docs
+- [ ] R9: release 1.2.0
+
+### Waiting on the owner (1.2)
+
+- Nothing yet.
+
+### Deferred (1.2)
+
+- Nothing yet.
