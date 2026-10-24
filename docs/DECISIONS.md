@@ -320,3 +320,4 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Guide files have two modes:** `share` (every Export, the Share dialog and shared-folder saves) burns blurs and crops into the pictures and drops page text, originals and unused pictures; `backup` (library ⋯ Back up, after a confirm) keeps everything.
 - **Burned blurs are a 16-px mosaic, then a blur,** in exports and shared files alike: a plain Gaussian blur over short text can sometimes be reversed.
 - **The desktop app's "copy into my library" is a backup,** because it never leaves the computer and the copy should stay editable (blurs can still be moved).
+- **Guide text in generated code goes through `q()` (a string literal) or `comment()` (one line),** and a unit test reads `replay.ts` to keep it that way; numbers are the only other values written into the script.

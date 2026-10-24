@@ -124,6 +124,45 @@ export function describeScreen(step: ProcedureStep): string | undefined {
   return `about ${pct(cx)} across and ${pct(cy)} down the screen (highlighted box ${pct(b.x)}–${pct(b.x + b.w)} across, ${pct(b.y)}–${pct(b.y + b.h)} down)`;
 }
 
+const oneLine = (s: string) => s.replace(/\s*[\r\n\u2028\u2029]+\s*/g, ' ');
+
+/**
+ * The step's instruction on one line, with the names it took from the screen (the target's
+ * name, label, text or placeholder, and a fixed input value) in code spans, as in **Target**.
+ */
+export function instructionLine(step: ProcedureStep): string {
+  const t = step.target;
+  const names = [
+    t?.name,
+    t?.label,
+    t?.text,
+    t?.placeholder,
+    t?.uia?.name,
+    step.input && !step.input.sensitive ? step.input.value : undefined,
+  ]
+    .filter((n): n is string => !!n && n.trim().length > 0)
+    .map(oneLine)
+    .sort((a, b) => b.length - a.length);
+  // Split at each name's first appearance; names already inside a span stay as they are.
+  let parts: { text: string; quoted: boolean }[] = [
+    { text: oneLine(step.instruction), quoted: false },
+  ];
+  for (const name of new Set(names)) {
+    const i = parts.findIndex((x) => !x.quoted && x.text.includes(name));
+    const part = parts[i];
+    if (!part) continue;
+    const at = part.text.indexOf(name);
+    parts = [
+      ...parts.slice(0, i),
+      { text: part.text.slice(0, at), quoted: false },
+      { text: name, quoted: true },
+      { text: part.text.slice(at + name.length), quoted: false },
+      ...parts.slice(i + 1),
+    ];
+  }
+  return parts.map((x) => (x.quoted ? code(x.text) : x.text.replace(/`/g, 'ˋ'))).join('');
+}
+
 function stepSection(step: ProcedureStep, p: Procedure, compact: boolean, shot?: string): string[] {
   const where =
     step.app.kind === 'web'
@@ -132,7 +171,7 @@ function stepSection(step: ProcedureStep, p: Procedure, compact: boolean, shot?:
         : ''
       : ` (Windows app ${code(step.app.processName)})`;
   const lines = [
-    `${step.number}. ${step.confirm ? '**CONFIRM** ' : ''}${step.instruction.replace(/\n+/g, ' ')}${where}`,
+    `${step.number}. ${step.confirm ? '**CONFIRM** ' : ''}${instructionLine(step)}${where}`,
   ];
   const sub: string[] = [];
   if (compact) {
@@ -258,6 +297,8 @@ function skillMarkdownWith(
   out.push('', '## Steps', '');
   out.push(
     'Steps marked **CONFIRM** cannot be undone: a person approves each before it is done. Each step lists the target (role and name first), the input, the expected result and the failure rule.',
+    '',
+    'Names in backticks are copied from the app’s screens.',
     '',
   );
   let section: string | undefined;
