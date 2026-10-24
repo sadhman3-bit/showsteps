@@ -9,6 +9,7 @@ import { nodeFileSystem } from '@showsteps/core/node';
 import {
   BrowserWindow,
   Menu,
+  Notification,
   Tray,
   app,
   dialog,
@@ -24,9 +25,10 @@ import { mkdirSync } from 'node:fs';
 import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BridgeServer } from './bridge';
+import { BridgeServer, pipePath } from './bridge';
 import { readDownload } from './downloads';
 import { DesktopGuide, type OverlayView } from './guide';
+import { currentSid, denyPermissions, freeName, hardenWindow } from './harden';
 import { UiaHelper } from './helper';
 import { registerNativeHost, unregisterNativeHost } from './nativeHost';
 import {
@@ -59,6 +61,10 @@ const hostSetup = process.argv.includes('--register-native-host')
 // so tests run even while the installed app is open.
 if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 if (!hostSetup && !app.requestSingleInstanceLock()) app.quit();
+
+/** H7: the bridge's pipe name was taken by another program. */
+const PIPE_BUSY =
+  'Another program is using ShowSteps’s connection to Chrome. Restart Windows; if it keeps happening, tell us.';
 
 // ---------- Paths ----------
 
@@ -232,6 +238,7 @@ function updateController(state: DesktopCaptureState): void {
       show: false,
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
     });
+    hardenWindow(controller);
     controller.setContentProtection(true); // never in a screenshot
     controller.setAlwaysOnTop(true, 'screen-saver');
     void controller.loadFile(join(renderer, 'controller.html'));
@@ -268,6 +275,7 @@ function overlayHost() {
           show: false,
           webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
         });
+        hardenWindow(overlay);
         overlay.setAlwaysOnTop(true, 'screen-saver');
         overlay.setContentProtection(true);
         overlay.setIgnoreMouseEvents(true, { forward: true });
@@ -391,6 +399,7 @@ function showMain(hash = ''): void {
       show: false,
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
     });
+    hardenWindow(mainWindow);
     mainWindow.setContentProtection(true);
     // Links never open app windows: web pages go to the browser, the licences to the viewer.
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -532,17 +541,25 @@ void app.whenReady().then(async () => {
   applyLoginItem();
   await restoreNextDue();
 
-  // Exports save straight to Downloads (the renderer uses download links).
+  // Exports save straight to Downloads (the renderer uses download links), never over a file
+  // that is already there (H7).
   session.defaultSession.on('will-download', (_e, item) => {
-    item.setSavePath(
-      join(process.env.SHOWSTEPS_DOWNLOADS ?? app.getPath('downloads'), item.getFilename()),
-    );
+    const dir = process.env.SHOWSTEPS_DOWNLOADS ?? app.getPath('downloads');
+    item.setSavePath(join(dir, freeName(dir, item.getFilename())));
   });
+  denyPermissions(session.defaultSession);
 
   await registerNativeHost(app.getPath('userData'), hostExe).catch(() => undefined);
-  await bridge
-    .listen()
-    .catch((error: unknown) => console.error('ShowSteps: bridge unavailable', error));
+  // The pipe is named by this account's SID, like the host's (no fallback to the old name).
+  const sid = currentSid();
+  if (sid)
+    await bridge.listen(pipePath(sid)).catch((error: unknown) => {
+      console.error('ShowSteps: bridge unavailable', error);
+      // Something else holds the name: tell the person rather than fail quietly.
+      if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE')
+        new Notification({ title: 'ShowSteps', body: PIPE_BUSY }).show();
+    });
+  else console.error('ShowSteps: bridge unavailable: no account SID');
 
   tray = new Tray(trayImage());
   nativeTheme.on('updated', () => tray?.setImage(trayImage()));
