@@ -431,6 +431,30 @@ export const strings = {
       'ShowSteps will do the steps in a browser tab with a visible pointer. It stops for steps marked to confirm, for passwords and other secrets, and if something unexpected happens.',
     runValues: 'Values to use',
     runStart: 'Start',
+    /** H4: a guide from someone else, before its first run. */
+    received: {
+      title: 'From someone else',
+      intro: (file?: string) =>
+        `This guide came from someone else${file ? ` (${file})` : ''}. Run for me acts with your sign-ins, so check what it does first.`,
+      fromFolder: 'Someone else saved this guide in the team folder last.',
+      sites: 'Sites it acts on',
+      typed: 'Values it types that you didn’t enter',
+      typedItem: (step: number, field: string, value: string) => `Step ${step}, ${field}: ${value}`,
+      attaches: 'Files it moves between sites',
+      attachItem: (step: number, to: string, from?: string) =>
+        from
+          ? `Step ${step} attaches the file downloaded from ${from} on ${to}`
+          : `Step ${step} attaches the latest downloaded file on ${to}`,
+      stops: 'Steps it stops at for you',
+      stopItem: (step: number, title: string, why: 'confirm' | 'person') =>
+        `Step ${step}: ${title} (${why === 'confirm' ? 'you confirm it' : 'you do it'})`,
+      none: 'None',
+      checked: 'I’ve checked this guide',
+      trust: 'Trust this guide',
+      trustHint: 'Run for me won’t ask again for this guide on this computer.',
+      noSchedule:
+        'This guide came from someone else. Run it once with Run for me and choose Trust this guide before scheduling it.',
+    },
     noWebSteps: 'This guide has no web steps to guide.',
     startFailed: 'Could not start. Open a website tab and try again.',
     permission:
@@ -585,6 +609,7 @@ export const strings = {
       closed: 'Chrome was closed or the computer was asleep',
       'not-started': 'Not started in time',
       'guide-missing': 'The guide was deleted',
+      'guide-received': 'The guide came from someone else and isn’t trusted yet',
       'no-web-steps': 'The guide has no browser steps',
       values: 'A value couldn’t be filled in',
       start: 'The run couldn’t start',

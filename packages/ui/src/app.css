@@ -752,6 +752,37 @@
   font-weight: 600;
 }
 
+/* ---------- A guide from someone else (H4) ---------- */
+
+.ss-received {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--ss-warning, var(--ss-line));
+  border-radius: var(--ss-radius);
+  background: var(--ss-surface-2, transparent);
+}
+.ss-received h3,
+.ss-received h4,
+.ss-received p,
+.ss-received ul {
+  margin: 0;
+}
+.ss-received h4 {
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+.ss-received ul {
+  padding-left: 1.25em;
+  overflow-wrap: anywhere;
+}
+.ss-received__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+  align-items: center;
+}
+
 /* ---------- Schedules (dialog and page) ---------- */
 
 .ss-schedule__row {

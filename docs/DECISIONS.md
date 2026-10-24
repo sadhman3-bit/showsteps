@@ -322,3 +322,5 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **The desktop app's "copy into my library" is a backup,** because it never leaves the computer and the copy should stay editable (blurs can still be moved).
 - **Guide text in generated code goes through `q()` (a string literal) or `comment()` (one line),** and a unit test reads `replay.ts` to keep it that way; numbers are the only other values written into the script.
 - **A download belongs to a Run for me run only if its own address is on the run's site;** the referrer is an extra check, never the only one. A redirect to another site is fetched again without cookies.
+- **A guide from someone else is marked `received`** (import, or a team-folder guide someone else saved last) until the person chooses Trust this guide; the field is optional, and 1.1 drops it when it saves (its schema strips unknown keys), which only means 1.1 never asks.
+- **Run for me judges the live element:** a button whose name on the page can't be undone asks first even when the guide recorded it as harmless, and a schedule's approval holds only for the name approved.

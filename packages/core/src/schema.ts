@@ -303,6 +303,17 @@ export const GuideSchema = z
     settings: z.object({ defaultInputMode: InputModeSchema }),
     /** In a shared library: others view it and edit a personal copy (L6). */
     readOnly: z.boolean().optional(),
+    /**
+     * H4: from someone else (an imported file, or a team-folder guide another person saved last).
+     * Run for me shows what it does before its first run; "Trust this guide" removes it.
+     */
+    received: z
+      .object({
+        at: z.string(),
+        from: z.enum(['import', 'shared-folder']),
+        file: z.string().max(255).optional(),
+      })
+      .optional(),
   })
   .superRefine((g, ctx) => {
     const seen = new Set<string>();

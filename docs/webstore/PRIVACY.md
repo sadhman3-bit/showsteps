@@ -68,6 +68,10 @@ Text recognition (OCR) runs on your computer with an engine and language data th
 
 Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web page, Agent Pack or `.showsteps` file), saving to a shared folder, or opening a link in a guide. Exports contain the guide's text and screenshots. Blurs and crops are burned into the pictures of every export, including `.showsteps` files, so what was under a blur or outside a crop is not in the file. A `.showsteps` file also leaves out the page text kept for Secure Blur, the pictures from before your edits, and who last edited the guide. **Back up (includes hidden details)** in the library's ⋯ menu is the one exception: it saves everything, including what is under your blurs, so keep backups to yourself.
 
+## Guides from other people
+
+A guide you import from a `.showsteps` file, or one someone else saved last in a team folder, is marked as coming from someone else. Before Run for me first acts on it, ShowSteps lists the sites it acts on, the values it types that you didn't enter, the files it moves between sites and the steps it stops at for you, and it starts only after you tick **I've checked this guide**. Steps whose button can't be undone (Send, Pay, Delete and similar) ask for your confirmation again on import, whatever the file says, and Run for me checks the name of the button actually on the page before clicking it. Such a guide can't be scheduled until you choose **Trust this guide**. This check happens on your computer; nothing is sent anywhere.
+
 ## What ShowSteps does not do
 
 - It does not sell, rent or transfer your data to anyone.

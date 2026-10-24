@@ -7,6 +7,7 @@ import {
   describeElement,
   failedExpectations,
   isSensitiveField,
+  liveNeedsConfirm,
   pageKey,
   performStep,
   toActionable,
@@ -561,6 +562,18 @@ export class GuidePage {
     if (msg.attach) return this.attach(msg.step, msg.attach, msg.timeoutMs, msg.speed);
     const target = await this.find(msg.step, msg.timeoutMs);
     if (!target) return { result: 'not-found' };
+    // H4: what the page shows now decides, not only what the guide recorded.
+    const live = describeElement(target);
+    const run = {
+      confirmed: msg.confirmed ?? false,
+      ...(msg.approvedName !== undefined ? { approvedName: msg.approvedName } : {}),
+    };
+    if (liveNeedsConfirm(msg.step, live, run))
+      return {
+        result: 'cannot',
+        reason: 'needs-confirm',
+        ...(live.name ? { name: live.name.slice(0, 1000) } : {}),
+      };
     if (!canPerform(target, msg.step, msg.value)) return { result: 'cannot' };
     // Read the link's file before the click: pages often revoke a blob: address right after.
     const grabbed = msg.grab ? await grabLinkFile(target, msg.grab.fetchLink) : undefined;

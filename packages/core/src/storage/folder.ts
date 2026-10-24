@@ -1,5 +1,6 @@
 import { nowIso } from '../ids.js';
 import { parseGuide, serializeGuide } from '../migrations.js';
+import { markReceived } from '../guidance/received.js';
 import type { Guide } from '../schema.js';
 import { summarize } from './summary.js';
 import {
@@ -48,7 +49,12 @@ export class FolderStore implements GuideStore {
   constructor(
     private readonly fs: FileSystem,
     private readonly root: string,
-    private readonly opts: { user?: string; onError?: (path: string, error: unknown) => void } = {},
+    private readonly opts: {
+      user?: string;
+      onError?: (path: string, error: unknown) => void;
+      /** A team folder (H4): a guide someone else saved last reads as received from them. */
+      othersAreReceived?: boolean;
+    } = {},
   ) {}
 
   private path(...parts: string[]): string {
@@ -118,7 +124,11 @@ export class FolderStore implements GuideStore {
   async getGuide(id: string): Promise<Guide | undefined> {
     const where = await this.locate(id);
     if (!where) return undefined;
-    return parseGuide(await this.readJson(`${where.dir}/guide.json`));
+    const guide = parseGuide(await this.readJson(`${where.dir}/guide.json`));
+    const { user, othersAreReceived } = this.opts;
+    return othersAreReceived && !guide.received && guide.updatedBy && guide.updatedBy !== user
+      ? markReceived(guide, 'shared-folder', guide.updatedAt)
+      : guide;
   }
 
   async saveGuide(guide: Guide, opts: SaveOptions = {}): Promise<void> {

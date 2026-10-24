@@ -148,7 +148,9 @@ export function Library({
   const onImportFile = async (file: File | undefined) => {
     if (!file) return;
     await act(async () => {
-      const result = await importGuideArchive(store, new Uint8Array(await file.arrayBuffer()));
+      const result = await importGuideArchive(store, new Uint8Array(await file.arrayBuffer()), {
+        received: { from: 'import', file: file.name },
+      });
       if (scope.kind === 'folder') {
         const g = await store.getGuide(result.guideId);
         if (g) await store.saveGuide({ ...g, folderId: scope.folderId }, { snapshot: false });

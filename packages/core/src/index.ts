@@ -102,6 +102,7 @@ export {
   importGuideArchive,
   duplicateGuide,
   type ImportResult,
+  type ImportOptions,
 } from './archive.js';
 
 // Editing
@@ -179,6 +180,14 @@ export {
   type StartMode,
 } from './guidance/links.js';
 export { looksLikeDownload, suggestAttachSource, setAttachSource } from './guidance/attach.js';
+export {
+  markReceived,
+  trustGuide,
+  rearmConfirms,
+  receivedSummary,
+  type ReceivedFrom,
+  type ReceivedSummary,
+} from './guidance/received.js';
 export {
   END_OF_GUIDE,
   REACTIONS,
@@ -327,7 +336,7 @@ export {
   alreadyBlurred,
   applySecureBlur,
 } from './secure.js';
-export { needsConfirm, isIrreversibleName } from './agent/confirm.js';
+export { needsConfirm, isIrreversibleName, liveNeedsConfirm } from './agent/confirm.js';
 export {
   valueKind,
   suggestAsk,

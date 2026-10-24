@@ -90,3 +90,32 @@ test('the start window: named, 24 px, and Start with the keyboard', async ({
     )
     .toBe('active');
 });
+
+test('a guide from someone else: the panel is named, 24 px, and passes with the keyboard (H4)', async ({
+  context,
+  serviceWorker: sw,
+  extensionId,
+}) => {
+  const { guide } = attachGuide();
+  await saveGuide(sw, { ...guide, received: { at: guide.updatedAt, from: 'import' } });
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/library.html`);
+  await page.getByRole('button', { name: `Run for me: ${guide.title}` }).click();
+  const dialog = page.getByRole('dialog', { name: 'Run for me' });
+  await expect(dialog.getByRole('region', { name: 'From someone else' })).toBeVisible();
+  await noProblems(page, 'Run for me with a guide from someone else');
+  // Keyboard only: reach the tick, tick it with Space, then Start is enabled.
+  const tick = dialog.getByRole('checkbox', { name: 'I’ve checked this guide' });
+  for (let i = 0; i < 12 && !(await tick.evaluate((el) => el === document.activeElement)); i++)
+    await page.keyboard.press('Tab');
+  await expect(tick).toBeFocused();
+  await expect(dialog.getByRole('button', { name: 'Start' })).toBeDisabled();
+  await page.keyboard.press('Space');
+  await expect(tick).toBeChecked();
+  await expect(dialog.getByRole('button', { name: 'Start' })).toBeEnabled();
+  // The next Tab stop is Trust this guide; Enter trusts it and the panel goes.
+  await page.keyboard.press('Tab');
+  expect(await focused(page)).toBe('Trust this guide');
+  await page.keyboard.press('Enter');
+  await expect(dialog.getByRole('region', { name: 'From someone else' })).toHaveCount(0);
+});

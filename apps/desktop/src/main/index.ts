@@ -93,7 +93,10 @@ const helper = new UiaHelper(helperExe);
 function openStores(): void {
   personal = new FolderStore(nodeFileSystem, settings.libraryPath, { user: settings.userName });
   shared = settings.sharedPath
-    ? new FolderStore(nodeFileSystem, settings.sharedPath, { user: settings.userName })
+    ? new FolderStore(nodeFileSystem, settings.sharedPath, {
+        user: settings.userName,
+        othersAreReceived: true,
+      })
     : undefined;
 }
 

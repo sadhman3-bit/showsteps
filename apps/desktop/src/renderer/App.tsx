@@ -95,7 +95,10 @@ export function App() {
   const copyToMine = async (g: Guide) => {
     // A copy within this computer, of a guide the team folder already holds as is: a backup copy.
     const bytes = await exportGuideArchive(store, g.id, { mode: 'backup' });
-    const { guideId } = await importGuideArchive(ipcStore('personal'), bytes);
+    // Still someone else's guide if it was (H4); the person's own stays theirs.
+    const { guideId } = await importGuideArchive(ipcStore('personal'), bytes, {
+      received: g.received ? { from: 'shared-folder' } : false,
+    });
     const mine = ipcStore('personal');
     const copy = await mine.getGuide(guideId);
     if (copy?.readOnly) {

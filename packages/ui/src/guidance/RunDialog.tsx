@@ -1,4 +1,4 @@
-import { runFields, type Guide } from '@showsteps/core';
+import { receivedSummary, runFields, trustGuide, type Guide } from '@showsteps/core';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { Button } from '../Button.js';
@@ -6,6 +6,7 @@ import { Dialog } from '../components/Dialog.js';
 import { strings } from '../strings.js';
 
 const g = strings.guidance;
+const r = g.received;
 export type RunSpeed = 'slow' | 'normal' | 'fast';
 /** What the Run dialog hands over: values, speed and step-through. */
 export interface RunOptions {
@@ -21,6 +22,7 @@ export function RunDialog({
   onClose,
   cancelLabel = strings.library.cancel,
   notice,
+  onTrust,
 }: {
   guide: Guide;
   onStart: (opts: RunOptions) => void;
@@ -29,6 +31,8 @@ export function RunDialog({
   cancelLabel?: string;
   /** A line above the fields (e.g. the guide changed since a file was made). */
   notice?: ComponentChildren;
+  /** "Trust this guide" (H4): save the guide without its received mark. */
+  onTrust?: (trusted: Guide) => void | Promise<void>;
 }) {
   const fields = runFields(guide);
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -36,8 +40,13 @@ export function RunDialog({
   );
   const [speed, setSpeed] = useState<RunSpeed>('normal');
   const [stepThrough, setStepThrough] = useState(false);
+  // H4: a guide from someone else shows what it does; Start waits for the person's tick.
+  const [received, setReceived] = useState(guide.received);
+  const [checked, setChecked] = useState(false);
+  const blocked = !!received && !checked;
   const submit = (e: Event) => {
     e.preventDefault();
+    if (blocked) return;
     onStart({ values, speed, stepThrough });
   };
   return (
@@ -47,7 +56,7 @@ export function RunDialog({
       actions={
         <>
           <Button onClick={onClose}>{cancelLabel}</Button>
-          <Button variant="primary" type="submit" form="ss-run">
+          <Button variant="primary" type="submit" form="ss-run" disabled={blocked}>
             {g.runStart}
           </Button>
         </>
@@ -55,6 +64,22 @@ export function RunDialog({
     >
       <form id="ss-run" class="ss-stack-form" onSubmit={submit}>
         {notice}
+        {received ? (
+          <ReceivedPanel
+            guide={guide}
+            from={received}
+            checked={checked}
+            onCheck={setChecked}
+            {...(onTrust
+              ? {
+                  onTrust: async () => {
+                    await onTrust(trustGuide(guide));
+                    setReceived(undefined);
+                  },
+                }
+              : {})}
+          />
+        ) : null}
         <p class="ss-muted">{g.runIntro}</p>
         {fields.length ? (
           <fieldset class="ss-fieldset">
@@ -96,5 +121,56 @@ export function RunDialog({
         </label>
       </form>
     </Dialog>
+  );
+}
+
+/** What a guide from someone else does, listed before Run for me acts on it (H4). */
+export function ReceivedPanel(props: {
+  guide: Guide;
+  from: NonNullable<Guide['received']>;
+  checked: boolean;
+  onCheck: (checked: boolean) => void;
+  onTrust?: () => void;
+}) {
+  const sum = receivedSummary(props.guide);
+  const list = (items: string[]) =>
+    items.length ? (
+      <ul>
+        {items.map((x, i) => (
+          <li key={i}>{x}</li>
+        ))}
+      </ul>
+    ) : (
+      <p class="ss-muted">{r.none}</p>
+    );
+  return (
+    <section class="ss-received" aria-labelledby="ss-received-h">
+      <h3 id="ss-received-h">{r.title}</h3>
+      <p>{props.from.from === 'shared-folder' ? r.fromFolder : r.intro(props.from.file)}</p>
+      <h4>{r.sites}</h4>
+      {list(sum.sites)}
+      <h4>{r.typed}</h4>
+      {list(sum.typed.map((t) => r.typedItem(t.step, t.field, t.value)))}
+      <h4>{r.attaches}</h4>
+      {list(sum.attaches.map((a) => r.attachItem(a.step, a.to, a.from)))}
+      <h4>{r.stops}</h4>
+      {list(sum.stops.map((x) => r.stopItem(x.step, x.title, x.why)))}
+      <label class="ss-check">
+        <input
+          type="checkbox"
+          checked={props.checked}
+          onChange={(e) => props.onCheck(e.currentTarget.checked)}
+        />{' '}
+        {r.checked}
+      </label>
+      {props.onTrust ? (
+        <div class="ss-received__trust">
+          <Button size="sm" onClick={props.onTrust} disabled={!props.checked}>
+            {r.trust}
+          </Button>
+          <small class="ss-muted">{r.trustHint}</small>
+        </div>
+      ) : null}
+    </section>
   );
 }

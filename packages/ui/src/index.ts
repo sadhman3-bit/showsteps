@@ -47,7 +47,7 @@ export {
   redactStepImage,
   shareRedactor,
 } from './export/flatten.js';
-export { RunDialog, type RunOptions, type RunSpeed } from './guidance/RunDialog.js';
+export { ReceivedPanel, RunDialog, type RunOptions, type RunSpeed } from './guidance/RunDialog.js';
 export { CommentBox, useComments, type CommentsApi } from './guidance/Comments.js';
 export { Insights } from './guidance/Insights.js';
 export { ScheduleDialog, type ScheduleDialogProps } from './schedule/ScheduleDialog.js';

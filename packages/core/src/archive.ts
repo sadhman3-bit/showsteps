@@ -2,6 +2,7 @@ import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
 import { createId, nowIso } from './ids.js';
 import { GuideFormatError, parseGuide, serializeGuide } from './migrations.js';
 import type { Annotation, Block, Guide, Point, Rect, Step } from './schema.js';
+import { markReceived, rearmConfirms, trustGuide, type ReceivedFrom } from './guidance/received.js';
 import { thumbNameFor } from './storage/summary.js';
 import { assertSafeName, type GuideStore } from './storage/types.js';
 
@@ -179,10 +180,21 @@ export interface ImportResult {
   renamed: boolean;
 }
 
-/** Read a .showsteps archive into the store. Assigns a fresh id if the guide already exists. */
+/** Who an imported guide is from (H4): someone else unless the caller says otherwise. */
+export interface ImportOptions {
+  /** `false`: ShowSteps's own samples, or a copy of the person's own guide. */
+  received?: { from: ReceivedFrom; file?: string } | false;
+}
+
+/**
+ * Read a .showsteps archive into the store. Assigns a fresh id if the guide already exists.
+ * Steps whose control can't be undone ask before acting again, whatever the file said, and the
+ * guide is marked as received from someone else (H4).
+ */
 export async function importGuideArchive(
   store: GuideStore,
   bytes: Uint8Array,
+  options: ImportOptions = {},
 ): Promise<ImportResult> {
   if (bytes.byteLength > MAX_ARCHIVE_BYTES)
     throw new GuideFormatError('This file is too large to import.');
@@ -200,9 +212,13 @@ export async function importGuideArchive(
   } catch {
     throw new GuideFormatError('This guide file is damaged or incomplete.');
   }
-  const parsed = parseGuide(raw);
+  const parsed = rearmConfirms(parseGuide(raw));
+  const received = options.received ?? { from: 'import' };
+  const marked = received
+    ? markReceived(parsed, received.from, nowIso(), received.file)
+    : trustGuide(parsed);
   const renamed = !!(await store.getGuide(parsed.id));
-  const guide: Guide = renamed ? { ...parsed, id: createId() } : parsed;
+  const guide: Guide = renamed ? { ...marked, id: createId() } : marked;
   for (const [path, data] of Object.entries(entries)) {
     const m = /^img\/([^/]+)$/.exec(path);
     if (!m?.[1]) continue;

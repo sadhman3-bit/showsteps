@@ -193,6 +193,8 @@ export class Scheduler {
     return this.serial(async () => {
       const guide = await this.deps.getGuide(input.guideId);
       if (!guide) throw new Error('not-found');
+      // H4: someone else's guide runs unattended only after the person trusts it.
+      if (guide.received) throw new Error('received');
       const schedule = ScheduleSchema.parse({ ...input, guideVersion: guideVersion(guide) });
       const all = await this.list();
       const isNew = !all.some((s) => s.id === schedule.id);
@@ -371,6 +373,7 @@ export class Scheduler {
       values: {},
     };
     if (!guide) return this.close(log, 'failed', 'guide-missing');
+    if (guide.received) return this.close(log, 'failed', 'guide-received');
     const steps = guideSteps(guide);
     const first = steps.find((x) => x.app.kind === 'web');
     if (!first || first.app.kind !== 'web') return this.close(log, 'failed', 'no-web-steps');

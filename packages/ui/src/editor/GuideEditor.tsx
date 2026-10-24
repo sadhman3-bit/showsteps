@@ -26,6 +26,7 @@ import {
   type GuideStore,
   type Rect,
   type Step,
+  trustGuide,
 } from '@showsteps/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button, IconButton } from '../Button.js';
@@ -848,6 +849,7 @@ export function GuideEditor({
       {running && onRunForMe ? (
         <RunDialog
           guide={guide}
+          onTrust={() => apply((latest) => trustGuide(latest))}
           onClose={() => setRunning(undefined)}
           onStart={(opts) => {
             setRunning(undefined);

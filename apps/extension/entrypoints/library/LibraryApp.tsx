@@ -287,6 +287,7 @@ export function LibraryApp() {
   const runDialog = runFor ? (
     <RunDialog
       guide={runFor}
+      onTrust={(trusted) => store.saveGuide(trusted)}
       onClose={() => setRunFor(null)}
       onStart={(opts) => {
         setRunFor(null);
@@ -301,6 +302,7 @@ export function LibraryApp() {
       desktopConnected={desktopConnected}
       suggestStartWithWindows={suggestStart}
       onDone={() => setScheduling(null)}
+      onTrust={(trusted) => store.saveGuide(trusted)}
     />
   ) : null;
 

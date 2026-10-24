@@ -9,7 +9,10 @@ export async function installSamples(store: GuideStore): Promise<string[]> {
   for (const file of SAMPLE_FILES) {
     const res = await fetch(browser.runtime.getURL(`/samples/${file}`));
     if (!res.ok) continue;
-    const { guideId } = await importGuideArchive(store, new Uint8Array(await res.arrayBuffer()));
+    // ShowSteps's own guides: not from someone else.
+    const { guideId } = await importGuideArchive(store, new Uint8Array(await res.arrayBuffer()), {
+      received: false,
+    });
     ids.push(guideId);
   }
   return ids;
