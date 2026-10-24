@@ -3,7 +3,8 @@ import { IndexedDbStore, type GuideStore } from '@showsteps/core';
 import { BridgeClient, bridgeStore, switchableStore } from './bridge';
 import { closeRunLogs } from './scheduleClient';
 import { readSettings } from './settings';
-import type { StepCheckView } from '@showsteps/ui';
+import type { DownloadAccess, StepCheckView } from '@showsteps/ui';
+import { strings } from '@showsteps/ui/strings';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   GUIDANCE_IDLE,
@@ -240,6 +241,13 @@ export function useActiveTab(): ActiveTab {
   return tab;
 }
 
+/** Chrome's optional `downloads` permission, for the editor's File control (1.2). */
+export const downloadAccess: DownloadAccess = {
+  has: () => browser.permissions.contains({ permissions: ['downloads'] }).catch(() => false),
+  // The request is the first thing the click does: Chrome shows its prompt only then.
+  request: () => browser.permissions.request({ permissions: ['downloads'] }).catch(() => false),
+};
+
 /** U7: dry-run a guide in a new tab (website access is requested first; it needs the click). */
 export async function selfCheckGuide(guideId: string): Promise<StepCheckView[] | undefined> {
   const granted = await browser.permissions.request({ origins: ['<all_urls>'] });
@@ -248,6 +256,17 @@ export async function selfCheckGuide(guideId: string): Promise<StepCheckView[] |
   const raw = (await browser.runtime.sendMessage(msg)) as { checks?: unknown } | undefined;
   const parsed = SelfCheckReportSchema.safeParse(raw?.checks);
   return parsed.success ? parsed.data : undefined;
+}
+
+/** The message for a guidance start that didn't happen. */
+export function startError(error: string): string {
+  return error === 'permission-needed'
+    ? strings.guidance.permission
+    : error === 'no-web-steps'
+      ? strings.guidance.noWebSteps
+      : error === 'busy'
+        ? strings.schedules.busy
+        : strings.guidance.startFailed;
 }
 
 /**
@@ -262,9 +281,15 @@ export async function startGuide(opts: {
   values?: Record<string, string>;
   speed?: Speed;
   stepThrough?: boolean;
+  /** Settles when the editor has saved pending edits (the run uses the saved guide). */
+  saved?: Promise<unknown>;
+  /** Started from a link in an exported file: the tab goes to the exact start page first. */
+  fromLink?: boolean;
 }): Promise<string | undefined> {
+  const { saved, ...start } = opts;
   const granted = await browser.permissions.request({ origins: ['<all_urls>'] });
   if (!granted) return 'permission-needed';
-  const reply = await guideRequest({ type: 'guide-start', ...opts });
+  await saved?.catch(() => undefined);
+  const reply = await guideRequest({ type: 'guide-start', ...start });
   return reply.error;
 }

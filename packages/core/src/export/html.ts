@@ -115,6 +115,7 @@ header{margin-bottom:24px}
 h1{font-size:30px;line-height:1.2;margin:0 0 8px}\n${coverCss()}
 .desc{font-size:17px;margin:0 0 8px}
 .meta{color:var(--muted);margin:0}
+.links{margin:0}.links small{display:block;color:var(--muted)}
 .before{margin:16px 0 0;padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
 .before h2{font-size:15px;margin:0 0 4px}
 .before ul{margin:0;padding-left:20px}
@@ -146,6 +147,14 @@ function calloutHtml(item: Extract<ExportItem, { kind: 'callout' }>, tag = 'asid
   return `<${tag} class="callout callout--${item.tone}"><strong>${escapeHtml(item.label)}:</strong> ${multiline(item.text)}</${tag}>`;
 }
 
+/** "Open in ShowSteps: Guide Me · Run for me" and its note, when the guide has links (1.2). */
+function linksHtml(doc: ExportDocument, style = ''): string {
+  if (!doc.links) return '';
+  const L = doc.labels;
+  const a = (href: string, text: string) => `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
+  return `<p class="links"${style ? ` style="${style}"` : ''}>${escapeHtml(L.openIn)} ${a(doc.links.guide, L.guideMe)} · ${a(doc.links.run, L.runForMe)}<br><small>${escapeHtml(L.linksNote)}</small></p>`;
+}
+
 function headerHtml(input: ExportInput, doc: ExportDocument): string {
   const parts = ['<header>'];
   if (input.logo)
@@ -153,6 +162,7 @@ function headerHtml(input: ExportInput, doc: ExportDocument): string {
   parts.push(
     `<div class="cover"><div class="cover__art" aria-hidden="true">${trailSvg()}</div><h1>${escapeHtml(doc.title)}</h1></div>`,
   );
+  if (doc.links) parts.push(linksHtml(doc));
   if (doc.description) parts.push(`<p class="desc">${multiline(doc.description)}</p>`);
   parts.push(`<p class="meta">${escapeHtml(doc.meta)}</p>`);
   if (doc.preconditions.length) {
@@ -234,6 +244,7 @@ body{background:var(--surface);font-size:15px}
 .logo{max-height:32px;width:auto}
 h1{font-size:18px;margin:0;line-height:1.3}
 .meta{margin:0;color:var(--muted);font-size:13px}
+.links{margin:4px 0 0;font-size:13px}.links small{display:block;color:var(--muted)}
 .slide{display:none}
 .slide:target,.slides:not(:has(.slide:target)) .slide:first-child{display:block}
 .slide__head{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
@@ -289,7 +300,7 @@ export function guideToEmbedHtml(input: ExportInput): string {
     head(doc.title, themeCss(input) + EMBED_CSS),
     '<body>',
     '<div class="card">',
-    `<div class="card__head">${input.logo ? img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo') : ''}<div><h1>${escapeHtml(doc.title)}</h1><p class="meta">${escapeHtml(doc.meta)}</p></div></div>`,
+    `<div class="card__head">${input.logo ? img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo') : ''}<div><h1>${escapeHtml(doc.title)}</h1><p class="meta">${escapeHtml(doc.meta)}</p>${linksHtml(doc)}</div></div>`,
     '<div class="slides">',
     ...(slides.length ? slides : [`<p>${escapeHtml(L.noSteps)}</p>`]),
     '</div>',
@@ -328,6 +339,7 @@ export function guideToClipboardHtml(input: ExportInput): string {
     out.push(`<p>${img(dataUri(input.logo), '', w, h)}</p>`);
   }
   out.push(`<h1 style="margin:0 0 6px">${escapeHtml(doc.title)}</h1>`);
+  if (doc.links) out.push(linksHtml(doc, 'margin:0 0 6px'));
   if (doc.description) out.push(`<p style="margin:0 0 6px">${multiline(doc.description)}</p>`);
   out.push(`<p style="margin:0 0 12px;color:${LIGHT.textMuted}">${escapeHtml(doc.meta)}</p>`);
   if (doc.preconditions.length) {

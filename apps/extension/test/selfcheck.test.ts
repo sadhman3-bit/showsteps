@@ -70,3 +70,34 @@ describe('self-check (U7)', () => {
     expect(sent.some((m) => m.type === 'guide-run')).toBe(false);
   });
 });
+
+describe('self-check of upload steps (1.2)', () => {
+  it('looks for the file field, hidden or not, without attaching anything', async () => {
+    const page = web('http://app.test/send');
+    const upload = createStep({
+      action: 'upload',
+      app: page,
+      target: { ...target('Attachment'), role: undefined },
+      input: { mode: 'fixed', value: 'r.pdf', sensitive: false, from: { download: 'latest' } },
+    });
+    const guide = { ...createGuide({ title: 'T' }), blocks: [upload] };
+    const sent: GuideToContent[] = [];
+    const report = await selfCheck(guide, {
+      openTab: async () => 1,
+      navigate: async () => undefined,
+      waitLoaded: async () => undefined,
+      tabUrl: async () => page.url,
+      frames: async () => [{ frameId: 0, url: page.url }],
+      sleep: async () => undefined,
+      send: async (_tab, msg) => {
+        sent.push(msg);
+        return msg.type === 'guide-probe' ? { status: 'found', strategy: 'label' } : { ok: true };
+      },
+    });
+    expect(report).toEqual([
+      expect.objectContaining({ stepId: upload.id, status: 'found', strategy: 'label' }),
+    ]);
+    expect(sent.find((m) => m.type === 'guide-probe')).toMatchObject({ fileField: true });
+    expect(sent.some((m) => m.type === 'guide-run')).toBe(false);
+  });
+});

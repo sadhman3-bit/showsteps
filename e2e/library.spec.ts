@@ -163,7 +163,9 @@ test('side panel shows Start, recent guides and the capture-more hand-over', asy
   await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
   await expect(panel.getByRole('button', { name: 'Start capture' })).toBeVisible();
   await expect(panel.getByText('Shortcut: Alt+Shift+R')).toBeVisible();
-  await expect(panel.getByRole('button', { name: 'Sign in · Ledgerline' })).toBeVisible();
+  await expect(
+    panel.getByRole('button', { name: 'Sign in · Ledgerline', exact: true }),
+  ).toBeVisible();
   await expect(panel.getByText('Guide saved.')).toBeVisible();
   await panel.screenshot({ path: test.info().outputPath('sidepanel.png') });
 
@@ -193,7 +195,9 @@ test('sample guides (E10): added from an empty library, with sections, tips and 
   await expect(list).toContainText('Run a monthly report in Ledgerline');
   await expect(lib.getByRole('button', { name: 'Add the sample guides' })).toHaveCount(0);
 
-  await list.getByRole('button', { name: 'Create a supplier invoice in Ledgerline' }).click();
+  await list
+    .getByRole('button', { name: 'Create a supplier invoice in Ledgerline', exact: true })
+    .click();
   await lib.getByRole('button', { name: 'Preview' }).click();
   const reader = lib.locator('.ss-reader');
   await expect(reader.getByRole('heading', { level: 2 })).toHaveText([

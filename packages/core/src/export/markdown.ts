@@ -18,6 +18,10 @@ export function guideToMarkdown(input: ExportInput): string {
   const out: string[] = [];
   if (input.logo) out.push(`![](img/logo.${extensionFor(input.logo)})`);
   out.push(`# ${escapeText(doc.title)}`);
+  if (doc.links)
+    out.push(
+      `${L.openIn} [${L.guideMe}](<${doc.links.guide}>) · [${L.runForMe}](<${doc.links.run}>)  \n*${L.linksNote}*`,
+    );
   if (doc.description) out.push(escapeText(doc.description));
   out.push(`*${doc.meta}*`);
   if (doc.preconditions.length) {

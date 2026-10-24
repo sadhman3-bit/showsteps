@@ -41,8 +41,8 @@ You do **not** need administrator rights, an account or an internet connection a
 
 1. Open the repository's **Releases** page on GitHub (the **Releases** link on the right of the repository's main page).
 2. Under the latest release, open **Assets** and download:
-   - `showsteps-extension-1.1.0.zip` (the browser extension);
-   - `ShowSteps-Setup-1.1.0.exe` (the desktop app; skip it if you only record web pages);
+   - `showsteps-extension-1.2.0.zip` (the browser extension);
+   - `ShowSteps-Setup-1.2.0.exe` (the desktop app; skip it if you only record web pages);
    - `SHA256SUMS.txt` (optional, to check the downloads).
 
 The `…-chrome-web-store.zip` file is for submitting to the Chrome Web Store. You do not need it to install ShowSteps.
@@ -61,7 +61,7 @@ This confirms the files arrived complete and unchanged.
 3. Print each file's checksum:
 
    ```powershell
-   Get-FileHash .\showsteps-extension-1.1.0.zip, .\ShowSteps-Setup-1.1.0.exe -Algorithm SHA256
+   Get-FileHash .\showsteps-extension-1.2.0.zip, .\ShowSteps-Setup-1.2.0.exe -Algorithm SHA256
    ```
 
 4. Open `SHA256SUMS.txt` in Notepad. Each value in the **Hash** column must match the line for the same file. Capital and small letters do not matter.
@@ -79,22 +79,22 @@ Installing it unpacked takes about two minutes.
 ### 4.1 Unzip it to a folder you will keep
 
 1. Make a folder that will stay put, for example `Documents\ShowSteps\extension`. Chrome loads the extension from this folder every time it starts, so **do not delete or move it later**.
-2. Right-click `showsteps-extension-1.1.0.zip` → **Extract All…** → choose that folder → **Extract**.
-3. Open the folder. It contains a folder named `showsteps-extension-1.1.0`, and that folder contains `manifest.json`. That inner folder is the one to load.
+2. Right-click `showsteps-extension-1.2.0.zip` → **Extract All…** → choose that folder → **Extract**.
+3. Open the folder. It contains a folder named `showsteps-extension-1.2.0`, and that folder contains `manifest.json`. That inner folder is the one to load.
 
 ### 4.2 Load it in Chrome
 
 1. In the address bar, type `chrome://extensions` and press **Enter**.
 2. Turn on **Developer mode** (switch at the top right).
 3. Click **Load unpacked**.
-4. Select the `showsteps-extension-1.1.0` folder (the one containing `manifest.json`) and click **Select Folder**.
+4. Select the `showsteps-extension-1.2.0` folder (the one containing `manifest.json`) and click **Select Folder**.
 5. A **ShowSteps** card appears. Make sure its switch is on.
 
 ### 4.2 (alternative) Load it in Edge
 
 1. In the address bar, type `edge://extensions` and press **Enter**.
 2. Turn on **Developer mode** (switch in the left-hand panel).
-3. Click **Load unpacked**, select the `showsteps-extension-1.1.0` folder and click **Select Folder**.
+3. Click **Load unpacked**, select the `showsteps-extension-1.2.0` folder and click **Select Folder**.
 
 ### 4.3 Pin it to the toolbar
 
@@ -110,7 +110,7 @@ Installing it unpacked takes about two minutes.
 
 Skip this section if you only record web pages.
 
-1. Double-click `ShowSteps-Setup-1.1.0.exe`.
+1. Double-click `ShowSteps-Setup-1.2.0.exe`.
 2. Windows may show **"Windows protected your PC"**, because the installer is not code-signed. Click **More info**, then **Run anyway**.
 3. The installer runs by itself. It installs for your Windows user only, so no administrator prompt appears.
 4. ShowSteps starts, and its icon appears in the system tray (bottom right of the taskbar; click **^** if you do not see it).
@@ -169,6 +169,8 @@ From the Chrome Web Store, updates arrive by themselves. To check now, turn on *
 
 **Desktop app:** install the new `ShowSteps-Setup-<version>.exe` over the old one, without uninstalling first. It replaces the old version and keeps your library and settings.
 
+**Updating to 1.2:** nothing new is asked at update. Chrome asks for **download access** only if you set an upload step to use a downloaded file (see the README's "Downloads and uploads"). Desktop app 1.2 is needed only to attach files downloaded by a form (an **Export** button that posts); everything else works with desktop app 1.0 or 1.1. If several people share a team folder, update everyone: a guide saved again by ShowSteps 1.1 loses its upload steps' **File** setting.
+
 ## 9. Moving from Trailmark or ABCXYZ
 
 ShowSteps was briefly called Trailmark, then ABCXYZ. Your guides carry over.
@@ -191,7 +193,7 @@ To remove ShowSteps's data but keep the extension, open the library and click **
 
 | Problem                                                    | What to do                                                                                                                                                                                                                                                                                                                |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Load unpacked** says "Manifest file is missing"          | You chose the outer folder. Choose the `showsteps-extension-1.1.0` folder that contains `manifest.json`.                                                                                                                                                                                                                  |
+| **Load unpacked** says "Manifest file is missing"          | You chose the outer folder. Choose the `showsteps-extension-1.2.0` folder that contains `manifest.json`.                                                                                                                                                                                                                  |
 | The ShowSteps icon is missing from the toolbar             | Click the puzzle-piece icon and pin ShowSteps (section 4.3). Check that its switch is on in `chrome://extensions`.                                                                                                                                                                                                        |
 | The extension disappeared after Chrome restarted           | The extension folder was moved or deleted. Extract it again to the same place and click **Load unpacked**.                                                                                                                                                                                                                |
 | **Start capture** does nothing on a page                   | Browsers do not let extensions work on their own pages (`chrome://…`, `edge://…`, the Chrome Web Store) or on PDFs opened in the browser. Try an ordinary web page, and click **Allow** when ShowSteps asks for website access.                                                                                           |
@@ -213,6 +215,8 @@ ShowSteps is built to keep everything on your computer:
 - **No accounts, analytics or telemetry.**
 - **AI writing tools are off by default.** When turned on, they use the AI model built into Chrome, which runs on your computer.
 - **The connection between the two apps** uses Chrome's native messaging on this computer only.
+- **Files a run attaches** are kept in the extension's storage only for that run, and deleted when it ends.
+- **Links in exported files** carry the guide's ID and version after a `#`, which browsers never send to the website.
 
 Data leaves your computer only when **you** do something that sends it:
 

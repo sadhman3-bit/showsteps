@@ -5,6 +5,7 @@ import { stepNumbers } from '../editor/ops.js';
 import { toPlainText } from '../richText.js';
 import { SCHEMA_VERSION } from '../version.js';
 import type { AppRef, Expectation, Guide, InputMode, Step, Target } from '../schema.js';
+import { attachSourceValid } from '../guidance/plan.js';
 import { fieldLabel, variableName } from './variables.js';
 
 export const PROCEDURE_FORMAT = 'showsteps-procedure';
@@ -58,7 +59,14 @@ export interface ProcedureStep {
   notes?: string[];
   app: Step['app'];
   target?: ProcedureTarget;
-  input?: { mode: InputMode; variable?: string; value?: string; sensitive: boolean };
+  input?: {
+    mode: InputMode;
+    variable?: string;
+    value?: string;
+    sensitive: boolean;
+    /** Upload steps: the file comes from this run's newest download, or a step's download. */
+    from?: { download: 'latest' | number };
+  };
   key?: string;
   expect: Expectation[];
   /** What happens when the step cannot be done. */
@@ -175,6 +183,11 @@ export function toProcedure(guide: Guide): Procedure {
           : {}),
         sensitive: b.input.sensitive,
       };
+      const from = b.input.from;
+      if (b.action === 'upload' && from && attachSourceValid(guide, b))
+        input.from = {
+          download: from.download === 'latest' ? 'latest' : (numbers.get(from.download) ?? 0),
+        };
     }
     const description = b.human.description ? toPlainText(b.human.description) : '';
     steps.push({

@@ -261,6 +261,23 @@ class Writer {
   }
 }
 
+/** A clickable area that opens `uri` (pdf-lib has no helper, so the annotation is built by hand). */
+function linkAnnotation(
+  pdf: PDFDocument,
+  page: PDFPage,
+  rect: [number, number, number, number],
+  uri: string,
+): void {
+  const annot = pdf.context.obj({
+    Type: 'Annot',
+    Subtype: 'Link',
+    Rect: rect,
+    Border: [0, 0, 0],
+    A: { Type: 'Action', S: 'URI', URI: PDFString.of(uri) },
+  });
+  page.node.addAnnot(pdf.context.register(annot));
+}
+
 function fit(image: ExportImage, maxW: number, maxH: number): { w: number; h: number } {
   const scale = Math.min(maxW / image.width, maxH / image.height, 1);
   return { w: image.width * scale, h: image.height * scale };
@@ -350,6 +367,33 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   w.y = PAGE_H - band / 2 + (titleLines.length * 32) / 2;
   w.lines(titleLines, MARGIN, 26, 32);
   w.y = PAGE_H - band - 36;
+  if (doc.links) {
+    // "Open in ShowSteps: Guide Me · Run for me", the two names clickable (URI link annotations).
+    const size = 11;
+    const baseline = w.y - size;
+    let x = MARGIN;
+    const piece = (text: string, font: PDFFont, color: RGB, uri?: string) => {
+      const width = font.widthOfTextAtSize(text, size);
+      w.page.drawText(text, { x, y: baseline, size, font, color });
+      if (uri) {
+        w.page.drawLine({
+          start: { x, y: baseline - 1.5 },
+          end: { x: x + width, y: baseline - 1.5 },
+          thickness: 0.6,
+          color,
+        });
+        linkAnnotation(pdf, w.page, [x, baseline - 3, x + width, baseline + size], uri);
+      }
+      x += width;
+    };
+    piece(`${L.openIn} `, fonts.regular, TEXT);
+    piece(L.guideMe, fonts.bold, accent, doc.links.guide);
+    piece('  ·  ', fonts.regular, MUTED);
+    piece(L.runForMe, fonts.bold, accent, doc.links.run);
+    w.y -= size * 1.5;
+    w.lines(layout(plainRuns(L.linksNote, fonts.regular, MUTED), 9, CONTENT_W), MARGIN, 9);
+    w.y -= 18;
+  }
   if (input.logo) {
     const logo = await embed(pdf, input.logo);
     const size = fit(input.logo, 200, 64);

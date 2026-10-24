@@ -26,9 +26,9 @@ Release files are in `dist/` (build them with `pnpm release`, see [For developer
 
 | File                                             | What it is                                                       |
 | ------------------------------------------------ | ---------------------------------------------------------------- |
-| `showsteps-extension-1.1.0.zip`                  | The browser extension                                            |
-| `showsteps-extension-1.1.0-chrome-web-store.zip` | The same extension, packaged for the Chrome Web Store            |
-| `ShowSteps-Setup-1.1.0.exe`                      | The Windows desktop app (installs for you only; no admin rights) |
+| `showsteps-extension-1.2.0.zip`                  | The browser extension                                            |
+| `showsteps-extension-1.2.0-chrome-web-store.zip` | The same extension, packaged for the Chrome Web Store            |
+| `ShowSteps-Setup-1.2.0.exe`                      | The Windows desktop app (installs for you only; no admin rights) |
 | `SHA256SUMS.txt`                                 | Checksums to verify the downloads                                |
 
 ### The browser extension (Chrome or Edge)
@@ -37,10 +37,10 @@ Install ShowSteps from the Chrome Web Store: <https://chromewebstore.google.com/
 
 Or install it as an unpacked extension (for example where the Web Store is blocked):
 
-1. Unzip `showsteps-extension-1.1.0.zip` to a folder you will keep, for example `Documents\ShowSteps\extension`. Chrome loads it from there each time.
+1. Unzip `showsteps-extension-1.2.0.zip` to a folder you will keep, for example `Documents\ShowSteps\extension`. Chrome loads it from there each time.
 2. Open `chrome://extensions` (in Edge, `edge://extensions`).
 3. Turn on **Developer mode** (top right in Chrome; bottom left in Edge).
-4. Click **Load unpacked** and choose the unzipped `showsteps-extension-1.1.0` folder.
+4. Click **Load unpacked** and choose the unzipped `showsteps-extension-1.2.0` folder.
 5. Pin ShowSteps: click the puzzle-piece icon in the toolbar, then the pin next to ShowSteps.
 
 Chrome may show a banner about developer-mode extensions when it starts. That is expected for extensions loaded this way. To update an unpacked copy, unzip the new version over the same folder, then click **↻** on ShowSteps's card in `chrome://extensions`.
@@ -56,7 +56,7 @@ ShowSteps was briefly called Trailmark, then ABCXYZ. Your guides carry over:
 
 ### The desktop app (Windows 10 or 11)
 
-1. Run `ShowSteps-Setup-1.1.0.exe`. It installs for your Windows user only; no administrator rights are needed. To update, run the new installer over the old version: your library and settings are kept.
+1. Run `ShowSteps-Setup-1.2.0.exe`. It installs for your Windows user only; no administrator rights are needed. To update, run the new installer over the old version: your library and settings are kept.
 2. Windows SmartScreen may say the app is unrecognised, because the installer is not code-signed. Click **More info**, then **Run anyway**.
 3. ShowSteps starts and puts an icon in the system tray.
 
@@ -79,7 +79,7 @@ Settings → **Delete all ShowSteps data** removes everything the extension keep
 ## Three things to try first
 
 1. **Record a guide.** Open a web page, click the ShowSteps icon, then **Start capture**. Do the task as usual: each click, entry and choice becomes a step with a screenshot. The side panel shows every step as it is recorded, with its screenshot, and you can delete any of them there. Click **Finish** on the small toolbar or in the side panel. Then tidy the guide in the editor: drag steps, add tips, blur what should not be seen. **Secure Blur** finds emails, phone, card, bank and tax numbers in every screenshot for you to review.
-2. **Guide someone through it.** Open the guide and click **Guide Me**. ShowSteps rings each element on the real page and moves on as the person does each step. **Run for me** does the steps itself. It stops for passwords, and for anything that cannot be undone, until you confirm.
+2. **Guide someone through it.** Click **Guide Me** on the guide's card in the library (or in the editor, or next to it in the side panel). ShowSteps rings each element on the real page and moves on as the person does each step. **Run for me** does the steps itself. It stops for passwords, and for anything that cannot be undone, until you confirm.
 3. **Share it.** **Share** makes a PDF, a Word document, Markdown, a single web page, an embed card for SharePoint, or rich text for Teams and Outlook. **Agent Pack** turns the guide into instructions an AI agent can follow, with a Playwright script that replays it.
 
 Desktop apps: press **Ctrl+Alt+R** anywhere to start and finish recording a Windows app.
@@ -102,6 +102,22 @@ Saving asks Chrome for website access (runs need it) and, optionally, notificati
 **The Schedules page** (library → **Schedules**) lists each schedule's next run and last outcome, with **Run now**, **Edit**, **Delete** and an on/off switch, and a history of the last 20 runs with the values typed and a picture after each step.
 
 **What schedules can't do:** run while the computer is asleep or off, or on a locked screen; do Windows-app steps by themselves; or follow you to another computer. Runs happen while Chrome is open; with the desktop app running (and **Start with Windows** on), Chrome is opened for a run if it's closed.
+
+## Downloads and uploads
+
+A process often downloads a file and uploads it somewhere else, such as a report you then email. Run for me can carry the file from one step to the other:
+
+1. Record it as usual: the download click, then the upload (the file picker isn't recorded, only the file's name).
+2. In the editor, the upload step has a **File** setting. Choose **The file this run downloaded last** or **The file downloaded in step N** (after a download-looking step, the editor offers **Use it**).
+3. Click **Allow download access** when the editor asks. It lets Run for me see the file its own click downloaded. Without it, ShowSteps can only attach files from simple download links.
+
+Run for me then attaches the file without opening a picker. It keeps a copy only for that run (at most 25 MB a file, 50 MB a run) and deletes it when the run ends. Downloads made by a form (an **Export** button that posts) need the desktop app 1.2 connected, which reads the file Chrome saved. Scheduled runs attach the file too, and their history says which file was attached.
+
+**What it can't do:** upload areas that only take drag and drop; Outlook for Windows and other Windows apps; Chrome's "Ask where to save each file" setting (the download waits for you, so a scheduled run stops); downloads Chrome blocks as unsafe; files over 25 MB. When it can't attach the file, Run for me stops at the upload step and says which file to choose from your Downloads folder.
+
+## Links in exported files
+
+Exported PDF, Word, web page, embed and Markdown files have a line under the title: **Open in ShowSteps: Guide Me · Run for me**. Each link opens the guide's first page. In Chrome with ShowSteps and the same guide in its library (import the `.showsteps` file, or share a team folder), a small ShowSteps window offers to start; nothing starts until you press **Start**. In another browser, or without ShowSteps, the link just opens the page. Turn the links off in the Share dialog.
 
 ## What else is in it
 

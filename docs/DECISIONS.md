@@ -285,3 +285,31 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Docs for 1.1:** the README and the installation guide now lead with the Chrome Web Store (unpacked stays as the alternative), name the 1.1.0 files, and tell desktop users to install the new setup over the old one. Release notes live in `docs/release-notes/<version>.md` and are the GitHub release's notes.
 - **Guides with Windows-app steps** can only ask "Start now?" through a notification, so the Schedule dialog and README say to allow notifications for them.
 - **Test copies of the desktop app** set their data folder before taking the single-instance lock, so `pnpm e2e:desktop` starts even while the installed app runs. The extension bridge's pipe is still one per Windows user, so the mixed web-and-desktop test needs the installed app closed while it runs.
+
+## Update 1.2
+
+- **`input.from` needs no schema version bump:** it's an optional field, so 1.1 reads a 1.2 guide (Zod drops the field). A guide saved again by 1.1, for example in a shared folder, loses the setting and its upload step goes back to "Choose it yourself".
+- **A broken file source** (the step it names was deleted or moved after the upload) makes the step a plain upload everywhere: Run for me, the procedure, the replay and schedules (`planGuideStep`).
+- **The run log's `file` entry** also keeps the step number the file was downloaded in, so the history can say "downloaded in step 4" after the guide changes.
+- **Demo pages for 1.2** are new (`/exports.html` with three downloads, `/send.html` with a hidden file field behind Attach) rather than changes to `/reports.html`, which older tests use. A signed-out session gets the sign-in page with status 200 in place of the file, so tests can prove a sign-in page is never attached.
+- **The replay waits for a source step's download** before going on, so a download that arrives late is still credited to the step that started it.
+- **The File control replaces nothing:** the input-mode select was already shown only for typed and chosen values, so upload steps get the File control on its own.
+- **"Looks like a download"** goes by the clicked element's name, text or label (Download, Export, or a file type such as PDF, CSV or XLSX) and a `[download]` selector, because the `download` attribute itself isn't recorded. "Use it" picks the nearest such step before the upload.
+- **`downloads` is declared optional in R2** (not R3), because the editor's Allow download access button can only request a permission the manifest lists.
+- **Reading a `blob:` link in the page works:** the content script can fetch a `blob:` address the page made (checked in `e2e/attach-run.spec.ts`), so files built in the page are read before the click, with or without download access.
+- **A hidden file field shows no highlight** when Run for me stops at an attach step, as for any upload today: the side panel says which file to choose, and the person presses "I did it" after picking it.
+- **Downloads in progress aren't kept across a worker restart:** the run keeps the files it already has (their names and sizes are in the saved run); a download still going when the worker stopped is treated as not arrived.
+- **A form POST download without the desktop app** is fetched again from its final address, which for a POST usually fails, so the run stops with "Choose … from your Downloads folder (downloaded in step N)". The desktop app (R4) reads the file Chrome saved instead.
+- **A file's name** comes from the link's `download` attribute, else the address's last part with an extension, else the saved file's name.
+- **A scheduled run's missing file** pauses it as a step for the person (pause reason `file`, notification "step N needs the downloaded file"); the run log keeps the detailed `file-…` reason.
+- **The Schedule dialog names upload steps a run will stop at** (those not set to a downloaded file), so people set them before relying on an unattended run.
+- **Guide Me and Run for me buttons** use the trail icon and the play icon; where many guides are listed (cards, Recent guides) their names include the guide's title ("Run for me: Approve invoice").
+- **The editor's buttons start inside the click** (so Chrome's site-access prompt and the side panel work) and the guidance waits until pending edits are saved, so a run uses what's on screen.
+- **Recent guides in the side panel** start on the guide's first page in a new tab when the current tab isn't already there, as the reader's buttons do; Guides for this site start in the current tab.
+- **The editor's top bar between 1101 and 1500 px wide** shows Record more, Guide Me and Run for me as icons (their names stay for screen readers and as tooltips), so the right-hand group never runs into the Edit, Preview and Agent switch. Wider windows show the words; narrower ones wrap the group onto its own row.
+- **The Share dialog's link toggle** is remembered per browser profile (like the editor's compact view), on by default, and shown only for guides with a browser step.
+- **Links in a PDF** are drawn under the cover band with URI link annotations built from pdf-lib's low-level objects; Word uses `ExternalHyperlink`; Markdown uses `[Guide Me](<url>)` so any address works.
+- **The start window opens even for a guide that isn't in the library** (the start page can't be checked without the guide), and says to import the ShowSteps file. For a guide in the library, a marker on any other page is ignored.
+- **Not now removes the marker only with site access** (it runs `history.replaceState` in the page); without it the address keeps the marker until the person navigates.
+- **Navigation events keep the fragment:** `webNavigation.onCommitted` and `onReferenceFragmentUpdated` report the address with its `#showsteps=…` marker (checked in `e2e/start-links.spec.ts`, where the window opens only from that marker).
+- **A downloaded file's name without an extension** gets one from its type (`application/pdf` → `.pdf`), because upload fields often check the extension. Found by the desktop e2e test, where Chrome saves downloads under random names.

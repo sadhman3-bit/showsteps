@@ -1,3 +1,4 @@
+import { StartLinkPage, parseStartRoute, type StartLinkRoute } from './StartLink';
 import { stepNumbers, toPlainText } from '@showsteps/core';
 import type { Guide, Schedule } from '@showsteps/core';
 import {
@@ -15,7 +16,8 @@ import {
   strings,
   Button,
   Dialog,
-  type RunSpeed,
+  RunDialog,
+  type RunOptions,
 } from '@showsteps/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
@@ -23,6 +25,7 @@ import {
   getStore,
   deleteAllData,
   selfCheckGuide,
+  downloadAccess,
   stepUrl,
   startGuide,
   useBackground,
@@ -43,15 +46,21 @@ type Route =
   | { page: 'view'; id: string; stepId?: string }
   | { page: 'print'; id: string }
   | { page: 'insights' }
-  | { page: 'schedules' };
+  | { page: 'schedules' }
+  | { page: 'start'; link: StartLinkRoute };
 
 /**
  * Hash routes: #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId>
- * (reader) · #/guide/<id>/print · #/insights · #/schedules.
+ * (reader) · #/guide/<id>/print · #/insights · #/schedules · #/start/<id>?mode&tab&v (the window
+ * a link in an exported file opens).
  */
 export function parseRoute(hash: string): Route {
   if (hash.startsWith('#/insights')) return { page: 'insights' };
   if (hash.startsWith('#/schedules')) return { page: 'schedules' };
+  if (hash.startsWith('#/start/')) {
+    const link = parseStartRoute(hash);
+    return link ? { page: 'start', link } : { page: 'library' };
+  }
   const m = /^#\/guide\/([^/?]+)(?:\/(view|step|print)(?:\/([^/?]+))?)?/.exec(hash);
   if (!m?.[1]) return { page: 'library' };
   const id = decodeURIComponent(m[1]);
@@ -74,6 +83,8 @@ export function LibraryApp() {
   const guidanceState = useGuidance();
   const schedulesVersion = useSchedulesVersion();
   const [scheduling, setScheduling] = useState<{ guide: Guide; schedule?: Schedule } | null>(null);
+  /** Run for me from a library card: its dialog (values, speed, step-through) first. */
+  const [runFor, setRunFor] = useState<Guide | null>(null);
   const [attention, setAttention] = useState(false);
   useEffect(() => {
     void scheduleAttention().then(setAttention);
@@ -114,9 +125,10 @@ export function LibraryApp() {
 
   /** Guide Me / Run for me: the side panel opens beside the page (inside this click). */
   const guide = (
-    g: Guide,
+    g: Pick<Guide, 'id'>,
     mode: 'guide' | 'run',
-    run?: { values: Record<string, string>; speed: RunSpeed; stepThrough: boolean },
+    run?: RunOptions,
+    saved?: Promise<void>,
   ) => {
     openSidePanel();
     setNotice('');
@@ -125,6 +137,7 @@ export function LibraryApp() {
       mode,
       ...(windowId !== undefined ? { windowId } : {}),
       ...(run ?? {}),
+      ...(saved ? { saved } : {}),
     }).then((error) => {
       if (error)
         setNotice(
@@ -271,6 +284,16 @@ export function LibraryApp() {
       {notice}
     </p>
   ) : null;
+  const runDialog = runFor ? (
+    <RunDialog
+      guide={runFor}
+      onClose={() => setRunFor(null)}
+      onStart={(opts) => {
+        setRunFor(null);
+        guide(runFor, 'run', opts);
+      }}
+    />
+  ) : null;
   const scheduleDialog = scheduling ? (
     <ScheduleHost
       guide={scheduling.guide}
@@ -291,6 +314,9 @@ export function LibraryApp() {
         stepLink={stepUrl}
         onPrint={() => go(printRoute(route.id))}
         onSelfCheck={selfCheckGuide}
+        downloadAccess={downloadAccess}
+        onGuideMe={(g, saved) => guide(g, 'guide', undefined, saved)}
+        onRunForMe={(g, run, saved) => guide(g, 'run', run, saved)}
         aiEnabled={settings.aiEnabled}
         onOpenGuide={(id) => go(`#/guide/${encodeURIComponent(id)}`)}
         onBack={() => go('#/')}
@@ -364,6 +390,7 @@ export function LibraryApp() {
       />
     );
   }
+  if (route.page === 'start') return <StartLinkPage store={store} link={route.link} />;
   if (route.page === 'print') {
     return (
       <PrintView
@@ -390,7 +417,11 @@ export function LibraryApp() {
         onSchedules={() => go('#/schedules')}
         schedulesAttention={attention}
         onSchedule={(id) => void store.getGuide(id).then((g) => (g ? scheduleGuide(g) : undefined))}
+        onGuideMe={(id) => guide({ id }, 'guide')}
+        onRunForMe={(id) => void store.getGuide(id).then((g) => g && setRunFor(g))}
       />
+      {noticeBar}
+      {runDialog}
       {scheduleDialog}
       {showAbout ? (
         <AboutDialog

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BridgeClient } from '../lib/bridge';
+import { BridgeClient, readDownloadVia } from '../lib/bridge';
 
 type Listener = (msg: unknown) => void;
 
@@ -15,6 +15,11 @@ function fakeDesktop(reply: object) {
       sent.push(msg);
       if (msg.method === 'hello')
         queueMicrotask(() => onMessage.forEach((l) => l({ id: msg.id, ok: true, result: reply })));
+      // Desktop app 1.2: the file's bytes, as the bridge sends them.
+      if (msg.method === 'readDownload')
+        queueMicrotask(() =>
+          onMessage.forEach((l) => l({ id: msg.id, ok: true, result: { $b64: 'JVBERi0=' } })),
+        );
     },
   };
   const spy = vi
@@ -57,5 +62,36 @@ describe('desktop app versions', () => {
     // Disconnected: nothing is claimed any more.
     client.disconnect();
     expect(client.can('schedule-wake')).toBe(false);
+  });
+
+  const download = {
+    filename: 'C:\\Users\\me\\Downloads\\statement.pdf',
+    fileSize: 5,
+    mime: 'application/pdf',
+  };
+
+  it('desktop app 1.1 is never asked to read a download', async () => {
+    const d = fakeDesktop({ version: 1, appVersion: '1.1.0', capabilities: ['schedule-wake'] });
+    const client = new BridgeClient('background');
+    await client.connect();
+    expect(client.can('read-download')).toBe(false);
+    expect(await readDownloadVia(client, download)).toBeUndefined();
+    expect(d.sent.some((m) => m.method === 'readDownload')).toBe(false);
+  });
+
+  it('desktop app 1.2 reads the downloaded file', async () => {
+    const d = fakeDesktop({
+      version: 1,
+      appVersion: '1.2.0',
+      capabilities: ['schedule-wake', 'read-download'],
+    });
+    const client = new BridgeClient('background');
+    await client.connect();
+    const blob = await readDownloadVia(client, download);
+    expect(await blob?.text()).toBe('%PDF-');
+    expect(blob?.type).toBe('application/pdf');
+    expect(d.sent.find((m) => m.method === 'readDownload')).toMatchObject({
+      args: [{ path: download.filename, size: 5 }],
+    });
   });
 });

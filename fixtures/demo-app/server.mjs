@@ -47,6 +47,31 @@ function cookie(req, name) {
   return undefined;
 }
 
+/** A small valid PDF, padded with a comment to about `kb` kilobytes. */
+export function demoPdf(title, kb = 0) {
+  const text = `BT /F1 18 Tf 72 720 Td (${title.replace(/[()\\]/g, '')}) Tj ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${text.length} >>\nstream\n${text}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let body = '%PDF-1.4\n';
+  const offsets = [];
+  objects.forEach((o, i) => {
+    offsets.push(body.length);
+    body += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = body.length;
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  body += offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const pad = Math.max(0, kb * 1024 - body.length);
+  // Padding after %%EOF: readers ignore it.
+  return Buffer.concat([Buffer.from(body), Buffer.alloc(pad, 0x25)]);
+}
+
 function mainHandler(xoriginPort) {
   return async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
@@ -72,6 +97,21 @@ function mainHandler(xoriginPort) {
           { number: 'INV-1039', supplier: 'Saltbush Software', amount: 9900.0 },
         ]),
       );
+    }
+    // Downloads for the Exports page. A signed-out session gets the sign-in page instead of the
+    // file (with status 200, as many sites do), so tests can check a sign-in page is never
+    // attached. `?kb=` pads the file (size tests).
+    if (path === '/files/report.pdf' || (path === '/api/export' && req.method === 'POST')) {
+      if (cookie(req, 'demo_session') === 'expired') return sendFile(res, join(ROOT, 'login.html'));
+      const kb = Math.min(Math.max(Number(url.searchParams.get('kb') ?? 0) || 0, 0), 40 * 1024);
+      const post = path === '/api/export';
+      const name = post ? 'statement.pdf' : 'report.pdf';
+      res.writeHead(200, {
+        'content-type': 'application/pdf',
+        'cache-control': 'no-store',
+        ...(post ? { 'content-disposition': `attachment; filename="${name}"` } : {}),
+      });
+      return res.end(demoPdf(post ? 'Statement' : 'Monthly report', kb));
     }
     // Sign-in through the mock identity provider (second port, /idp/): it sends the person
     // back here with a user name, which becomes the session cookie.

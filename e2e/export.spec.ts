@@ -4,6 +4,7 @@ import mammoth from 'mammoth';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { buildStartLink, type Guide } from '@showsteps/core';
 import { expect, test } from './fixtures';
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -321,4 +322,85 @@ test('editor: Share is in the toolbar and exports the guide being edited', async
   const text = readFileSync(html.path, 'utf8');
   expect(text).toContain(`<h1>${INVOICE}</h1>`);
   expect(text.match(/<article class="step"/g)).toHaveLength(17);
+});
+
+test('exports carry Guide Me and Run for me links, and none with the toggle off (1.2)', async ({
+  context,
+  serviceWorker,
+  extensionId,
+}) => {
+  test.setTimeout(120_000);
+  const guide = await prepareGuide(serviceWorker);
+  const stored = await serviceWorker.evaluate((id) => __showsteps.store.getGuide(id), guide.id);
+  const guideLink = buildStartLink(stored as unknown as Guide, 'guide')!;
+  const runLink = buildStartLink(stored as unknown as Guide, 'run')!;
+  expect(guideLink).toMatch(
+    /^http:\/\/localhost:5173\/login\.html#showsteps=1&guide=.+&mode=guide&v=/,
+  );
+  const amp = (s: string) => s.replace(/&/g, '&amp;');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
+    origin: 'http://localhost:5173',
+  });
+
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/library.html#/guide/${guide.id}/view`);
+  await page.getByRole('button', { name: 'Share' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Share this guide' });
+  const toggle = dialog.getByRole('checkbox', { name: 'Include Guide Me and Run for me links' });
+  await expect(toggle).toBeChecked();
+
+  const files = async () => {
+    const html = readFileSync((await download(page, 'Web page')).path, 'utf8');
+    const embed = readFileSync((await download(page, 'Embed card')).path, 'utf8');
+    const md = strFromU8(
+      unzipSync(new Uint8Array(readFileSync((await download(page, 'Markdown')).path)))['guide.md']!,
+    );
+    const docx = unzipSync(new Uint8Array(readFileSync((await download(page, 'Word')).path)));
+    const rels = strFromU8(docx['word/_rels/document.xml.rels']!);
+    // The PDF's link annotations, read back.
+    const doc = await getDocument({
+      data: new Uint8Array(readFileSync((await download(page, 'PDF')).path)),
+    }).promise;
+    const uris: string[] = [];
+    for (let i = 1; i <= doc.numPages; i++)
+      for (const a of await (await doc.getPage(i)).getAnnotations())
+        if (a.subtype === 'Link' && a.url) uris.push(a.url as string);
+    await dialog.getByRole('button', { name: 'Copy HTML' }).click();
+    await expect(dialog.getByRole('status')).toHaveText(
+      'Copied. Paste it where you want the guide.',
+    );
+    const demo = await context.newPage();
+    await demo.goto('http://localhost:5173/login.html');
+    await demo.bringToFront();
+    const clip = await demo.evaluate(async () => {
+      const read = navigator.clipboard.read.bind(navigator.clipboard) as (
+        o: object,
+      ) => Promise<ClipboardItems>;
+      const [item] = await read({ unsanitized: ['text/html'] });
+      return (await item!.getType('text/html')).text();
+    });
+    await demo.close();
+    await page.bringToFront();
+    return { html, embed, md, rels, uris, clip };
+  };
+
+  const on = await files();
+  for (const html of [on.html, on.embed, on.clip]) {
+    expect(html).toContain(`<a href="${amp(guideLink)}">Guide Me</a>`);
+    expect(html).toContain(`<a href="${amp(runLink)}">Run for me</a>`);
+  }
+  expect(on.md).toContain(`[Guide Me](<${guideLink}>) · [Run for me](<${runLink}>)`);
+  expect(on.rels).toContain(`Target="${amp(guideLink)}"`);
+  expect(on.rels).toContain(`Target="${amp(runLink)}"`);
+  expect(on.uris).toEqual([guideLink, runLink]);
+
+  // Off, and remembered when the dialog opens again.
+  await toggle.uncheck();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Share' }).click();
+  await expect(toggle).not.toBeChecked();
+  const off = await files();
+  for (const text of [off.html, off.embed, off.clip, off.md, off.rels])
+    expect(text).not.toContain('showsteps=1');
+  expect(off.uris).toEqual([]);
 });

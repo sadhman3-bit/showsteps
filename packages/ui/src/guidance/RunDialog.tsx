@@ -1,4 +1,5 @@
 import { runFields, type Guide } from '@showsteps/core';
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
@@ -6,20 +7,28 @@ import { strings } from '../strings.js';
 
 const g = strings.guidance;
 export type RunSpeed = 'slow' | 'normal' | 'fast';
+/** What the Run dialog hands over: values, speed and step-through. */
+export interface RunOptions {
+  values: Record<string, string>;
+  speed: RunSpeed;
+  stepThrough: boolean;
+}
 
 /** Run for me (G6): values asked once, speed and step-through, then start. */
 export function RunDialog({
   guide,
   onStart,
   onClose,
+  cancelLabel = strings.library.cancel,
+  notice,
 }: {
   guide: Guide;
-  onStart: (opts: {
-    values: Record<string, string>;
-    speed: RunSpeed;
-    stepThrough: boolean;
-  }) => void;
+  onStart: (opts: RunOptions) => void;
   onClose: () => void;
+  /** The close button's words ("Not now" in the start window). */
+  cancelLabel?: string;
+  /** A line above the fields (e.g. the guide changed since a file was made). */
+  notice?: ComponentChildren;
 }) {
   const fields = runFields(guide);
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -37,7 +46,7 @@ export function RunDialog({
       onClose={onClose}
       actions={
         <>
-          <Button onClick={onClose}>{strings.library.cancel}</Button>
+          <Button onClick={onClose}>{cancelLabel}</Button>
           <Button variant="primary" type="submit" form="ss-run">
             {g.runStart}
           </Button>
@@ -45,6 +54,7 @@ export function RunDialog({
       }
     >
       <form id="ss-run" class="ss-stack-form" onSubmit={submit}>
+        {notice}
         <p class="ss-muted">{g.runIntro}</p>
         {fields.length ? (
           <fieldset class="ss-fieldset">

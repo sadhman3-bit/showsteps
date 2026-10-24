@@ -280,6 +280,7 @@ export const strings = {
     button: 'Share',
     title: 'Share this guide',
     privacy: 'Files are made on this computer. Nothing is uploaded.',
+    startLinks: 'Include Guide Me and Run for me links',
     download: 'Download',
     formats: {
       pdf: ['PDF', 'For printing and attaching to email'],
@@ -328,6 +329,9 @@ export const strings = {
     suggestedValue: (v: string) => `Suggested value: ${v}`,
     guideMe: 'Guide Me',
     runForMe: 'Run for me',
+    /** Accessible names where many guides are listed (1.2). */
+    guideMeFor: (title: string) => `Guide Me: ${title}`,
+    runForMeFor: (title: string) => `Run for me: ${title}`,
     guideMeHint: 'Shows each step on the page and moves on when you do it.',
     runForMeHint:
       'ShowSteps does the steps for you and stops before anything it should not do alone.',
@@ -373,6 +377,37 @@ export const strings = {
       'sign-in': 'Sign in, then press Continue.',
     } as Record<string, string>,
     expectFailed: (what: string) => `What should have happened did not: ${what}.`,
+    /** Attach steps (1.2): which file to choose. */
+    chooseFile: (step?: number) =>
+      step
+        ? `Choose the file you downloaded in step ${step}.`
+        : 'Choose the file you just downloaded.',
+    chooseFileNamed: (name: string, step?: number) =>
+      `Choose ${name} from your Downloads folder${step ? ` (downloaded in step ${step})` : ''}.`,
+    /** Why Run for me waits or stops at an attach step (`file-…` reasons). */
+    fileReason: (reason: string, file: { name?: string; step?: number } = {}): string => {
+      const name = file.name ?? 'the file';
+      const from = file.step ? ` from step ${file.step}` : '';
+      const choose = file.name
+        ? `Choose ${file.name} from your Downloads folder${file.step ? ` (downloaded in step ${file.step})` : ''}.`
+        : `Choose the file${file.step ? ` downloaded in step ${file.step}` : ''} from your Downloads folder.`;
+      switch (reason) {
+        case 'file-wait':
+          return `Waiting for ${name} to download…`;
+        case 'file-none':
+          return `The download${from} didn’t arrive. ${choose}`;
+        case 'file-slow':
+          return `${name} didn’t finish downloading in time. ${choose}`;
+        case 'file-big':
+          return `${name} is larger than 25 MB, so ShowSteps doesn’t attach it. ${choose}`;
+        case 'file-ambiguous':
+          return `More than one file was downloaded${from}. ${choose}`;
+        case 'file-type':
+          return `This field doesn’t take ${name}.`;
+        default:
+          return choose;
+      }
+    },
     openPage: 'Open the page',
     done: 'All steps done.',
     doneTitle: (title: string) => `You finished “${title}”.`,
@@ -399,6 +434,8 @@ export const strings = {
           `ShowSteps paused ${name}: couldn’t find step ${step}`,
         failed: (name: string, step: number) =>
           `ShowSteps paused ${name}: step ${step} didn’t work`,
+        file: (name: string, step: number) =>
+          `ShowSteps paused ${name}: step ${step} needs the downloaded file`,
       },
       due: (name: string) => `${name} is due. Start now?`,
       finished: {
@@ -420,7 +457,7 @@ export const strings = {
     needsWebStep: 'Only guides with a browser step can be scheduled.',
     intro: 'Run for me runs these guides at the times you set, each in its own Chrome window.',
     limits:
-      'Schedules run only while this computer is on and awake, with you signed in and the screen unlocked. They can’t wake a sleeping computer, run while it’s off, or run on a locked screen.',
+      'Schedules run only while this computer is on and awake, with you signed in and the screen unlocked. They can’t wake a sleeping computer, run while it’s off, or run on a locked screen. They stop at file uploads, unless the upload step is set to use a file the run downloaded.',
     none: 'No schedules yet. Open a guide, then choose ⋯ → Schedule.',
     dialogTitle: (title: string) => `Schedule “${title}”`,
     repeat: 'Repeat',
@@ -483,6 +520,8 @@ export const strings = {
     checkFirst: 'Check the guide an hour before (finds each step without clicking)',
     desktopNote:
       'This guide has steps in Windows apps, so it needs you at the computer. When it’s due, ShowSteps asks you to start it with a notification, so allow notifications when you save.',
+    uploadNote: (steps: string) =>
+      `Step ${steps} uploads a file, so the run stops there for you. To run it on its own, set the step’s File to a file the run downloads.`,
     chromeOnlyNote:
       'Runs happen only while Chrome is open. With the ShowSteps desktop app connected, it can open Chrome when a run is due.',
     permission:
@@ -533,7 +572,18 @@ export const strings = {
       'no-web-steps': 'The guide has no browser steps',
       values: 'A value couldn’t be filled in',
       start: 'The run couldn’t start',
+      file: 'Needed a downloaded file',
+      'file-none': 'The download didn’t arrive',
+      'file-missing': 'The downloaded file wasn’t there to attach',
+      'file-failed': 'The downloaded file couldn’t be read',
+      'file-slow': 'The download took too long',
+      'file-big': 'The downloaded file was over 25 MB',
+      'file-ambiguous': 'More than one file was downloaded',
+      'file-type': 'The upload field didn’t take the downloaded file',
     } as Record<string, string>,
+    /** "Attached invoice.pdf (240 KB), downloaded in step 4" (1.2). */
+    attachedFile: (name: string, size: string, step?: number) =>
+      `Attached ${name} (${size})${step ? `, downloaded in step ${step}` : ''}`,
     valuesUsed: 'Values typed',
     stepPicture: (n: number) => `After step ${n}`,
     pictureTitle: (n: number) => `The page after step ${n}`,
@@ -740,6 +790,41 @@ export const strings = {
     variable: (name: string) => `Variable {{${name}}}`,
     suggest: 'Looks like a value that changes.',
     suggestApply: 'Ask every run',
+  },
+  /** The window a Guide Me or Run for me link in an exported file opens (1.2). */
+  startLink: {
+    title: 'Open in ShowSteps',
+    guideMe: (title: string) =>
+      `Guide Me shows each step of “${title}” on the page and moves on when you do it.`,
+    runForMe: (title: string) =>
+      `Run for me does the steps of “${title}” in that tab. It stops for steps marked to confirm, for passwords and other secrets, and if something unexpected happens.`,
+    changed: (mode: 'guide' | 'run') =>
+      `This guide has changed since this file was made. ${mode === 'run' ? 'Run for me' : 'Guide Me'} uses your current copy.`,
+    start: 'Start',
+    notNow: 'Not now',
+    missing:
+      'This guide isn’t in your ShowSteps library. Ask whoever sent the file for the ShowSteps file (.showsteps) and import it.',
+    openLibrary: 'Open library',
+    close: 'Close',
+    tabGone: 'The page this link opened has been closed.',
+  },
+  /** Upload steps: where Run for me gets the file (1.2). */
+  fileSource: {
+    label: 'File',
+    choose: 'Choose it yourself',
+    latest: 'The file this run downloaded last',
+    fromStep: (n: number, title: string) =>
+      `The file downloaded in step ${n}${title ? `: ${title}` : ''}`,
+    attaches: 'Run for me attaches the file instead of stopping.',
+    suggest: 'Attach the file this run downloaded?',
+    suggestApply: 'Use it',
+    broken:
+      'The step this file came from was deleted or moved after this one, so Run for me stops here for the person. Choose again.',
+    access: 'Lets Run for me see the file its own click downloaded, so it can attach it.',
+    allow: 'Allow download access',
+    declined:
+      'Without download access, ShowSteps can only attach files from simple download links.',
+    inChrome: 'Download access is set in Chrome.',
   },
   ai: {
     menu: 'AI',

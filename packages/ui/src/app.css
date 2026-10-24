@@ -220,6 +220,16 @@
   font: var(--ss-text-small);
 }
 
+/* Guide Me and Run for me on each card (1.2): above the card's stretched title link. */
+.ss-card__run {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+  margin-top: auto;
+}
+
 .ss-card__body {
   display: flex;
   flex: 1;
@@ -904,6 +914,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ss-run__files {
+  list-style: none;
+  margin: 0 0 var(--ss-space-2);
+  padding: 0;
+}
+
+.ss-run__files li {
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-1);
+}
+
 .ss-run__values {
   display: flex;
   flex-wrap: wrap;
@@ -981,4 +1003,35 @@
   margin-inline-start: auto;
   border-radius: 50%;
   background: var(--ss-alert);
+}
+
+/* The window a Guide Me or Run for me link in an exported file opens (1.2) */
+.ss-start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ss-space-3);
+  max-width: 440px;
+  padding: var(--ss-space-5) var(--ss-space-4);
+}
+
+.ss-start h1 {
+  margin: 0;
+  color: var(--ss-accent);
+  font: var(--ss-text-h3);
+}
+
+.ss-start h2 {
+  margin: 0;
+  font: var(--ss-text-h2);
+  letter-spacing: var(--ss-display-tracking);
+}
+
+.ss-start p {
+  margin: 0;
+}
+
+.ss-start__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
 }

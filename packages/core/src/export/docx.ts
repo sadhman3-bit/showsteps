@@ -111,6 +111,24 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
     );
   }
   children.push(new Paragraph({ heading: HeadingLevel.TITLE, children: textRuns(doc.title) }));
+  if (doc.links) {
+    const link = (href: string, text: string) =>
+      new ExternalHyperlink({
+        link: href,
+        children: [new TextRun({ text, style: 'Hyperlink', bold: true })],
+      });
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: `${L.openIn} ` }),
+          link(doc.links.guide, L.guideMe),
+          new TextRun({ text: ' · ' }),
+          link(doc.links.run, L.runForMe),
+        ],
+      }),
+      new Paragraph({ children: textRuns(L.linksNote, { color: MUTED }) }),
+    );
+  }
   if (doc.description) children.push(new Paragraph({ children: textRuns(doc.description) }));
   children.push(new Paragraph({ children: textRuns(doc.meta, { color: MUTED }) }));
   if (doc.preconditions.length) {

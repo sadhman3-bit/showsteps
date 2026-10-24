@@ -1,16 +1,29 @@
 import {
+  attachAhead,
   createId,
   guideSteps,
   needsSignIn,
   parseAnalytics,
-  planStep,
+  planGuideStep,
   recordRun,
   samePage,
+  stepNumbers,
   valueFor,
+  type AttachSource,
+  type Guide,
   type GuideStore,
   type Run,
+  type RunStepLog,
   type Step,
 } from '@showsteps/core';
+import {
+  RunAttachments,
+  type AttachDeps,
+  type DownloadInfo,
+  type FileLookup,
+  type RunFileMeta,
+} from './attachments';
+import { base64ToBytes, blobToBase64 } from './fileData';
 import type { z } from 'zod';
 import {
   CheckReplySchema,
@@ -18,6 +31,7 @@ import {
   RunReplySchema,
   ShowReplySchema,
   SignInReplySchema,
+  type FileHint,
   type GuideControl,
   type GuidePageMessage,
   type GuideToContent,
@@ -45,6 +59,8 @@ export interface GuidanceDeps {
   persist(data: PersistedGuidance | undefined): Promise<void>;
   sleep(ms: number): Promise<void>;
   now(): string;
+  /** Attaching files a run downloaded (1.2): the run's file store and how files are fetched. */
+  attach?: Omit<AttachDeps, 'now'> & { hasDownloadAccess(): Promise<boolean> };
   /** The desktop app, when connected: it highlights desktop steps on screen (G8). */
   desktop?: {
     available(): boolean;
@@ -59,6 +75,10 @@ export interface PersistedGuidance {
   run: Run;
   approved?: string[];
   windowId?: number;
+  /** Files kept for attach steps (their contents are in the run file store). */
+  files?: RunFileMeta[];
+  /** The run watches Chrome's downloads (it had download access when it started). */
+  watch?: boolean;
 }
 
 export interface StartOptions {
@@ -67,6 +87,11 @@ export interface StartOptions {
   /** The schedule this run is for. It stays in `windowId` and doesn't follow other tabs. */
   scheduleId?: string;
   windowId?: number;
+  /**
+   * Started from a link in an exported file (1.2): the tab goes to the exact start page first,
+   * which drops the link's marker and restores the site's own fragment.
+   */
+  fromLink?: boolean;
 }
 
 /** Pause between Run for me steps, and how long the cursor takes to travel. */
@@ -102,7 +127,16 @@ export function frameFor(frames: FrameInfo[], step: Step): number | undefined {
  */
 export class Guidance {
   private state: GuidanceState = { ...GUIDANCE_IDLE };
+  private guide: Guide | undefined;
   private steps: Step[] = [];
+  /** Files this run downloaded, while an attach step is ahead (1.2). */
+  private files: RunAttachments | undefined;
+  /** The run watches Chrome's downloads for files (download access was on at the start). */
+  private watch = false;
+  /** The guided tab's address before the last click (downloads must come from its site). */
+  private site = '';
+  /** Files attached in this run, by the attach step's ID (for run logs). */
+  private readonly attached = new Map<string, RunFileMeta>();
   private values: Record<string, string> = {};
   private run: Run | undefined;
   private confirmed = new Set<number>();
@@ -130,6 +164,7 @@ export class Guidance {
   private set(patch: Partial<GuidanceState>): void {
     this.state = { ...this.state, ...patch };
     if (!patch.reason && 'phase' in patch) delete this.state.reason;
+    if (!patch.file && 'phase' in patch) delete this.state.file;
     // A copy: listeners may read it later, after this session's state has moved on.
     this.deps.broadcast({ ...this.state });
     void this.save();
@@ -144,6 +179,7 @@ export class Guidance {
             run: this.run,
             ...(this.approved.size ? { approved: [...this.approved] } : {}),
             ...(this.ownWindow !== undefined ? { windowId: this.ownWindow } : {}),
+            ...(this.files ? { files: this.files.metas, watch: this.watch } : {}),
           }
         : undefined,
     );
@@ -186,7 +222,10 @@ export class Guidance {
 
     let tabId = msg.tabId;
     const currentUrl = tabId === undefined ? undefined : await this.deps.tabUrl(tabId);
-    if (options.scheduleId && tabId !== undefined) {
+    if (options.fromLink && tabId !== undefined) {
+      await this.deps.navigate(tabId, startUrl);
+      await this.deps.waitLoaded(tabId, PAGE_LOAD_TIMEOUT);
+    } else if (options.scheduleId && tabId !== undefined) {
       // A scheduled run's window was opened on the first page for it: stay in that tab even if
       // the site redirected it (to sign in, say). The first step takes it where it should be.
     } else if (tabId === undefined || !currentUrl || !/^(https?|file):/.test(currentUrl)) {
@@ -196,6 +235,7 @@ export class Guidance {
       tabId = await this.deps.openTab(startUrl, msg.windowId);
     }
 
+    this.guide = guide;
     this.steps = steps;
     this.values = msg.values ?? {};
     this.confirmed = new Set();
@@ -209,6 +249,12 @@ export class Guidance {
       total: steps.length,
       completed: false,
     };
+    // Only a run with an attach step ahead keeps files; Guide Me never does.
+    this.attached.clear();
+    this.files =
+      msg.mode === 'run' ? this.attachments(this.run.id, attachAhead(guide, -1)) : undefined;
+    this.watch = !!this.files && !!(await this.deps.attach?.hasDownloadAccess().catch(() => false));
+    this.site = '';
     this.state = {
       status: 'active',
       mode: msg.mode,
@@ -246,6 +292,9 @@ export class Guidance {
     this.run = undefined;
     this.approved = new Set();
     this.ownWindow = undefined;
+    void this.files?.dispose();
+    this.files = undefined;
+    this.watch = false;
     const ended: Partial<GuidanceState> = completed
       ? { status: 'done', phase: 'finding' }
       : { ...GUIDANCE_IDLE, ...(reason ? { reason } : {}) };
@@ -259,9 +308,12 @@ export class Guidance {
       ? await this.deps.store.getGuide(data.state.guideId)
       : undefined;
     if (!guide) return;
+    this.guide = guide;
     this.steps = guideSteps(guide);
     this.values = data.values;
     this.run = data.run;
+    this.files = data.files ? this.attachments(data.run.id, true, data.files) : undefined;
+    this.watch = !!this.files && !!data.watch;
     this.approved = new Set(data.approved ?? []);
     this.ownWindow = data.windowId;
     this.state = data.state;
@@ -332,7 +384,7 @@ export class Guidance {
     const step = this.step;
     const tabId = this.state.tabId;
     if (!step || tabId === undefined) return;
-    const plan = planStep(step);
+    const plan = this.guide ? planGuideStep(this.guide, step) : ({ kind: 'act' } as const);
 
     if (plan.kind === 'navigate') {
       const url = await this.deps.tabUrl(tabId);
@@ -358,12 +410,19 @@ export class Guidance {
     const needsConfirm =
       step.agent.confirm && !this.confirmed.has(index) && !this.approved.has(step.id);
     if (mode === 'run' && plan.kind === 'act' && !needsConfirm) return this.act(seq, step);
+    if (mode === 'run' && plan.kind === 'attach' && !needsConfirm)
+      return this.attachStep(seq, step, plan.from);
 
     // In Guide Me the person does every step, so secrets and uploads are highlighted like any
     // other; only steps with nothing to point at are "manual".
     const manual =
       plan.kind === 'manual' && (mode === 'run' || !['secret', 'upload'].includes(plan.reason));
-    const phase = mode === 'run' && plan.kind === 'act' ? 'confirm' : manual ? 'manual' : 'showing';
+    const phase =
+      mode === 'run' && (plan.kind === 'act' || plan.kind === 'attach')
+        ? 'confirm'
+        : manual
+          ? 'manual'
+          : 'showing';
     this.set({
       phase: phase === 'showing' ? 'finding' : phase,
       ...(plan.kind === 'manual' ? { reason: plan.reason } : {}),
@@ -371,10 +430,19 @@ export class Guidance {
     if (!step.target) return;
     await this.revealFrame(step);
     const timeoutMs = step.agent.timeoutMs;
+    const hint = plan.kind === 'attach' ? this.sourceHint(plan.from) : undefined;
     const reply = await this.deliver(
       seq,
       step,
-      { type: 'guide-show', step, number: index + 1, total, phase, timeoutMs },
+      {
+        type: 'guide-show',
+        step,
+        number: index + 1,
+        total,
+        phase,
+        timeoutMs,
+        ...(hint ? { hint } : {}),
+      },
       ShowReplySchema,
       timeoutMs + 5000,
     );
@@ -387,6 +455,16 @@ export class Guidance {
     await this.revealFrame(step);
     const timeoutMs = step.agent.timeoutMs;
     const value = valueFor(step, this.values);
+    // A later step attaches a download: this click's download (if any) belongs to the run.
+    const files =
+      this.files && this.guide && attachAhead(this.guide, this.state.index)
+        ? this.files
+        : undefined;
+    if (files) {
+      const tabId = this.state.tabId;
+      this.site = (tabId !== undefined ? await this.deps.tabUrl(tabId) : undefined) ?? '';
+      files.noteClick(step.id);
+    }
     const reply = await this.deliver(
       seq,
       step,
@@ -396,11 +474,18 @@ export class Guidance {
         ...(value !== undefined ? { value } : {}),
         speed: this.state.speed,
         timeoutMs,
+        ...(files ? { grab: { fetchLink: !this.watch } } : {}),
       },
       RunReplySchema,
       timeoutMs + 5000,
     );
     if (seq !== this.seq) return;
+    if (files && reply?.file) {
+      const { name, type, data } = reply.file;
+      const blob = new Blob([base64ToBytes(data)], { type });
+      await files.keep(step.id, blob, name, hostOf(this.site) || undefined);
+      void this.save();
+    } else if (files && reply?.tooBig) files.tooBig(step.id, reply.tooBig.name);
     if (reply?.result === 'acted') return this.afterAct(seq);
     if (reply?.result === 'cannot') {
       // Page events could not do it (e.g. a missing option): the person does this one.
@@ -421,6 +506,163 @@ export class Guidance {
     if (await this.signInStop(seq, step)) return;
     if (seq !== this.seq) return;
     this.set({ phase: 'failed', reason: 'not-found' });
+  }
+
+  // ---------- Attaching downloaded files (1.2) ----------
+
+  private attachments(
+    runId: string,
+    wanted: boolean,
+    files: readonly RunFileMeta[] = [],
+  ): RunAttachments | undefined {
+    const deps = this.deps.attach;
+    if (!wanted || !deps) return undefined;
+    return new RunAttachments(runId, { ...deps, now: () => Date.now() }, () => this.site, files);
+  }
+
+  /** The file attached at a step of the latest run, for its run log (never the contents). */
+  attachedFile(stepId: string): RunStepLog['file'] {
+    const meta = this.attached.get(stepId);
+    if (!meta) return undefined;
+    const step = this.guide ? stepNumbers(this.guide).get(meta.stepId) : undefined;
+    return {
+      name: meta.name,
+      size: meta.size,
+      ...(meta.from ? { from: meta.from } : {}),
+      ...(step ? { step } : {}),
+    };
+  }
+
+  /** `downloads.onCreated` (only while a run with download access has an attach step ahead). */
+  downloadCreated(item: DownloadInfo): void {
+    if (!this.isActive || !this.watch || !this.files) return;
+    if (this.files.downloadCreated(item)) void this.save();
+  }
+
+  /** `downloads.onChanged`: a download finished or failed. */
+  downloadEnded(item: DownloadInfo): void {
+    if (!this.isActive || !this.watch || !this.files) return;
+    void this.files.downloadEnded(item).then(() => this.save());
+  }
+
+  /** The step number an attach source names (undefined for the latest download). */
+  private sourceNumber(from: AttachSource): number | undefined {
+    if (from.download === 'latest' || !this.guide) return undefined;
+    return stepNumbers(this.guide).get(from.download);
+  }
+
+  /** Guide Me's tooltip line for an attach step: which download to choose. */
+  private sourceHint(from: AttachSource): FileHint {
+    const step = this.sourceNumber(from);
+    return step ? { step } : {};
+  }
+
+  /** The file's name (or the one recorded) and the step it came from, for messages. */
+  private hintFor(step: Step, from: AttachSource, found: FileLookup): FileHint {
+    const name =
+      found.kind === 'ready'
+        ? found.meta.name
+        : 'name' in found && found.name
+          ? found.name
+          : step.input?.value;
+    const sourceId = found.kind === 'ready' ? found.meta.stepId : found.stepId;
+    const number =
+      (sourceId && this.guide ? stepNumbers(this.guide).get(sourceId) : undefined) ??
+      this.sourceNumber(from);
+    return { ...(name ? { name } : {}), ...(number ? { step: number } : {}) };
+  }
+
+  /**
+   * Run for me at an attach step: put the file the run downloaded into the field. While it is
+   * still downloading, wait (up to the step's timeout); without it, stop for the person.
+   */
+  private async attachStep(seq: number, step: Step, from: AttachSource): Promise<void> {
+    const timeoutMs = step.agent.timeoutMs;
+    const index = this.state.index;
+    const look = (): FileLookup => this.files?.lookup(from, this.steps, index) ?? { kind: 'none' };
+    let found = look();
+    if (found.kind === 'pending') {
+      this.set({ phase: 'acting', reason: 'file-wait', file: this.hintFor(step, from, found) });
+      const deadline = Date.now() + timeoutMs;
+      while (found.kind === 'pending' && Date.now() < deadline && seq === this.seq) {
+        await this.deps.sleep(RETRY_MS);
+        found = look();
+      }
+      if (seq !== this.seq) return;
+    }
+    const hint = this.hintFor(step, from, found);
+    const blob = found.kind === 'ready' ? await this.files?.blob(found.meta) : undefined;
+    if (seq !== this.seq) return;
+    if (found.kind !== 'ready' || !blob) {
+      const reason =
+        found.kind === 'problem'
+          ? `file-${found.problem}`
+          : found.kind === 'pending'
+            ? 'file-slow'
+            : this.watch &&
+                !(found.kind === 'none' && found.stepId && this.files?.sawDownload(found.stepId))
+              ? 'file-none'
+              : 'file-missing';
+      return this.stopForPerson(seq, step, reason, hint);
+    }
+    this.set({ phase: 'acting', file: hint });
+    await this.revealFrame(step);
+    const reply = await this.deliver(
+      seq,
+      step,
+      {
+        type: 'guide-run',
+        step,
+        speed: this.state.speed,
+        timeoutMs,
+        attach: { name: found.meta.name, type: found.meta.type, data: await blobToBase64(blob) },
+      },
+      RunReplySchema,
+      timeoutMs + 5000,
+    );
+    if (seq !== this.seq) return;
+    if (reply?.result === 'acted') {
+      this.attached.set(step.id, found.meta);
+      return this.afterAct(seq);
+    }
+    if (reply?.result === 'cannot')
+      return this.stopForPerson(
+        seq,
+        step,
+        reply.reason === 'file-type' ? 'file-type' : 'cannot',
+        hint,
+      );
+    if (await this.signInStop(seq, step)) return;
+    if (seq !== this.seq) return;
+    this.set({ phase: 'failed', reason: 'not-found' });
+  }
+
+  /** Run for me stops at a step for the person, saying why, and highlights it if it can. */
+  private async stopForPerson(
+    seq: number,
+    step: Step,
+    reason: string,
+    file?: FileHint,
+  ): Promise<void> {
+    this.set({ phase: 'manual', reason, ...(file ? { file } : {}) });
+    if (!step.target) return;
+    const { index, total } = this.state;
+    await this.revealFrame(step);
+    void this.deliver(
+      seq,
+      step,
+      {
+        type: 'guide-show',
+        step,
+        number: index + 1,
+        total,
+        phase: 'manual',
+        timeoutMs: step.agent.timeoutMs,
+        ...(file ? { hint: file } : {}),
+      },
+      ShowReplySchema,
+      step.agent.timeoutMs,
+    );
   }
 
   /**

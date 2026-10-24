@@ -1,7 +1,7 @@
 {
   "name": "showsteps",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Local-first how-to guide recorder",
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",

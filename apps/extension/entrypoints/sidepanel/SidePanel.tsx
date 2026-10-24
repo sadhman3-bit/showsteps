@@ -1,3 +1,4 @@
+import { GuideActions, useStartGuide } from './StartGuide';
 import { stepNumbers, toPlainText, type Guide, type GuideSummary } from '@showsteps/core';
 import {
   Button,
@@ -73,6 +74,7 @@ function Idle({
   const [busy, setBusy] = useState(false);
   const [more, setMore] = useState<CaptureMore>();
   const [recent, setRecent] = useState<GuideSummary[]>([]);
+  const starter = useStartGuide();
   const [shortcut, setShortcut] = useState('Alt+Shift+R');
 
   useEffect(() => {
@@ -197,19 +199,36 @@ function Idle({
         {recent.length ? (
           <ul class="ss-guidelist">
             {recent.map((g) => (
-              <li key={g.id}>
-                <button type="button" class="ss-guidelist__title" onClick={() => openLibrary(g.id)}>
-                  {g.title}
-                </button>
-                <span class="ss-muted">
-                  {strings.library.steps(g.stepCount)} · {relativeTime(g.updatedAt)}
+              <li key={g.id} class="ss-guidelist__row">
+                <span class="ss-guidelist__text">
+                  <button
+                    type="button"
+                    class="ss-guidelist__title"
+                    onClick={() => openLibrary(g.id)}
+                  >
+                    {g.title}
+                  </button>
+                  <span class="ss-muted">
+                    {strings.library.steps(g.stepCount)} · {relativeTime(g.updatedAt)}
+                  </span>
                 </span>
+                <GuideActions
+                  guide={g}
+                  onGuideMe={() => starter.guideMe(g.id)}
+                  onRunForMe={() => starter.runForMe(g.id)}
+                />
               </li>
             ))}
           </ul>
         ) : (
           <p class="ss-muted">{s.noGuides}</p>
         )}
+        {starter.error ? (
+          <p class="ss-error" role="alert">
+            {starter.error}
+          </p>
+        ) : null}
+        {starter.runDialog}
         <Button onClick={() => openLibrary()}>
           <Icon name="library" /> {s.openLibrary}
         </Button>

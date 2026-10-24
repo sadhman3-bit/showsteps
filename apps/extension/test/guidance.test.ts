@@ -265,3 +265,35 @@ describe('Run for me', () => {
     expect(t.g.current.scheduleId).toBeUndefined();
   });
 });
+
+describe('attach steps (1.2)', () => {
+  const download = step('Click Download PDF');
+  const upload = (from: string) =>
+    step('Upload report.pdf', {
+      action: 'upload',
+      input: { mode: 'fixed', value: 'report.pdf', sensitive: false, from: { download: from } },
+    });
+
+  it('Guide Me says which download to choose', async () => {
+    const t = await setup([download, upload(download.id)]);
+    await t.g.start({ type: 'guide-start', guideId: t.guide.id, mode: 'guide', tabId: 1 });
+    await t.settle();
+    await t.g.control('next');
+    await t.settle();
+    expect(t.shown().at(-1)).toMatchObject({ phase: 'showing', hint: { step: 1 } });
+  });
+
+  it('Run for me stops at an attach step with nothing to attach, saying so', async () => {
+    const t = await setup([download, upload('latest')]);
+    await t.g.start({ type: 'guide-start', guideId: t.guide.id, mode: 'run', tabId: 1 });
+    await t.settle();
+    // No file store in these deps: the run keeps nothing, so the step is the person's.
+    expect(t.g.current).toMatchObject({
+      index: 1,
+      phase: 'manual',
+      reason: 'file-missing',
+      file: { name: 'report.pdf' },
+    });
+    expect(t.shown().at(-1)).toMatchObject({ phase: 'manual', hint: { name: 'report.pdf' } });
+  });
+});

@@ -593,3 +593,25 @@
     transition: none;
   }
 }
+
+/* Guide Me and Run for me in the side panel's lists (1.2) */
+.ss-guidelist__row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--ss-space-2);
+}
+
+.ss-guidelist__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ss-guidelist__actions,
+.ss-discover__actions {
+  display: flex;
+  flex: none;
+  gap: var(--ss-space-1);
+}

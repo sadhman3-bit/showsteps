@@ -836,3 +836,10 @@ kbd,
   font: var(--ss-text-caption);
   white-space: normal;
 }
+
+/* Dialogs in narrow places (the side panel): less padding, full width (1.2). */
+@media (max-width: 480px) {
+  .ss-dialog {
+    padding: var(--ss-space-4);
+  }
+}

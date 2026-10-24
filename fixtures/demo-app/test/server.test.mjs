@@ -93,4 +93,26 @@ describe('demo app server', () => {
     const res = await get('/..%2f..%2fpackage.json');
     expect([400, 404]).toContain(res.status);
   });
+
+  it('serves downloads for the Exports page, and the sign-in page when signed out', async () => {
+    const pdf = await get('/files/report.pdf?kb=64');
+    expect(pdf.headers.get('content-type')).toBe('application/pdf');
+    const bytes = new Uint8Array(await pdf.arrayBuffer());
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
+    expect(bytes.length).toBe(64 * 1024);
+    const post = await fetch(app.url + '/api/export', { method: 'POST' });
+    expect(post.headers.get('content-disposition')).toBe('attachment; filename="statement.pdf"');
+    const out = await get('/files/report.pdf', app.url);
+    expect(out.status).toBe(200);
+    const signedOut = await fetch(app.url + '/files/report.pdf', {
+      headers: { cookie: 'demo_session=expired' },
+    });
+    expect(signedOut.headers.get('content-type')).toContain('text/html');
+  });
+
+  it('has an Exports page and a Send page with a hidden file field', async () => {
+    expect(await (await get('/exports.html')).text()).toContain('download="invoices.csv"');
+    const send = await (await get('/send.html')).text();
+    expect(send).toContain('type="file" accept=".pdf,.csv" aria-label="Attachment" hidden');
+  });
 });

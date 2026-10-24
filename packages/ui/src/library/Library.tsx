@@ -52,6 +52,10 @@ export interface LibraryProps {
   schedulesAttention?: boolean;
   /** Set when a guide's Run for me runs (S3); offered on each card. */
   onSchedule?: (guideId: string) => void;
+  /** Start Guide Me from a card (1.2). Called inside the click, so permissions can be asked. */
+  onGuideMe?: (guideId: string) => void;
+  /** Open Run for me's dialog for a guide (1.2). */
+  onRunForMe?: (guideId: string) => void;
 }
 
 type Modal =
@@ -76,6 +80,8 @@ export function Library({
   onSchedules,
   schedulesAttention,
   onSchedule,
+  onGuideMe,
+  onRunForMe,
 }: LibraryProps) {
   const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -395,8 +401,17 @@ export function Library({
               trash={inTrash}
               onOpen={() => onOpen(g.id)}
               {...(onSchedule ? { schedulable: g.apps.some((a) => a.kind === 'web') } : {})}
+              {...(onGuideMe && onRunForMe
+                ? { runnable: g.apps.some((a) => a.kind === 'web') }
+                : {})}
               onAction={(action) => {
                 switch (action) {
+                  case 'guide-me':
+                    onGuideMe?.(g.id);
+                    break;
+                  case 'run-for-me':
+                    onRunForMe?.(g.id);
+                    break;
                   case 'schedule':
                     onSchedule?.(g.id);
                     break;
@@ -514,7 +529,24 @@ export function Library({
 }
 
 type CardAction =
-  'rename' | 'tags' | 'move' | 'duplicate' | 'export' | 'schedule' | 'trash' | 'restore' | 'purge';
+  | 'guide-me'
+  | 'run-for-me'
+  | 'rename'
+  | 'tags'
+  | 'move'
+  | 'duplicate'
+  | 'export'
+  | 'schedule'
+  | 'trash'
+  | 'restore'
+  | 'purge';
+
+/** Actions that need a browser step: unavailable (with the reason) for desktop-only guides. */
+const WEB_ONLY: Partial<Record<CardAction, 'runnable' | 'schedulable'>> = {
+  'guide-me': 'runnable',
+  'run-for-me': 'runnable',
+  schedule: 'schedulable',
+};
 
 function GuideCard(props: {
   store: GuideStore;
@@ -523,6 +555,8 @@ function GuideCard(props: {
   trash: boolean;
   /** Offer Schedule; false shows it disabled (no browser steps). */
   schedulable?: boolean;
+  /** Offer Guide Me and Run for me; false shows them disabled (no browser steps). */
+  runnable?: boolean;
   onOpen: () => void;
   onAction: (a: CardAction) => void;
 }) {
@@ -539,6 +573,12 @@ function GuideCard(props: {
         ['purge', s.deleteForever],
       ]
     : [
+        ...(props.runnable === undefined
+          ? []
+          : ([
+              ['guide-me', strings.guidance.guideMe],
+              ['run-for-me', strings.guidance.runForMe],
+            ] as [CardAction, string][])),
         ['rename', s.rename],
         ['tags', s.tags],
         ['move', s.moveTo],
@@ -582,32 +622,64 @@ function GuideCard(props: {
             ))}
           </span>
         ) : null}
+        {props.runnable !== undefined && !trash ? (
+          <span class="ss-card__run">
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={!props.runnable}
+              aria-label={strings.guidance.guideMeFor(g.title)}
+              title={props.runnable ? strings.guidance.guideMeHint : strings.guidance.noWebSteps}
+              onClick={() => props.onAction('guide-me')}
+            >
+              <Icon name="trail" size={16} /> {strings.guidance.guideMe}
+            </Button>
+            <Button
+              size="sm"
+              disabled={!props.runnable}
+              aria-label={strings.guidance.runForMeFor(g.title)}
+              title={props.runnable ? strings.guidance.runForMeHint : strings.guidance.noWebSteps}
+              onClick={() => props.onAction('run-for-me')}
+            >
+              <Icon name="play" size={16} /> {strings.guidance.runForMe}
+            </Button>
+          </span>
+        ) : null}
       </div>
       <details class="ss-menu">
         <summary aria-label={`${s.actions}: ${g.title}`}>
           <Icon name="more" />
         </summary>
         <ul role="menu">
-          {items.map(([action, label]) => (
-            <li key={action} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                disabled={action === 'schedule' && !props.schedulable}
-                {...(action === 'schedule' && !props.schedulable
-                  ? { title: strings.schedules.needsWebStep }
-                  : {})}
-                onClick={(e) => {
-                  (
-                    e.currentTarget.closest('details') as HTMLDetailsElement | null
-                  )?.removeAttribute('open');
-                  props.onAction(action);
-                }}
-              >
-                {label}
-              </button>
-            </li>
-          ))}
+          {items.map(([action, label]) => {
+            const needs = WEB_ONLY[action];
+            const off = !!needs && !props[needs];
+            return (
+              <li key={action} role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={off}
+                  {...(off
+                    ? {
+                        title:
+                          action === 'schedule'
+                            ? strings.schedules.needsWebStep
+                            : strings.guidance.noWebSteps,
+                      }
+                    : {})}
+                  onClick={(e) => {
+                    (
+                      e.currentTarget.closest('details') as HTMLDetailsElement | null
+                    )?.removeAttribute('open');
+                    props.onAction(action);
+                  }}
+                >
+                  {label}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </details>
     </li>
