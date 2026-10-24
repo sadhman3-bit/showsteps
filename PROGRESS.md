@@ -241,3 +241,9 @@ Fixes found while testing:
 ### Deferred (1.2)
 
 - **A start link opened in the first moments after ShowSteps starts in a brand-new profile** sometimes opens no window (seen only under parallel e2e load, right after the extension is installed in a new test profile: the worker never receives that navigation event; later links in the same profile work). `e2e/start-links.spec.ts` waits until ShowSteps has started before the first link. Worth checking by hand: click a link right after starting Chrome (part of MT-R-3).
+
+## Security (H)
+
+Plan: `SECURITY_PLAN.md` (H0 to H9). 1.2.0 was already released, so this work is branch `security` from `main`, merged back to `main` as version 1.2.1.
+
+- [x] H0: branch `security` from `main` at `e6794a0`; baseline is the R9 gate on that commit (lint and typecheck clean; unit 359: core 239, ui 31, desktop 21, extension 55, demo 13; build OK; e2e 68; `pnpm e2e:desktop` 6/6). `pnpm audit --prod`: 4 vulnerabilities (1 low, 2 high, 1 critical) in dompurify, zod and electron, fixed in H8
