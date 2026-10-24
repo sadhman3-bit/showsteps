@@ -2,6 +2,7 @@ import { iconSvg } from '@showsteps/ui/icons';
 import { strings } from '@showsteps/ui/strings';
 import { CHROME_BASE_CSS } from './chromeStyle';
 import type { CaptureState, ControlAction } from '../messages';
+import { trusted } from './trusted';
 
 const s = strings.capture;
 
@@ -106,7 +107,10 @@ export class Controller {
       this.els[el.dataset.el ?? ''] = el;
     }
     this.root.append(style, this.bar);
-    this.bar.addEventListener('click', (e) => this.onClick(e));
+    this.bar.addEventListener(
+      'click',
+      trusted((e) => this.onClick(e)),
+    );
     this.enableDrag();
   }
 
@@ -123,23 +127,26 @@ export class Controller {
   private enableDrag() {
     const grip = this.bar.querySelector<HTMLElement>('.grip');
     if (!grip) return;
-    grip.addEventListener('pointerdown', (down) => {
-      down.preventDefault();
-      grip.setPointerCapture(down.pointerId);
-      const start = this.host.getBoundingClientRect();
-      const move = (e: PointerEvent) => {
-        const right = Math.max(0, innerWidth - (start.right + e.clientX - down.clientX));
-        const bottom = Math.max(0, innerHeight - (start.bottom + e.clientY - down.clientY));
-        this.host.style.right = `${Math.min(right, innerWidth - 40)}px`;
-        this.host.style.bottom = `${Math.min(bottom, innerHeight - 40)}px`;
-      };
-      const up = () => {
-        grip.removeEventListener('pointermove', move);
-        grip.removeEventListener('pointerup', up);
-      };
-      grip.addEventListener('pointermove', move);
-      grip.addEventListener('pointerup', up);
-    });
+    grip.addEventListener(
+      'pointerdown',
+      trusted((down: PointerEvent) => {
+        down.preventDefault();
+        grip.setPointerCapture(down.pointerId);
+        const start = this.host.getBoundingClientRect();
+        const move = (e: PointerEvent) => {
+          const right = Math.max(0, innerWidth - (start.right + e.clientX - down.clientX));
+          const bottom = Math.max(0, innerHeight - (start.bottom + e.clientY - down.clientY));
+          this.host.style.right = `${Math.min(right, innerWidth - 40)}px`;
+          this.host.style.bottom = `${Math.min(bottom, innerHeight - 40)}px`;
+        };
+        const up = () => {
+          grip.removeEventListener('pointermove', move);
+          grip.removeEventListener('pointerup', up);
+        };
+        grip.addEventListener('pointermove', move);
+        grip.addEventListener('pointerup', up);
+      }),
+    );
   }
 
   /**
