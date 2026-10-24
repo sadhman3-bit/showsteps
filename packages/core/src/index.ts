@@ -74,7 +74,7 @@ export {
   type ElementKey,
   type ShotInfo,
 } from './capture/session.js';
-export { isSensitiveField, isTextEntry } from './dom/sensitive.js';
+export { hasSecretName, isSensitiveField, isTextEntry } from './dom/sensitive.js';
 export { collectPageText, type CollectOptions } from './dom/text.js';
 export { pageState, expectationsFrom, type PageState } from './dom/observe.js';
 export {

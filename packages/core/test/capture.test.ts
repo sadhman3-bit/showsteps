@@ -9,7 +9,7 @@ import {
   importGuideArchive,
 } from '../src/archive.js';
 import { CaptureSession, attachScreenshot, type CaptureEvent } from '../src/capture/session.js';
-import { isSensitiveField, isTextEntry } from '../src/dom/sensitive.js';
+import { hasSecretName, isSensitiveField, isTextEntry } from '../src/dom/sensitive.js';
 import { createGuide, createHeading, createStep } from '../src/factory.js';
 import { actionBoxFor, autoCrop, clampRect, fitWidth } from '../src/geometry.js';
 import { GuideFormatError, serializeGuide } from '../src/migrations.js';
@@ -292,6 +292,38 @@ describe('field detection', () => {
     expect(isSensitiveField(make('<select autocomplete="cc-exp-month"></select>'))).toBe(true);
     expect(isSensitiveField(make('<input autocomplete="username">'))).toBe(false);
     expect(isSensitiveField(make('<button>Password</button>'))).toBe(false);
+  });
+
+  it('flags inputs whose name, id, label or placeholder names a secret (H6)', () => {
+    const secret = [
+      '<input name="pin">',
+      '<input id="passcode">',
+      '<input aria-label="CVV">',
+      '<input placeholder="Security code">',
+      '<input name="oneTimeCode">',
+      '<input name="otp">',
+      '<input name="tfn">',
+      '<input placeholder="Tax file number">',
+      '<input name="bsb">',
+      '<input aria-label="Account number">',
+      '<input aria-label="Card number">',
+      '<label>Your PIN <input name="x"></label>',
+    ];
+    for (const html of secret) {
+      const el = make(html);
+      const input = el.localName === 'input' ? el : el.querySelector('input')!;
+      expect(isSensitiveField(input), html).toBe(true);
+      expect(hasSecretName(input), html).toBe(true);
+    }
+    const plain = [
+      '<input name="username">',
+      '<input name="spinner">',
+      '<input aria-label="Pinned notes">',
+      '<input placeholder="Supplier">',
+      '<button aria-label="Pin to top">Pin to top</button>',
+      '<textarea name="pin"></textarea>',
+    ];
+    for (const html of plain) expect(hasSecretName(make(html)), html).toBe(false);
   });
 
   it('knows which elements take typing', () => {

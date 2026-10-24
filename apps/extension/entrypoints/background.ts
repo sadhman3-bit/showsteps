@@ -711,11 +711,12 @@ export default defineBackground(() => {
             msg.event,
             msg.shotId,
             msg.observeId,
+            msg.byPage ?? false,
           )
           .catch((error: unknown) => console.error('ShowSteps: could not record step', error));
         return { ok: true };
       case 'shot-words':
-        if (frameId === 0) recorder.shotWords(msg.shotId, msg.words);
+        if (frameId === 0) recorder.shotWords(msg.shotId, msg.words, msg.secrets);
         return { ok: true };
       case 'observe-top':
         browser.tabs

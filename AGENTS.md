@@ -19,7 +19,7 @@ Always run Playwright through `scripts/playwright.mjs` (the scripts above do). `
 ## Rules that keep the product safe
 
 - Local-first: no accounts, servers, telemetry or remote fonts and scripts. Optional AI is on-device and off by default.
-- Never capture secrets: password fields and inputs with `autocomplete` values such as `current-password`, `new-password`, `one-time-code` or `cc-*` are never stored.
+- Never capture secrets: password fields, inputs with `autocomplete` values such as `current-password`, `new-password`, `one-time-code` or `cc-*`, and inputs whose name, id, `aria-label`, label or placeholder names a secret (`isSensitiveField`: password, PIN, passcode, one-time code, OTP, CVV/CVC, security code, card number, TFN, tax file, BSB, account number) are never stored. A field seen as secret at any time during a capture stays secret (a Show password button doesn't change that), its value never reaches page text, and a secret field on screen gets a blur in the picture.
 - Strict content security policy: no `eval` or `new Function`. Guide HTML is sanitised with DOMPurify before rendering.
 - Every colour comes from `packages/ui/src/tokens.css` (mirrored in `packages/core/src/tokens.ts`); every interface string comes from `packages/ui/src/strings.ts`. Tests fail on hard-coded colours.
 - `packages/core` never touches DOM globals.

@@ -145,6 +145,10 @@ export const strings = {
     guideDescription: 'Description',
     guideDescriptionPlaceholder: 'What this guide helps someone do',
     stepTitle: (n: number) => `Step ${n} title`,
+    /** H6: a step made from an event the page's script raised. */
+    byPage: 'This step came from the page, not from you.',
+    byPageDelete: 'Delete',
+    byPageKeep: 'Keep',
     stepDescription: (n: number) => `Step ${n} description`,
     descriptionPlaceholder: 'Add more detail (optional)',
     altText: 'Alt text',

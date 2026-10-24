@@ -16,6 +16,7 @@ import {
   type GuideStore,
   type InputMode,
   type PageText,
+  type Rect,
   type ShotInfo,
   type Step,
 } from '@showsteps/core';
@@ -111,7 +112,7 @@ export class Recorder {
   private lastShot: (ShotInfo & { stepId: string }) | undefined;
   private readonly pending = new Map<string, { shot: Promise<PendingShot>; at: number }>();
   /** Word positions sent with a picture request (shot id → words), for Secure Blur. */
-  private readonly wordsByShot = new Map<string, PageText>();
+  private readonly wordsByShot = new Map<string, { words: PageText; secrets?: Rect[] }>();
   /** Pictures saved before their word positions arrived (shot id → picture). */
   private readonly awaitingWords = new Map<
     string,
@@ -430,16 +431,26 @@ export class Recorder {
     });
   }
 
-  event(sender: EventSender, ev: ContentEvent, shotId?: string, observeId?: string): Promise<void> {
+  event(
+    sender: EventSender,
+    ev: ContentEvent,
+    shotId?: string,
+    observeId?: string,
+    byPage = false,
+  ): Promise<void> {
     return this.serial(async () => {
       if (this.state.status !== 'recording') return;
       const entry = shotId ? await this.pendingShot(shotId) : undefined;
       if (shotId) this.pending.delete(shotId);
       const taken = entry ? await entry.shot : undefined;
-      const words = shotId ? this.wordsByShot.get(shotId) : undefined;
+      const seen = shotId ? this.wordsByShot.get(shotId) : undefined;
+      const words = seen?.words;
       if (shotId) this.wordsByShot.delete(shotId);
-      const shot = taken?.kind === 'captured' && words ? { ...taken, words } : taken;
-      const step = await this.applyContentEvent(sender, ev, shot);
+      const shot =
+        taken?.kind === 'captured' && seen
+          ? { ...taken, words: seen.words, ...(seen.secrets ? { secrets: seen.secrets } : {}) }
+          : taken;
+      const step = await this.applyContentEvent(sender, ev, shot, byPage);
       if (this.replacing && step) this.finishReplaceSoon();
       // Word positions still on their way (a busy machine): saved when they arrive.
       const picture = step?.human.screenshot;
@@ -477,7 +488,7 @@ export class Recorder {
   }
 
   /** The words on screen when a picture was asked for (top frame). */
-  shotWords(shotId: string, words: PageText): void {
+  shotWords(shotId: string, words: PageText, secrets?: Rect[]): void {
     if (this.state.status !== 'recording') return;
     const late = this.awaitingWords.get(shotId);
     if (late) {
@@ -490,10 +501,16 @@ export class Recorder {
           wordsFileFor(late.file),
           serializePageText(page),
         );
+        const step = this.session?.steps.find((s) => s.human.screenshot?.file === late.file);
+        if (step && secrets?.length) {
+          blurSecrets(step, secrets, late.scale);
+          await this.save();
+          this.publish();
+        }
       });
       return;
     }
-    this.wordsByShot.set(shotId, words);
+    this.wordsByShot.set(shotId, { words, ...(secrets?.length ? { secrets } : {}) });
     // Never more than a handful are waiting; drop the oldest beyond that.
     if (this.wordsByShot.size > 20) {
       const oldest = this.wordsByShot.keys().next().value;
@@ -556,6 +573,7 @@ export class Recorder {
     sender: EventSender,
     ev: ContentEvent,
     shot: PendingShot | undefined,
+    byPage = false,
   ): Promise<Step | undefined> {
     const mapped = await this.mapToTop(sender, ev);
     if (!mapped) return undefined;
@@ -564,7 +582,13 @@ export class Recorder {
       sender.tabTitle,
       sender.frameId !== 0 ? sender.frameUrl : undefined,
     );
-    const captureEvent = { ...mapped, app, at: nowIso(), tabId: sender.tabId } as CaptureEvent;
+    const captureEvent = {
+      ...mapped,
+      app,
+      at: nowIso(),
+      tabId: sender.tabId,
+      ...(byPage ? { byPage: true } : {}),
+    } as CaptureEvent;
     return this.applyEvent(captureEvent, shot);
   }
 
@@ -683,6 +707,7 @@ export class Recorder {
       };
       attachScreenshot(step, info, this.maxZoom);
       this.lastShot = { ...info, stepId: step.id };
+      if (shot.secrets?.length) blurSecrets(step, shot.secrets, scale);
       if (shot.words) {
         const words = scalePageText(shot.words, scale, encoded.width, encoded.height);
         await this.deps.store.putImage(this.guide.id, wordsFileFor(name), serializePageText(words));
@@ -690,6 +715,10 @@ export class Recorder {
     } else if (!step.human.screenshot && this.lastShot) {
       const { stepId, ...info } = this.lastShot;
       attachScreenshot(step, { ...info, reusedFromStepId: stepId }, this.maxZoom);
+      // The same picture: the same blurs, so a secret field blurred there stays hidden (H6).
+      const source = this.session?.steps.find((x) => x.id === stepId);
+      if (source && !step.human.blurs.length)
+        step.human.blurs = source.human.blurs.map((r) => ({ ...r }));
     }
   }
 
@@ -806,6 +835,23 @@ export class Recorder {
   /** Guide being recorded, with the session's steps in place (for tests and the side panel). */
   async currentGuide(): Promise<Guide | undefined> {
     return this.guide ? this.deps.store.getGuide(this.guide.id) : undefined;
+  }
+}
+
+/**
+ * H6: blur every secret field that was on screen (CSS pixels × `scale` = picture pixels), so a
+ * revealed password never shows in the picture. The person can remove a blur in the editor.
+ */
+function blurSecrets(step: Step, secrets: readonly Rect[], scale: number): void {
+  const shot = step.human.screenshot;
+  if (!shot) return;
+  const pad = 4;
+  for (const r of secrets) {
+    const x = Math.max(0, Math.round(r.x * scale) - pad);
+    const y = Math.max(0, Math.round(r.y * scale) - pad);
+    const w = Math.min(shot.width - x, Math.round(r.w * scale) + pad * 2);
+    const h = Math.min(shot.height - y, Math.round(r.h * scale) + pad * 2);
+    if (w > 0 && h > 0) step.human.blurs.push({ x, y, w, h });
   }
 }
 

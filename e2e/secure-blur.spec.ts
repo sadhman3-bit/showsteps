@@ -113,7 +113,10 @@ test('Secure Blur finds every planted value on the dashboard and blurs after rev
   await expect
     .poll(async () => {
       const g = await sw.evaluate((id) => __showsteps.store.getGuide(id), guideId);
-      return g.blocks.find((b) => b.kind === 'step' && b.human?.blurs.length)?.human?.blurs.length;
+      // The dashboard step: the sign-in step also has a blur, over its password field (H6).
+      return Math.max(
+        ...g.blocks.map((b) => (b.kind === 'step' ? (b.human?.blurs.length ?? 0) : 0)),
+      );
     })
     .toBe(planted.values.length - 1);
 

@@ -12,6 +12,8 @@ interface Base {
   at: string;
   source?: Step['capture']['source'];
   tabId?: number;
+  /** H6: the page's script raised this event (a value set by script), not the person. */
+  byPage?: boolean;
 }
 
 /** Events produced by a recorder (extension content script or desktop hooks). */
@@ -123,6 +125,7 @@ export class CaptureSession {
         at: ev.at,
         source: ev.source ?? 'extension',
         ...(ev.tabId !== undefined ? { tabId: ev.tabId } : {}),
+        ...(ev.byPage ? { byPage: true } : {}),
       },
     });
   }

@@ -223,6 +223,8 @@ export const StepSchema = z
       at: z.string(),
       tabId: z.number().int().optional(),
       source: z.enum(['extension', 'desktop', 'upload', 'manual']),
+      /** H6: made from an event the page's script raised, not the person's own input. */
+      byPage: z.boolean().optional(),
     }),
   })
   .refine((s) => !(s.input?.sensitive && s.input.value), {

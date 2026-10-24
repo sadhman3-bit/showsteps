@@ -14,6 +14,8 @@ export interface CollectOptions {
   maxWords?: number;
   /** Elements to leave out, such as ShowSteps's own on-page UI. */
   skip?: (el: Element) => boolean;
+  /** H6: fields to treat as secret besides `isSensitiveField` (seen as secret at any time). */
+  sensitive?: (el: Element) => boolean;
 }
 
 /**
@@ -67,7 +69,7 @@ export function collectPageText(doc: Document, options: CollectOptions = {}): Pa
 
   const valueOf = (el: Element) => {
     const tag = tagOf(el);
-    if (!VALUE_TAGS.has(tag) || isSensitiveField(el)) return;
+    if (!VALUE_TAGS.has(tag) || isSensitiveField(el) || options.sensitive?.(el)) return;
     if (tag === 'input' && !VALUE_TYPES.has((el.getAttribute('type') ?? '').toLowerCase())) return;
     const value = (el as HTMLInputElement).value;
     if (!value || !/\S/.test(value)) return;

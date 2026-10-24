@@ -1,4 +1,4 @@
-import { fitWidth, type PageText } from '@showsteps/core';
+import { fitWidth, type PageText, type Rect } from '@showsteps/core';
 
 /** Chrome allows two captureVisibleTab calls per second; keep a small margin. */
 export const MIN_SHOT_INTERVAL_MS = 520;
@@ -30,6 +30,8 @@ export type PendingShot =
       dpr: number;
       /** Words on screen at that moment, in CSS pixels of the viewport (Secure Blur). */
       words?: PageText;
+      /** H6: boxes of secret fields on screen, in CSS pixels; blurred in the picture. */
+      secrets?: Rect[];
       /** Encoding, started as soon as the picture was taken (it takes a second or two). */
       encoded?: Promise<EncodedShot>;
     }
