@@ -68,11 +68,11 @@ To uninstall, use **Settings → Apps** in Windows. It removes the app and the b
 
 ## Where your guides are
 
-| Where                   | Stored in                                                                                                                                                 |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Browser extension       | The browser's own storage, on this computer. Use **Export** in the library to save a `.showsteps` file, or keep guides in the desktop library (Settings). |
-| Desktop app             | `Documents\ShowSteps\Library`, one folder per guide (`guide.json` plus an `img` folder). You can change this in Settings.                                 |
-| Team library (optional) | A folder you share, such as a OneDrive or SharePoint folder: everyone who points ShowSteps at it sees the same guides, and sees who edited them last.     |
+| Where                   | Stored in                                                                                                                                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Browser extension       | The browser's own storage, on this computer. Use **Export** in the library to save a `.showsteps` file to share (blurs and crops are burned in), **Back up** to keep a full copy for yourself, or keep guides in the desktop library (Settings). |
+| Desktop app             | `Documents\ShowSteps\Library`, one folder per guide (`guide.json` plus an `img` folder). You can change this in Settings.                                                                                                                        |
+| Team library (optional) | A folder you share, such as a OneDrive or SharePoint folder: everyone who points ShowSteps at it sees the same guides, and sees who edited them last.                                                                                            |
 
 Settings → **Delete all ShowSteps data** removes everything the extension keeps in the browser.
 

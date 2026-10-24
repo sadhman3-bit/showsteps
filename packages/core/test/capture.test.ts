@@ -316,7 +316,7 @@ describe('.showsteps archives', () => {
 
   it('round-trips a guide with its images into another library', async () => {
     const { store, guide, step } = await seeded();
-    const bytes = await exportGuideArchive(store, guide.id);
+    const bytes = await exportGuideArchive(store, guide.id, { mode: 'backup' });
     expect(ARCHIVE_EXTENSION).toBe('.showsteps');
     // Archives saved before the rename still show in the import picker.
     expect(ARCHIVE_ACCEPT.split(',')).toEqual(['.showsteps', '.trailmark', 'application/zip']);
@@ -329,7 +329,10 @@ describe('.showsteps archives', () => {
 
   it('assigns a new id when importing a guide that already exists', async () => {
     const { store, guide } = await seeded();
-    const result = await importGuideArchive(store, await exportGuideArchive(store, guide.id));
+    const result = await importGuideArchive(
+      store,
+      await exportGuideArchive(store, guide.id, { mode: 'backup' }),
+    );
     expect(result.renamed).toBe(true);
     expect(result.guideId).not.toBe(guide.id);
     expect(await store.listGuides()).toHaveLength(2);

@@ -41,7 +41,12 @@ export { brandStyle, BRAND_FONTS, textOn } from './brand.js';
 export { ImageLayers, blurRadius } from './guide/Screenshot.js';
 export { PrintView } from './guide/PrintView.js';
 export { ShareDialog, fileNameFor, type ShareDialogProps } from './export/ShareDialog.js';
-export { flattenStepImage, prepareExport } from './export/flatten.js';
+export {
+  flattenStepImage,
+  prepareExport,
+  redactStepImage,
+  shareRedactor,
+} from './export/flatten.js';
 export { RunDialog, type RunOptions, type RunSpeed } from './guidance/RunDialog.js';
 export { CommentBox, useComments, type CommentsApi } from './guidance/Comments.js';
 export { Insights } from './guidance/Insights.js';

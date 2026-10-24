@@ -313,3 +313,10 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Not now removes the marker only with site access** (it runs `history.replaceState` in the page); without it the address keeps the marker until the person navigates.
 - **Navigation events keep the fragment:** `webNavigation.onCommitted` and `onReferenceFragmentUpdated` report the address with its `#showsteps=…` marker (checked in `e2e/start-links.spec.ts`, where the window opens only from that marker).
 - **A downloaded file's name without an extension** gets one from its type (`application/pdf` → `.pdf`), because upload fields often check the extension. Found by the desktop e2e test, where Chrome saves downloads under random names.
+
+## Security 1.2.1
+
+- **The security plan ships as 1.2.1:** 1.2.0 was already published when it started, so the work is branch `security` from `main`, a PR back to `main`, release notes `docs/release-notes/1.2.1.md` and `docs/SECURITY_REVIEW_1.2.1.md`; publishing the release and the Web Store update (now 1.2.1) wait for the owner.
+- **Guide files have two modes:** `share` (every Export, the Share dialog and shared-folder saves) burns blurs and crops into the pictures and drops page text, originals and unused pictures; `backup` (library ⋯ Back up, after a confirm) keeps everything.
+- **Burned blurs are a 16-px mosaic, then a blur,** in exports and shared files alike: a plain Gaussian blur over short text can sometimes be reversed.
+- **The desktop app's "copy into my library" is a backup,** because it never leaves the computer and the copy should stay editable (blurs can still be moved).

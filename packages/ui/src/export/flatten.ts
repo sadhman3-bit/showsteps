@@ -9,8 +9,10 @@ import {
   type Guide,
   type GuideStore,
   type Rect,
+  type Redactor,
   type Step,
 } from '@showsteps/core';
+import { encodeImage } from '../editor/imageio.js';
 import type { ExportImage, ExportInput } from '@showsteps/core/export';
 import { ANNOTATION_FONT, strokeFor } from '../components/Annotations.js';
 import { blurRadius } from '../guide/Screenshot.js';
@@ -112,6 +114,35 @@ async function encodePng(canvas: OffscreenCanvas): Promise<Uint8Array> {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
+/** Side of a mosaic block, in screenshot pixels. */
+const MOSAIC = 16;
+
+/**
+ * Burn a blur into the picture: first a 16-px mosaic of the region's own pixels (each block one
+ * average colour), then the blur on top for the usual look. A blur of the original pixels alone
+ * can sometimes be undone for short numbers in a known font; block averages can't.
+ */
+function burnBlur(ctx: Ctx, bitmap: ImageBitmap, W: number, H: number, r: Rect, radius: number) {
+  const sx = bitmap.width / W;
+  const sy = bitmap.height / H;
+  const bw = Math.max(1, Math.ceil(r.w / MOSAIC));
+  const bh = Math.max(1, Math.ceil(r.h / MOSAIC));
+  const small = new OffscreenCanvas(bw, bh);
+  const sctx = small.getContext('2d');
+  if (!sctx) return;
+  sctx.imageSmoothingQuality = 'high';
+  sctx.drawImage(bitmap, r.x * sx, r.y * sy, r.w * sx, r.h * sy, 0, 0, bw, bh);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.clip();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(small, 0, 0, bw, bh, r.x, r.y, bw * MOSAIC, bh * MOSAIC);
+  ctx.filter = `blur(${radius}px)`;
+  ctx.drawImage(small, 0, 0, bw, bh, r.x, r.y, bw * MOSAIC, bh * MOSAIC);
+  ctx.restore();
+}
+
 /**
  * A step's picture as readers see it, burned into pixels: crop when magnified, blurs (so the
  * hidden data is gone from the exported file), the highlight box and annotations.
@@ -137,15 +168,7 @@ export async function flattenStepImage(
     ctx.scale(scale, scale);
     ctx.translate(-view.x, -view.y);
     ctx.drawImage(bitmap, 0, 0, W, H);
-    for (const r of step.human.blurs) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(r.x, r.y, r.w, r.h);
-      ctx.clip();
-      ctx.filter = `blur(${blurRadius(W) * scale}px)`;
-      ctx.drawImage(bitmap, 0, 0, W, H);
-      ctx.restore();
-    }
+    for (const r of step.human.blurs) burnBlur(ctx, bitmap, W, H, r, blurRadius(W) * scale);
     const box = step.human.actionBox;
     if (box) {
       const sw = strokeFor(W);
@@ -178,6 +201,51 @@ export async function flattenStepImage(
     bitmap.close();
   }
 }
+
+/**
+ * A step's stored picture for a shared guide file (H1): the crop and blurs burned in, without the
+ * highlight and annotations (they stay editable in guide.json). Full size, so text stays sharp.
+ */
+export async function redactStepImage(
+  step: Step,
+  source: Blob,
+): Promise<{ png: Blob; view: Rect } | undefined> {
+  const shot = step.human.screenshot;
+  if (!shot) return undefined;
+  const bitmap = await createImageBitmap(source);
+  try {
+    const { width: W, height: H } = shot;
+    const view: Rect = shot.crop && (shot.zoom ?? 1) > 1 ? shot.crop : { x: 0, y: 0, w: W, h: H };
+    const canvas = new OffscreenCanvas(
+      Math.max(1, Math.round(view.w)),
+      Math.max(1, Math.round(view.h)),
+    );
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('2D canvas unavailable');
+    ctx.translate(-view.x, -view.y);
+    ctx.drawImage(bitmap, 0, 0, W, H);
+    for (const r of step.human.blurs) burnBlur(ctx, bitmap, W, H, r, blurRadius(W));
+    return { png: await canvas.convertToBlob({ type: 'image/png' }), view };
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** The redactor `exportGuideArchive` uses for shared files: redacted, then stored like any picture. */
+export const shareRedactor: Redactor = async (step, bytes, name) => {
+  const done = await redactStepImage(step, new Blob([bytes as BlobPart], { type: mimeFor(name) }));
+  if (!done) return undefined;
+  const img = await encodeImage(done.png);
+  return {
+    full: img.full,
+    thumb: img.thumb,
+    ext: img.ext,
+    width: img.width,
+    height: img.height,
+    origin: { x: done.view.x, y: done.view.y },
+    scale: img.width / done.view.w,
+  };
+};
 
 /** Any stored image (the branding logo) re-encoded as PNG, which every export format accepts. */
 async function toPng(source: Blob): Promise<ExportImage> {

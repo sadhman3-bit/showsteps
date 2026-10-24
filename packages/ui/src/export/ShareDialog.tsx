@@ -10,7 +10,7 @@ import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
 import { downloadBytes, safeFileName, usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
-import { prepareExport } from './flatten.js';
+import { prepareExport, shareRedactor } from './flatten.js';
 import { canPickFolder, pickFolder, rememberedFolder, saveFiles } from './folder.js';
 
 const s = strings.share;
@@ -80,7 +80,8 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
   });
 
   async function bytesFor(format: Format): Promise<Uint8Array> {
-    if (format === 'showsteps') return exportGuideArchive(store, guide.id);
+    if (format === 'showsteps')
+      return exportGuideArchive(store, guide.id, { mode: 'share', redact: shareRedactor });
     const [x, data] = await Promise.all([exporters(), input()]);
     switch (format) {
       case 'pdf':

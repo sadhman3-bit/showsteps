@@ -106,6 +106,11 @@ export const strings = {
     duplicate: 'Duplicate',
     copyOf: (title: string) => `Copy of ${title}`,
     export: 'Export (.showsteps)',
+    /** H1: a full copy with everything under the blurs, for the person's own safekeeping. */
+    backup: 'Back up (includes hidden details)',
+    backupConfirm: 'This file includes everything under your blurs. Keep it to yourself.',
+    backupDo: 'Download backup',
+    backupName: (title: string) => `${title} (backup)`,
     moveToTrash: 'Move to Trash',
     restore: 'Restore',
     deleteForever: 'Delete permanently',

@@ -12,6 +12,44 @@ export const RELEASE_MANIFEST = fileURLToPath(
   new URL('../apps/extension/.output/chrome-mv3/manifest.json', import.meta.url),
 );
 
+/**
+ * A fresh Chromium profile with the extension loaded. The `context` fixture is one; tests that
+ * pass a file between two people open a second one.
+ */
+export async function launchProfile(headed = false) {
+  if (!existsSync(join(EXTENSION_PATH, 'manifest.json'))) {
+    throw new Error('The extension is not built. Run `pnpm build` before `pnpm e2e`.');
+  }
+  const userDataDir = mkdtempSync(join(tmpdir(), 'showsteps-e2e-'));
+  const context = await chromium.launchPersistentContext(userDataDir, {
+    channel: 'chromium',
+    headless: !headed,
+    viewport: { width: 1280, height: 800 },
+    args: [
+      `--disable-extensions-except=${EXTENSION_PATH}`,
+      `--load-extension=${EXTENSION_PATH}`,
+      // A headed window covered by another app must keep rendering (desktop tests).
+      ...(headed
+        ? [
+            '--disable-backgrounding-occluded-windows',
+            '--disable-features=CalculateNativeWinOcclusion',
+          ]
+        : []),
+    ],
+  });
+  let [worker] = context.serviceWorkers();
+  worker ??= await context.waitForEvent('serviceworker');
+  return {
+    context,
+    serviceWorker: worker,
+    extensionId: new URL(worker.url()).host,
+    close: async () => {
+      await context.close();
+      rmSync(userDataDir, { recursive: true, force: true });
+    },
+  };
+}
+
 /** Playwright fixtures that launch Chromium with the built, unpacked extension loaded. */
 export const test = base.extend<{
   /** Show a real browser window (desktop tests switch between it and other apps). */
@@ -22,29 +60,9 @@ export const test = base.extend<{
 }>({
   headed: [false, { option: true }],
   context: async ({ headed }, use) => {
-    if (!existsSync(join(EXTENSION_PATH, 'manifest.json'))) {
-      throw new Error('The extension is not built. Run `pnpm build` before `pnpm e2e`.');
-    }
-    const userDataDir = mkdtempSync(join(tmpdir(), 'showsteps-e2e-'));
-    const context = await chromium.launchPersistentContext(userDataDir, {
-      channel: 'chromium',
-      headless: !headed,
-      viewport: { width: 1280, height: 800 },
-      args: [
-        `--disable-extensions-except=${EXTENSION_PATH}`,
-        `--load-extension=${EXTENSION_PATH}`,
-        // A headed window covered by another app must keep rendering (desktop tests).
-        ...(headed
-          ? [
-              '--disable-backgrounding-occluded-windows',
-              '--disable-features=CalculateNativeWinOcclusion',
-            ]
-          : []),
-      ],
-    });
-    await use(context);
-    await context.close();
-    rmSync(userDataDir, { recursive: true, force: true });
+    const profile = await launchProfile(headed);
+    await use(profile.context);
+    await profile.close();
   },
   serviceWorker: async ({ context }, use) => {
     let [worker] = context.serviceWorkers();

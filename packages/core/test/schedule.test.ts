@@ -353,7 +353,7 @@ describe('schedule schema', () => {
     const from = new IndexedDbStore(new IDBFactory());
     await from.saveGuide(g);
     // A file someone tampered with: a schedule inside guide.json and as a file of its own.
-    const files = unzipSync(await exportGuideArchive(from, g.id));
+    const files = unzipSync(await exportGuideArchive(from, g.id, { mode: 'backup' }));
     const raw = JSON.parse(strFromU8(files['guide.json']!)) as Record<string, unknown>;
     files['guide.json'] = strToU8(JSON.stringify({ ...raw, schedules: [s] }));
     files['schedules.json'] = strToU8(JSON.stringify([s]));

@@ -93,7 +93,8 @@ export function App() {
 
   /** L6: a read-only team guide is edited as a personal copy. */
   const copyToMine = async (g: Guide) => {
-    const bytes = await exportGuideArchive(store, g.id);
+    // A copy within this computer, of a guide the team folder already holds as is: a backup copy.
+    const bytes = await exportGuideArchive(store, g.id, { mode: 'backup' });
     const { guideId } = await importGuideArchive(ipcStore('personal'), bytes);
     const mine = ipcStore('personal');
     const copy = await mine.getGuide(guideId);

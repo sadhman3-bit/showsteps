@@ -66,7 +66,7 @@ Text recognition (OCR) runs on your computer with an engine and language data th
 
 ## When data leaves your computer
 
-Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web page, Agent Pack or `.showsteps` file), saving to a shared folder, or opening a link in a guide. Exports contain the guide's text, screenshots and, in `.showsteps` files, the names saved with it.
+Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web page, Agent Pack or `.showsteps` file), saving to a shared folder, or opening a link in a guide. Exports contain the guide's text and screenshots. Blurs and crops are burned into the pictures of every export, including `.showsteps` files, so what was under a blur or outside a crop is not in the file. A `.showsteps` file also leaves out the page text kept for Secure Blur, the pictures from before your edits, and who last edited the guide. **Back up (includes hidden details)** in the library's ⋯ menu is the one exception: it saves everything, including what is under your blurs, so keep backups to yourself.
 
 ## What ShowSteps does not do
 
