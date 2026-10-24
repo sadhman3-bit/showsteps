@@ -569,7 +569,11 @@ export class Guidance {
     const number =
       (sourceId && this.guide ? stepNumbers(this.guide).get(sourceId) : undefined) ??
       this.sourceNumber(from);
-    return { ...(name ? { name } : {}), ...(number ? { step: number } : {}) };
+    const sites =
+      found.kind === 'problem' && found.from && found.site
+        ? { from: found.from, site: found.site }
+        : {};
+    return { ...(name ? { name } : {}), ...(number ? { step: number } : {}), ...sites };
   }
 
   /**

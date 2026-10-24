@@ -32,7 +32,15 @@ export type PauseReason = 'confirm' | 'manual' | 'sign-in' | 'not-found' | 'fail
 
 /** What the person is told (notifications, and the toolbar badge for stops and failures). */
 export type Notice =
-  | { kind: 'paused'; reason: PauseReason; scheduleId: string; name: string; step: number }
+  | {
+      kind: 'paused';
+      reason: PauseReason;
+      scheduleId: string;
+      name: string;
+      step: number;
+      /** A file from another site wasn't attached (H3): its host and the step's. */
+      sites?: { from: string; site: string };
+    }
   | { kind: 'due'; scheduleId: string; name: string }
   | { kind: 'finished'; outcome: RunOutcome; scheduleId: string; name: string; reason?: string }
   | { kind: 'check-failed'; scheduleId: string; name: string; step: number };
@@ -453,6 +461,9 @@ export class Scheduler {
               scheduleId: a.scheduleId,
               name: s?.name ?? g.title ?? '',
               step: g.index + 1,
+              ...(g.reason === 'file-other-site' && g.file?.from && g.file.site
+                ? { sites: { from: g.file.from, site: g.file.site } }
+                : {}),
             });
           }
         } else if (!key && a.pauseKey && g.phase !== 'paused') {

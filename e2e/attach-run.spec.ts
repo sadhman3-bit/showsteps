@@ -1,6 +1,6 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { EXPORTS, SEND, attachGuide, saveGuide } from './attach-helpers';
+import { EXPORTS, EXPORTS_CROSS, SEND, attachGuide, saveGuide } from './attach-helpers';
 
 // 1.2 (R3): Run for me attaches the file an earlier step downloaded, on the demo app's Exports
 // and Send pages (the file field is hidden behind an Attach button, as in webmail).
@@ -10,7 +10,7 @@ type State = {
   phase: string;
   index: number;
   reason?: string;
-  file?: { name?: string; step?: number };
+  file?: { name?: string; step?: number; from?: string; site?: string };
 };
 declare const __showsteps: {
   guidance: { current: State; control(a: string): Promise<State> };
@@ -41,11 +41,12 @@ async function run(
   const { guide } = attachGuide(opts);
   await saveGuide(sw, guide);
   const page = await context.newPage();
-  await page.goto(EXPORTS + (opts.exportsQuery ? `?${opts.exportsQuery}` : ''));
+  const exportsPage = opts.exportsPage ?? EXPORTS;
+  await page.goto(exportsPage + (opts.exportsQuery ? `?${opts.exportsQuery}` : ''));
   await page.bringToFront();
   const tabId = await sw.evaluate(
     async (u) => (await chrome.tabs.query({ url: `${u}*` }))[0]!.id!,
-    EXPORTS,
+    exportsPage,
   );
   await sw.evaluate(
     ({ id, tabId, stepThrough }) =>
@@ -143,6 +144,26 @@ test('a field that doesn’t take the file stops with the reason', async ({
   expect(s.file?.name).toBe('report.pdf');
   await sw.evaluate(() => __showsteps.guidance.control('stop'));
   await expect.poll(() => storedFiles(sw)).toBe(0);
+});
+
+test('a file from another site isn’t attached, even without a referrer (H3)', async ({
+  context,
+  serviceWorker: sw,
+}) => {
+  test.setTimeout(90_000);
+  const { page } = await run(context, sw, {
+    download: 'link',
+    from: 'step',
+    exportsPage: EXPORTS_CROSS,
+  });
+  const s = await stoppedAtAttach(sw, 'file-other-site');
+  expect(s.file).toMatchObject({ from: 'localhost', site: '127.0.0.1', step: 2 });
+  await expect(page).toHaveURL(new RegExp(`^${SEND}`));
+  expect(
+    await page.locator('input[type="file"]').evaluate((i: HTMLInputElement) => i.files?.length),
+  ).toBe(0);
+  expect(await storedFiles(sw)).toBe(0);
+  await sw.evaluate(() => __showsteps.guidance.control('stop'));
 });
 
 test('a file over 25 MB isn’t attached', async ({ context, serviceWorker: sw }) => {

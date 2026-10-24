@@ -15,6 +15,9 @@ export type Speed = z.infer<typeof SpeedSchema>;
 export const FileHintSchema = z.object({
   name: z.string().max(255).optional(),
   step: z.number().int().positive().optional(),
+  /** `file-other-site`: the host the file came from and the step's own (H3). */
+  from: z.string().max(255).optional(),
+  site: z.string().max(255).optional(),
 });
 export type FileHint = z.infer<typeof FileHintSchema>;
 

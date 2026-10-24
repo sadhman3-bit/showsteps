@@ -2,6 +2,10 @@
  * Every user-facing string in ShowSteps lives here, keyed by area, so the UI can be
  * translated later by swapping this object.
  */
+/** Why Run for me didn’t attach another site’s file (H3); the same words in the run and its notice. */
+const fileOtherSite = (from = 'another site', site = 'this site') =>
+  `The file came from another site (${from}) than this step (${site}), so ShowSteps didn’t attach it.`;
+
 export const strings = {
   app: {
     name: 'ShowSteps',
@@ -390,7 +394,10 @@ export const strings = {
     chooseFileNamed: (name: string, step?: number) =>
       `Choose ${name} from your Downloads folder${step ? ` (downloaded in step ${step})` : ''}.`,
     /** Why Run for me waits or stops at an attach step (`file-…` reasons). */
-    fileReason: (reason: string, file: { name?: string; step?: number } = {}): string => {
+    fileReason: (
+      reason: string,
+      file: { name?: string; step?: number; from?: string; site?: string } = {},
+    ): string => {
       const name = file.name ?? 'the file';
       const from = file.step ? ` from step ${file.step}` : '';
       const choose = file.name
@@ -409,6 +416,8 @@ export const strings = {
           return `More than one file was downloaded${from}. ${choose}`;
         case 'file-type':
           return `This field doesn’t take ${name}.`;
+        case 'file-other-site':
+          return fileOtherSite(file.from, file.site);
         default:
           return choose;
       }
@@ -441,6 +450,8 @@ export const strings = {
           `ShowSteps paused ${name}: step ${step} didn’t work`,
         file: (name: string, step: number) =>
           `ShowSteps paused ${name}: step ${step} needs the downloaded file`,
+        'file-other-site': (name: string, step: number, from?: string, site?: string) =>
+          `ShowSteps paused ${name} at step ${step}. ${fileOtherSite(from, site)}`,
       },
       due: (name: string) => `${name} is due. Start now?`,
       finished: {
@@ -584,6 +595,7 @@ export const strings = {
       'file-slow': 'The download took too long',
       'file-big': 'The downloaded file was over 25 MB',
       'file-ambiguous': 'More than one file was downloaded',
+      'file-other-site': 'The file came from another site than the step',
       'file-type': 'The upload field didn’t take the downloaded file',
     } as Record<string, string>,
     /** "Attached invoice.pdf (240 KB), downloaded in step 4" (1.2). */

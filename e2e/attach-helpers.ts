@@ -5,6 +5,8 @@ import type { Worker } from '@playwright/test';
 
 export const EXPORTS = 'http://localhost:5173/exports.html';
 export const SEND = 'http://localhost:5173/send.html';
+/** The same server on 127.0.0.1, so its download link to localhost is another site (H3). */
+export const EXPORTS_CROSS = 'http://127.0.0.1:5173/exports-cross.html';
 
 const box = { bbox: { x: 0, y: 0, w: 120, h: 24 }, point: { x: 60, y: 12 } };
 
@@ -37,12 +39,15 @@ export function attachGuide(
     query?: string;
     /** Added to the Exports page's address (`kb=…` makes the PDF bigger). */
     exportsQuery?: string;
+    /** Another Exports page (`EXPORTS_CROSS`: its link downloads from another site). */
+    exportsPage?: string;
     title?: string;
     file?: string;
   } = {},
 ): { guide: Guide; steps: Step[] } {
   const d = DOWNLOADS[opts.download ?? 'link'];
-  const exportsUrl = EXPORTS + (opts.exportsQuery ? `?${opts.exportsQuery}` : '');
+  const exportsUrl =
+    (opts.exportsPage ?? EXPORTS) + (opts.exportsQuery ? `?${opts.exportsQuery}` : '');
   const exportsApp = { kind: 'web' as const, url: exportsUrl, title: 'Exports · Ledgerline' };
   const sendUrl = SEND + (opts.query ? `?${opts.query}` : '');
   const sendApp = { kind: 'web' as const, url: sendUrl, title: 'Send · Ledgerline' };

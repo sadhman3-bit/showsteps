@@ -234,11 +234,15 @@ export default defineBackground(() => {
   const hasDownloadAccess = () =>
     browser.permissions.contains({ permissions: ['downloads'] }).catch(() => false);
   /**
-   * Fetch a finished download's own address again, with the site's cookies (ShowSteps's site
-   * access makes Chrome send them). Only http(s), only with access to that site, and only when
-   * the size matches and it isn't an HTML page standing in for the file (a sign-in page).
+   * Fetch a finished download's own address again: with the site's cookies for the run's own
+   * site (ShowSteps's site access makes Chrome send them), without for another site's address.
+   * Only http(s), only with access to that site, and only when the size matches and it isn't an
+   * HTML page standing in for the file (a sign-in page).
    */
-  async function refetch(d: DownloadInfo): Promise<Blob | undefined> {
+  async function refetch(
+    d: DownloadInfo,
+    { credentials }: { credentials: 'include' | 'omit' },
+  ): Promise<Blob | undefined> {
     const url = d.finalUrl || d.url;
     let origin: string;
     try {
@@ -250,7 +254,7 @@ export default defineBackground(() => {
     }
     if (!(await browser.permissions.contains({ origins: [`${origin}/*`] }).catch(() => false)))
       return undefined;
-    const res = await fetch(url, { credentials: 'include' });
+    const res = await fetch(url, { credentials });
     if (!res.ok) return undefined;
     if (/text\/html/i.test(res.headers.get('content-type') ?? '') && !htmlAllowed(d))
       return undefined;

@@ -4,15 +4,22 @@ import type { Notice } from './schedules';
 const n = strings.schedules.notify;
 
 /**
- * The words of a scheduled-run notification. Built only from the schedule's name, a step number
- * and fixed text: a notice carries no typed values, so none can show on screen.
+ * The words of a scheduled-run notification. Built only from the schedule's name, a step number,
+ * two site names and fixed text: a notice carries no typed values, so none can show on screen.
  */
 export function noticeText(notice: Notice): { title: string; message: string; buttons: string[] } {
   switch (notice.kind) {
     case 'paused':
       return {
         title: n.title,
-        message: n.paused[notice.reason](notice.name, notice.step),
+        message: notice.sites
+          ? n.paused['file-other-site'](
+              notice.name,
+              notice.step,
+              notice.sites.from,
+              notice.sites.site,
+            )
+          : n.paused[notice.reason](notice.name, notice.step),
         buttons: [n.open],
       };
     case 'due':

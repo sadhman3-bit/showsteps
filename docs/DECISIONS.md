@@ -321,3 +321,4 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Burned blurs are a 16-px mosaic, then a blur,** in exports and shared files alike: a plain Gaussian blur over short text can sometimes be reversed.
 - **The desktop app's "copy into my library" is a backup,** because it never leaves the computer and the copy should stay editable (blurs can still be moved).
 - **Guide text in generated code goes through `q()` (a string literal) or `comment()` (one line),** and a unit test reads `replay.ts` to keep it that way; numbers are the only other values written into the script.
+- **A download belongs to a Run for me run only if its own address is on the run's site;** the referrer is an extra check, never the only one. A redirect to another site is fetched again without cookies.
