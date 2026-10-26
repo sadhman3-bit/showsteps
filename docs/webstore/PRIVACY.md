@@ -1,6 +1,6 @@
 # ShowSteps privacy policy
 
-_Last updated: 24 October 2026_
+_Last updated: 26 October 2026_
 
 ShowSteps is a browser extension, with an optional Windows app, that records a process you perform and turns it into a step-by-step guide. This policy covers both. It is published by the ShowSteps developer (contact below).
 
@@ -47,9 +47,9 @@ If you set an upload step to use a file the run downloaded, Run for me keeps a c
 
 - Only files that Run for me's own clicks downloaded in that run, at most 25 MB each and 50 MB per run.
 - The copy is kept in the extension's own storage on this device and deleted when the run finishes, is stopped or is replaced (and, if Chrome closed mid-run, the next time ShowSteps starts). It is never written anywhere else, and never put into guides, exports, notifications or usage counts. A scheduled run's log keeps only the file's name, size, the site it came from and the step that downloaded it.
-- To get the file, ShowSteps reads it in the page (for files the page builds itself), or fetches the download's own address again with that site's cookies, using the website access you gave it. It fetches only the address the download itself came from, and keeps the result only if it matches the download's size and isn't a web page standing in for the file (such as a sign-in page).
+- Only files from the site of the step that downloaded them: a file from any other site is never attached, and the run stops and says so. To get the file, ShowSteps reads it in the page (for files the page builds itself), or fetches the download's own address again with that site's cookies, using the website access you gave it. If the site sent the download on to another address (a storage service, say), that address is fetched without any cookies. ShowSteps keeps the result only if it matches the download's size and isn't a web page standing in for the file (such as a sign-in page).
 - With **download access** (Chrome's optional `downloads` permission, asked only when you choose a downloaded file for an upload step), ShowSteps sees the downloads Chrome makes while such a run goes, to find the one its click started. It ignores downloads made by other extensions or from other sites.
-- If the desktop app 1.2 is connected, the extension may ask it to read the downloaded file from your Downloads folder, on this computer. The app reads only a file Chrome has just saved, of the size Chrome reported, at most 25 MB.
+- If the desktop app (1.2 or later) is connected, the extension may ask it to read the downloaded file from your Downloads folder, on this computer. The app reads only a file Chrome has just saved, of the size Chrome reported, at most 25 MB.
 
 ## Links in exported files
 
@@ -67,6 +67,10 @@ Text recognition (OCR) runs on your computer with an engine and language data th
 ## When data leaves your computer
 
 Only when **you** do it: exporting or copying a guide (PDF, Word, Markdown, web page, Agent Pack or `.showsteps` file), saving to a shared folder, or opening a link in a guide. Exports contain the guide's text and screenshots. Blurs and crops are burned into the pictures of every export, including `.showsteps` files, so what was under a blur or outside a crop is not in the file. A `.showsteps` file also leaves out the page text kept for Secure Blur, the pictures from before your edits, and who last edited the guide. **Back up (includes hidden details)** in the library's ⋯ menu is the one exception: it saves everything, including what is under your blurs, so keep backups to yourself.
+
+## Brand kits
+
+Brand kits (colours, fonts, logos, cover pictures, header and footer text) are kept on this device: in the extension's own storage, or in `Documents\ShowSteps\Brand` in the desktop app. A kit in a team folder's `.brand` folder is visible to everyone with access to that folder. A `.showsteps-brand` file holds a kit and its pictures and fonts, never guide content. Pictures you add are redrawn as PNG, which drops their metadata, and only PNG, JPEG and WebP pictures and TTF and OTF fonts are accepted. Kits are never sent anywhere.
 
 ## Guides from other people
 
