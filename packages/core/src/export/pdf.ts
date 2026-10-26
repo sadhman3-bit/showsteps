@@ -23,16 +23,12 @@ import { PDF_DISPLAY_800, PDF_SANS_400, PDF_SANS_700 } from './fonts.generated.j
 import fontkit from '@pdf-lib/fontkit';
 
 const SIGNAL = HIGHLIGHT_COLOR;
-import { HIGHLIGHT_COLOR, SERIF_FONTS, accentOf, fontOf, textOn } from '../branding.js';
+import { BRAND_FONTS, HIGHLIGHT_COLOR, SERIF_FONTS, textOn } from '../branding.js';
+import { coverOrder, expandTokens, resolveBrand, type ResolvedBrand } from '../brandkit.js';
 import type { RichText } from '../schema.js';
 import { exportDocument, type ExportImage, type ExportInput } from './model.js';
 
-const PAGE_W = 595.28; // A4
-const PAGE_H = 841.89;
 const MARGIN = 50;
-const CONTENT_W = PAGE_W - MARGIN * 2;
-const TOP = PAGE_H - MARGIN;
-const BOTTOM = MARGIN + 28; // room for the footer
 const INDENT = 36; // step text and pictures sit right of the number
 const MAX_IMAGE_H = 430;
 
@@ -46,6 +42,29 @@ const TONE_BG = {
   warning: LIGHT.warningBg,
   alert: LIGHT.alertBg,
 };
+
+/** Page size and the area text may use: room for a header line, the footer and a notice. */
+interface Geometry {
+  PAGE_W: number;
+  PAGE_H: number;
+  CONTENT_W: number;
+  TOP: number;
+  BOTTOM: number;
+}
+
+function pageGeometry(brand: ResolvedBrand, headerLine: boolean): Geometry {
+  const [PAGE_W, PAGE_H] = brand.page.size === 'Letter' ? [612, 792] : [595.28, 841.89];
+  return {
+    PAGE_W,
+    PAGE_H,
+    CONTENT_W: PAGE_W - MARGIN * 2,
+    TOP: PAGE_H - MARGIN - (headerLine ? 22 : 0),
+    BOTTOM: MARGIN + 28 + (brand.page.notice ? 14 : 0),
+  };
+}
+
+/** Cover band heights for the kit's small, medium and large covers. */
+const BAND = { small: 160, medium: 230, large: 320 } as const;
 
 /** The Trail pattern (pink path, numbered stops) in a box whose bottom-left is (x, y). */
 function drawTrail(page: PDFPage, font: PDFFont, x: number, y: number, w: number, h: number) {
@@ -219,20 +238,25 @@ function layout(runs: Run[], size: number, maxWidth: number): Line[] {
 
 class Writer {
   page!: PDFPage;
-  y = TOP;
+  y: number;
   readonly pages: PDFPage[] = [];
 
-  constructor(readonly pdf: PDFDocument) {}
+  constructor(
+    readonly pdf: PDFDocument,
+    readonly geo: Geometry,
+  ) {
+    this.y = geo.TOP;
+  }
 
   newPage(): void {
-    this.page = this.pdf.addPage([PAGE_W, PAGE_H]);
+    this.page = this.pdf.addPage([this.geo.PAGE_W, this.geo.PAGE_H]);
     this.pages.push(this.page);
-    this.y = TOP;
+    this.y = this.geo.TOP;
   }
 
   /** Start a new page unless `height` fits below the cursor (a fresh page always "fits"). */
   ensure(height: number): void {
-    if (this.y - height < BOTTOM && this.y < TOP) this.newPage();
+    if (this.y - height < this.geo.BOTTOM && this.y < this.geo.TOP) this.newPage();
   }
 
   lines(lines: Line[], x: number, size: number, leading = size * 1.35): void {
@@ -289,143 +313,207 @@ async function embed(pdf: PDFDocument, image: ExportImage): Promise<PDFImage> {
 
 /**
  * X1: PDF with a cover (title, description, prerequisites), numbered steps with their
- * pictures, headings, callouts, page numbers and the guide's accent colour and font family.
+ * pictures, headings, callouts and page numbers, drawn with the guide's brand (B2): its colours,
+ * fonts, logo, cover style and order, header, footer, notice, page size and ShowSteps marks.
  */
 export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   const doc = exportDocument(input);
   const L = doc.labels;
-  const accentHex = accentOf(input.guide);
+  const brand = input.brand ?? resolveBrand(input.guide);
+  const { header, footer, notice } = brand.page;
+  const logoInHeader = !!input.logo && brand.logoPlacement !== 'cover';
+  const logoOnCover = !!input.logo && brand.logoPlacement !== 'header';
+  const headerLine = logoInHeader || !!(header.left || header.centre || header.right);
+  const geo = pageGeometry(brand, headerLine);
+  const { PAGE_W, PAGE_H, CONTENT_W, TOP, BOTTOM } = geo;
+  const accentHex = brand.colors.accent;
   const accent = hex(accentHex);
   const onAccent = hex(textOn(accentHex));
+  const links = hex(brand.colors.links);
+  const headings = hex(brand.colors.headings);
   const pdf = await PDFDocument.create();
-  const branded = fontOf(input.guide);
-  const serif = SERIF_FONTS.has(branded ?? '');
-  const own = !branded || branded === 'Funnel Sans';
+  pdf.registerFontkit(fontkit);
+  const embedded = async (data: Uint8Array) => {
+    const font = await pdf.embedFont(data, { subset: true });
+    charSets.set(font, new Set(font.getCharacterSet()));
+    return font;
+  };
+  /** A custom font's bytes (`custom:<asset>`), when the export was given them. */
+  const customBytes = (name: string | undefined) =>
+    name?.startsWith('custom:') ? input.fonts?.get(name.slice(7)) : undefined;
+  const body = brand.fonts.body;
+  const heading = brand.fonts.heading ?? body;
+  const standard = async (name: string | undefined): Promise<Fonts> => {
+    const serif = SERIF_FONTS.has(name ?? '');
+    const bold = await pdf.embedFont(
+      serif ? StandardFonts.TimesRomanBold : StandardFonts.HelveticaBold,
+    );
+    return {
+      regular: await pdf.embedFont(serif ? StandardFonts.TimesRoman : StandardFonts.Helvetica),
+      bold,
+      italic: await pdf.embedFont(
+        serif ? StandardFonts.TimesRomanItalic : StandardFonts.HelveticaOblique,
+      ),
+      boldItalic: await pdf.embedFont(
+        serif ? StandardFonts.TimesRomanBoldItalic : StandardFonts.HelveticaBoldOblique,
+      ),
+      display: bold,
+    };
+  };
+  /** ShowSteps's own type: no font chosen, Funnel Sans, or a font this export can't use. */
+  const own = (name: string | undefined) =>
+    !name || name === 'Funnel Sans' || (!BRAND_FONTS[name] && !customBytes(name));
   let fonts: Fonts;
-  if (own) {
+  const bodyCustom = customBytes(body);
+  if (bodyCustom) {
+    // A font the person added: one face for every style.
+    const face = await embedded(bodyCustom);
+    fonts = { regular: face, bold: face, italic: face, boldItalic: face, display: face };
+  } else if (own(body)) {
     // ShowSteps's type, embedded (only the characters used). Funnel has no italic: italic
     // text uses the upright face, as many sans families do in PDFs.
-    pdf.registerFontkit(fontkit);
-    const custom = async (b64: string) => {
-      const font = await pdf.embedFont(bytes(b64), { subset: true });
-      charSets.set(font, new Set(font.getCharacterSet()));
-      return font;
-    };
-    const regular = await custom(PDF_SANS_400);
-    const bold = await custom(PDF_SANS_700);
-    fonts = {
-      regular,
-      bold,
-      italic: regular,
-      boldItalic: bold,
-      display: await custom(PDF_DISPLAY_800),
-    };
-  } else if (serif) {
-    const bold = await pdf.embedFont(StandardFonts.TimesRomanBold);
-    fonts = {
-      regular: await pdf.embedFont(StandardFonts.TimesRoman),
-      bold,
-      italic: await pdf.embedFont(StandardFonts.TimesRomanItalic),
-      boldItalic: await pdf.embedFont(StandardFonts.TimesRomanBoldItalic),
-      display: bold,
-    };
-  } else {
-    const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-    fonts = {
-      regular: await pdf.embedFont(StandardFonts.Helvetica),
-      bold,
-      italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
-      boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
-      display: bold,
-    };
-  }
+    const regular = await embedded(bytes(PDF_SANS_400));
+    const bold = await embedded(bytes(PDF_SANS_700));
+    fonts = { regular, bold, italic: regular, boldItalic: bold, display: regular };
+  } else fonts = await standard(body);
+  // Titles, headings and step numbers.
+  const headingCustom = customBytes(heading);
+  if (headingCustom) fonts.display = await embedded(headingCustom);
+  else if (own(heading)) fonts.display = await embedded(bytes(PDF_DISPLAY_800));
+  else if (heading !== body) fonts.display = (await standard(heading)).display;
   const plainRuns = (text: string, font = fonts.regular, color = TEXT): Run[] => [
     { text, font, color },
   ];
 
   pdf.setTitle(doc.title, { showInWindowTitleBar: true });
   if (doc.description) pdf.setSubject(doc.description);
-  pdf.setCreator('ShowSteps');
-  pdf.setProducer('ShowSteps');
+  const generator = brand.marks.generator === 'showsteps' ? 'ShowSteps' : (brand.company ?? '');
+  pdf.setCreator(generator);
+  pdf.setProducer(generator);
   pdf.setCreationDate(new Date(input.guide.createdAt));
   pdf.setModificationDate(new Date(input.guide.updatedAt));
 
-  const w = new Writer(pdf);
+  const w = new Writer(pdf, geo);
 
-  // ---------- Cover: the Trail pattern on navy, the title in white ----------
+  // ---------- Cover: a band (pattern, solid or picture) or a plain page, in the kit's order ----
   w.newPage();
-  const band = 230;
-  w.page.drawRectangle({
-    x: 0,
-    y: PAGE_H - band,
-    width: PAGE_W,
-    height: band,
-    color: hex(CHROME.bg),
-  });
-  drawTrail(w.page, fonts.display, PAGE_W * 0.42, PAGE_H - band, PAGE_W * 0.58, band);
-  const titleLines = layout(plainRuns(doc.title, fonts.display, hex(CHROME.fg)), 26, PAGE_W * 0.5);
-  w.y = PAGE_H - band / 2 + (titleLines.length * 32) / 2;
-  w.lines(titleLines, MARGIN, 26, 32);
-  w.y = PAGE_H - band - 36;
-  if (doc.links) {
-    // "Open in ShowSteps: Guide Me · Run for me", the two names clickable (URI link annotations).
-    const size = 11;
-    const baseline = w.y - size;
-    let x = MARGIN;
-    const piece = (text: string, font: PDFFont, color: RGB, uri?: string) => {
-      const width = font.widthOfTextAtSize(text, size);
-      w.page.drawText(text, { x, y: baseline, size, font, color });
-      if (uri) {
-        w.page.drawLine({
-          start: { x, y: baseline - 1.5 },
-          end: { x: x + width, y: baseline - 1.5 },
-          thickness: 0.6,
-          color,
-        });
-        linkAnnotation(pdf, w.page, [x, baseline - 3, x + width, baseline + size], uri);
-      }
-      x += width;
-    };
-    piece(`${L.openIn} `, fonts.regular, TEXT);
-    piece(L.guideMe, fonts.bold, accent, doc.links.guide);
-    piece('  ·  ', fonts.regular, MUTED);
-    piece(L.runForMe, fonts.bold, accent, doc.links.run);
-    w.y -= size * 1.5;
-    w.lines(layout(plainRuns(L.linksNote, fonts.regular, MUTED), 9, CONTENT_W), MARGIN, 9);
-    w.y -= 18;
-  }
-  if (input.logo) {
-    const logo = await embed(pdf, input.logo);
-    const size = fit(input.logo, 200, 64);
-    w.page.drawImage(logo, { x: MARGIN, y: w.y - size.h, width: size.w, height: size.h });
-    w.y -= size.h + 24;
-  }
-  if (doc.description) {
-    w.lines(layout(plainRuns(doc.description), 13, CONTENT_W), MARGIN, 13);
-    w.y -= 8;
-  }
-  w.lines(layout(plainRuns(doc.meta, fonts.regular, MUTED), 11, CONTENT_W), MARGIN, 11);
-  if (doc.preconditions.length) {
-    w.y -= 18;
-    w.lines(layout(plainRuns(L.before, fonts.bold), 12, CONTENT_W), MARGIN, 12);
-    for (const p of doc.preconditions) {
-      w.lines(layout(plainRuns(`•  ${p}`), 11, CONTENT_W - 12), MARGIN + 6, 11);
+  const style = brand.cover.style;
+  const order = coverOrder(brand);
+  const titleInBand = style !== 'plain' && order.includes('title');
+  if (style === 'plain') w.y = PAGE_H - MARGIN;
+  else {
+    const band = BAND[brand.cover.height];
+    w.page.drawRectangle({
+      x: 0,
+      y: PAGE_H - band,
+      width: PAGE_W,
+      height: band,
+      color: hex(brand.colors.coverBackground),
+    });
+    if (style === 'image' && input.coverImage) {
+      // The picture fills the band, its middle showing.
+      const pic = input.coverImage;
+      const scale = Math.max(PAGE_W / pic.width, band / pic.height);
+      const [pw, ph] = [pic.width * scale, pic.height * scale];
+      const image = await embed(pdf, pic);
+      const x = (PAGE_W - pw) / 2;
+      const y = PAGE_H - band - (ph - band) / 2;
+      w.page.drawImage(image, { x, y, width: pw, height: ph });
+      // What reaches below the band is painted over: the rest of the cover is a white page.
+      w.page.drawRectangle({
+        x: 0,
+        y: 0,
+        width: PAGE_W,
+        height: PAGE_H - band,
+        color: hex(LIGHT.surface),
+      });
     }
+    if (style === 'pattern' && brand.marks.pattern)
+      drawTrail(w.page, fonts.display, PAGE_W * 0.42, PAGE_H - band, PAGE_W * 0.58, band);
+    if (input.logoOnDark) {
+      const size = fit(input.logoOnDark, 160, 48);
+      w.page.drawImage(await embed(pdf, input.logoOnDark), {
+        x: MARGIN,
+        y: PAGE_H - 28 - size.h,
+        width: size.w,
+        height: size.h,
+      });
+    }
+    if (titleInBand) {
+      const titleLines = layout(
+        plainRuns(doc.title, fonts.display, hex(brand.colors.coverText)),
+        26,
+        style === 'pattern' && brand.marks.pattern ? PAGE_W * 0.5 : CONTENT_W,
+      );
+      w.y = PAGE_H - band / 2 + (titleLines.length * 32) / 2;
+      w.lines(titleLines, MARGIN, 26, 32);
+    }
+    w.y = PAGE_H - band - 36;
   }
-  if (doc.success) {
-    w.y -= 12;
-    w.lines(
-      layout(
-        [
-          { text: `${L.success}: `, font: fonts.bold, color: TEXT },
-          { text: doc.success, font: fonts.regular, color: TEXT },
-        ],
-        11,
-        CONTENT_W,
-      ),
-      MARGIN,
-      11,
-    );
+  for (const element of order) {
+    if (element === 'title' && !titleInBand) {
+      w.lines(layout(plainRuns(doc.title, fonts.display, headings), 26, CONTENT_W), MARGIN, 26, 32);
+      w.y -= 16;
+    } else if (element === 'links' && doc.links) {
+      // "Open in ShowSteps: Guide Me · Run for me", the two names clickable (URI link annotations).
+      const size = 11;
+      const baseline = w.y - size;
+      let x = MARGIN;
+      const piece = (text: string, font: PDFFont, color: RGB, uri?: string) => {
+        const width = font.widthOfTextAtSize(text, size);
+        w.page.drawText(text, { x, y: baseline, size, font, color });
+        if (uri) {
+          w.page.drawLine({
+            start: { x, y: baseline - 1.5 },
+            end: { x: x + width, y: baseline - 1.5 },
+            thickness: 0.6,
+            color,
+          });
+          linkAnnotation(pdf, w.page, [x, baseline - 3, x + width, baseline + size], uri);
+        }
+        x += width;
+      };
+      piece(`${L.openIn} `, fonts.regular, TEXT);
+      piece(L.guideMe, fonts.bold, links, doc.links.guide);
+      piece('  ·  ', fonts.regular, MUTED);
+      piece(L.runForMe, fonts.bold, links, doc.links.run);
+      w.y -= size * 1.5;
+      w.lines(layout(plainRuns(L.linksNote, fonts.regular, MUTED), 9, CONTENT_W), MARGIN, 9);
+      w.y -= 18;
+    } else if (element === 'logo' && logoOnCover && input.logo) {
+      const logo = await embed(pdf, input.logo);
+      const size = fit(input.logo, 200, 64);
+      w.page.drawImage(logo, { x: MARGIN, y: w.y - size.h, width: size.w, height: size.h });
+      w.y -= size.h + 24;
+    } else if (element === 'description' && doc.description) {
+      w.lines(layout(plainRuns(doc.description), 13, CONTENT_W), MARGIN, 13);
+      w.y -= 8;
+    } else if (element === 'meta') {
+      w.lines(layout(plainRuns(doc.meta, fonts.regular, MUTED), 11, CONTENT_W), MARGIN, 11);
+    } else if (element === 'preconditions') {
+      if (doc.preconditions.length) {
+        w.y -= 18;
+        w.lines(layout(plainRuns(L.before, fonts.bold), 12, CONTENT_W), MARGIN, 12);
+        for (const p of doc.preconditions) {
+          w.lines(layout(plainRuns(`•  ${p}`), 11, CONTENT_W - 12), MARGIN + 6, 11);
+        }
+      }
+      if (doc.success) {
+        w.y -= 12;
+        w.lines(
+          layout(
+            [
+              { text: `${L.success}: `, font: fonts.bold, color: TEXT },
+              { text: doc.success, font: fonts.regular, color: TEXT },
+            ],
+            11,
+            CONTENT_W,
+          ),
+          MARGIN,
+          11,
+        );
+      }
+    }
   }
 
   // ---------- Body ----------
@@ -433,7 +521,7 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
   if (!doc.items.length) w.lines(layout(plainRuns(L.noSteps), 12, CONTENT_W), MARGIN, 12);
   for (const item of doc.items) {
     if (item.kind === 'heading') {
-      const lines = layout(plainRuns(item.text, fonts.display, TEXT), 18, CONTENT_W);
+      const lines = layout(plainRuns(item.text, fonts.display, headings), 18, CONTENT_W);
       w.y -= w.y < TOP ? 14 : 0;
       w.ensure(lines.length * 24 + 140); // keep a heading with what follows
       // Pink highlighter under the lower part of each line, as in the app.
@@ -443,7 +531,7 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
           y: w.y - (i + 1) * 24 + 4,
           width: line.width,
           height: 7,
-          color: hex(HIGHLIGHT_COLOR),
+          color: hex(brand.colors.highlight),
           opacity: 0.35,
         });
       });
@@ -473,24 +561,28 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
       w.y -= 18;
     } else {
       const textW = CONTENT_W - INDENT;
-      const title = layout(richRuns(item.title, fonts, TEXT, accent), 12.5, textW);
+      const title = layout(richRuns(item.title, fonts, TEXT, links), 12.5, textW);
       const desc = item.description
-        ? layout(richRuns(item.description, fonts, MUTED, accent), 10.5, textW)
+        ? layout(richRuns(item.description, fonts, MUTED, links), 10.5, textW)
         : [];
       const size = item.image ? fit(item.image, textW, MAX_IMAGE_H) : undefined;
       const height =
         title.length * 12.5 * 1.35 + desc.length * 10.5 * 1.35 + (size ? size.h + 12 : 0) + 6;
       w.ensure(Math.min(height, TOP - BOTTOM));
       const top = w.y;
-      w.page.drawCircle({ x: MARGIN + 12, y: top - 9, size: 12, color: accent });
+      const numberStyle = brand.steps.numberStyle;
+      if (numberStyle === 'circle')
+        w.page.drawCircle({ x: MARGIN + 12, y: top - 9, size: 12, color: accent });
+      else if (numberStyle === 'square')
+        w.page.drawRectangle({ x: MARGIN, y: top - 21, width: 24, height: 24, color: accent });
       const num = String(item.number);
       const numSize = num.length > 2 ? 8.5 : 10.5;
       w.page.drawText(num, {
         x: MARGIN + 12 - fonts.display.widthOfTextAtSize(num, numSize) / 2,
         y: top - 9 - numSize * 0.36,
-        size: numSize,
+        size: numberStyle === 'plain' ? numSize + 2 : numSize,
         font: fonts.display,
-        color: onAccent,
+        color: numberStyle === 'plain' ? accent : onAccent,
       });
       w.y -= 2;
       w.lines(title, MARGIN + INDENT, 12.5);
@@ -504,14 +596,15 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
         const image = await embed(pdf, item.image);
         const x = MARGIN + INDENT;
         w.page.drawImage(image, { x, y: w.y - size.h, width: size.w, height: size.h });
-        w.page.drawRectangle({
-          x,
-          y: w.y - size.h,
-          width: size.w,
-          height: size.h,
-          borderColor: BORDER,
-          borderWidth: 0.75,
-        });
+        if (brand.steps.pictureBorder)
+          w.page.drawRectangle({
+            x,
+            y: w.y - size.h,
+            width: size.w,
+            height: size.h,
+            borderColor: BORDER,
+            borderWidth: 0.75,
+          });
         w.y -= size.h;
       }
       w.y -= 22;
@@ -533,44 +626,94 @@ export async function guideToPdf(input: ExportInput): Promise<Uint8Array> {
     );
   }
 
-  // U3: one visible line, and the procedure attached to the file as procedure.json.
-  w.ensure(30);
-  w.y -= 12;
-  w.lines(
-    layout([{ text: L.agentFooter, font: fonts.regular, color: MUTED }], 9, CONTENT_W),
-    MARGIN,
-    9,
-  );
-  await pdf.attach(strToU8(procedureJson(toProcedure(input.guide))), 'procedure.json', {
-    mimeType: 'application/json',
-    description: L.agentFooter,
-    creationDate: new Date(input.guide.createdAt),
-    modificationDate: new Date(input.guide.updatedAt),
-  });
+  // U3: one visible line, and the procedure attached to the file as procedure.json (each one
+  // a kit can leave out).
+  if (brand.marks.agentLine) {
+    w.ensure(30);
+    w.y -= 12;
+    w.lines(
+      layout([{ text: L.agentFooter, font: fonts.regular, color: MUTED }], 9, CONTENT_W),
+      MARGIN,
+      9,
+    );
+  }
+  if (brand.marks.agentData)
+    await pdf.attach(strToU8(procedureJson(toProcedure(input.guide))), 'procedure.json', {
+      mimeType: 'application/json',
+      description: L.agentFooter,
+      creationDate: new Date(input.guide.createdAt),
+      modificationDate: new Date(input.guide.updatedAt),
+    });
 
-  // ---------- Footers (every page after the cover) ----------
+  // ---------- Header, footer and notice (every page after the cover) ----------
   const total = w.pages.length;
+  const headerLogo = logoInHeader && input.logo ? await embed(pdf, input.logo) : undefined;
   w.pages.forEach((page, i) => {
     if (i === 0) return;
-    const label = safeText(fonts.regular, L.page(i + 1, total));
-    const labelW = fonts.regular.widthOfTextAtSize(label, 9);
-    let title = safeText(fonts.regular, doc.title);
-    while (title.length > 1 && fonts.regular.widthOfTextAtSize(title, 9) > CONTENT_W - labelW - 24)
-      title = `${title.slice(0, -2)}…`;
+    const values = {
+      title: doc.title,
+      ...(brand.company ? { company: brand.company } : {}),
+      page: i + 1,
+      pages: total,
+      date: doc.date,
+      ...(input.guide.author ? { author: input.guide.author } : {}),
+      pageOf: L.page(i + 1, total),
+    };
+    /** Three slots on one line: the left one gives way to the other two. */
+    const slots = (row: { left: string; centre: string; right: string }, y: number, x0: number) => {
+      const text = (t: string) => safeText(fonts.regular, expandTokens(t, values));
+      const width = (t: string) => fonts.regular.widthOfTextAtSize(t, 9);
+      const right = text(row.right);
+      const centre = text(row.centre);
+      const room =
+        CONTENT_W - (x0 - MARGIN) - width(right) - (centre ? width(centre) + 24 : 0) - 24;
+      let left = text(row.left);
+      while (left.length > 1 && width(left) > room) left = `${left.slice(0, -2)}…`;
+      if (left) page.drawText(left, { x: x0, y, size: 9, font: fonts.regular, color: MUTED });
+      if (centre)
+        page.drawText(centre, {
+          x: MARGIN + (CONTENT_W - width(centre)) / 2,
+          y,
+          size: 9,
+          font: fonts.regular,
+          color: MUTED,
+        });
+      if (right)
+        page.drawText(right, {
+          x: MARGIN + CONTENT_W - width(right),
+          y,
+          size: 9,
+          font: fonts.regular,
+          color: MUTED,
+        });
+    };
+    if (headerLine) {
+      const y = PAGE_H - MARGIN - 9;
+      let x0 = MARGIN;
+      if (headerLogo && input.logo) {
+        const size = fit(input.logo, 120, 18);
+        page.drawImage(headerLogo, { x: MARGIN, y: y - 4, width: size.w, height: size.h });
+        x0 += size.w + 10;
+      }
+      slots(header, y, x0);
+    }
     page.drawLine({
       start: { x: MARGIN, y: MARGIN + 14 },
       end: { x: MARGIN + CONTENT_W, y: MARGIN + 14 },
       thickness: 0.5,
       color: BORDER,
     });
-    page.drawText(title, { x: MARGIN, y: MARGIN, size: 9, font: fonts.regular, color: MUTED });
-    page.drawText(label, {
-      x: MARGIN + CONTENT_W - labelW,
-      y: MARGIN,
-      size: 9,
-      font: fonts.regular,
-      color: MUTED,
-    });
+    slots(footer, MARGIN, MARGIN);
+    if (notice) {
+      const line = safeText(fonts.bold, notice);
+      page.drawText(line, {
+        x: MARGIN + (CONTENT_W - fonts.bold.widthOfTextAtSize(line, 8.5)) / 2,
+        y: MARGIN + 20,
+        size: 8.5,
+        font: fonts.bold,
+        color: MUTED,
+      });
+    }
   });
 
   return pdf.save();

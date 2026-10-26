@@ -1,7 +1,8 @@
-import { CHROME, DARK, LIGHT } from '../tokens.js';
+import { DARK, LIGHT } from '../tokens.js';
 import { trailSvg } from '../patterns.js';
 import { WEB_DISPLAY_700, WEB_SANS_400, WEB_SANS_600 } from './fonts.generated.js';
-import { BRAND_FONTS, HIGHLIGHT_COLOR, accentOf, fontOf, textOn } from '../branding.js';
+import { BRAND_FONTS, textOn } from '../branding.js';
+import { SHOWSTEPS_KIT, coverOrder, resolveBrand, type ResolvedBrand } from '../brandkit.js';
 import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
 import { escapeHtml, toHtml, toPlainText } from '../richText.js';
 import {
@@ -28,31 +29,93 @@ const TONES = {
   dark: { tip: DARK.tip, note: DARK.note, warning: DARK.warning, alert: DARK.alert },
 };
 
+const brandOf = (input: ExportInput): ResolvedBrand => input.brand ?? resolveBrand(input.guide);
+
+/** A font the person added (`custom:<asset>`), when the export was given its bytes. */
+function customFont(input: ExportInput, name: string | undefined): Uint8Array | undefined {
+  return name?.startsWith('custom:') ? input.fonts?.get(name.slice(7)) : undefined;
+}
+
+/** ShowSteps's own type: no font chosen, Funnel Sans, or one this export can't use. */
+function ownFont(input: ExportInput, name: string | undefined): boolean {
+  return !name || name === 'Funnel Sans' || (!BRAND_FONTS[name] && !customFont(input, name));
+}
+
 function fontStack(input: ExportInput): string {
-  return BRAND_FONTS[fontOf(input.guide) ?? 'Funnel Sans'] ?? 'system-ui, sans-serif';
+  const body = brandOf(input).fonts.body;
+  if (customFont(input, body)) return "'Brand Body', system-ui, sans-serif";
+  return (
+    BRAND_FONTS[ownFont(input, body) ? 'Funnel Sans' : (body ?? '')] ?? 'system-ui, sans-serif'
+  );
 }
 
-/** The guide uses ShowSteps's own type (no branding font chosen). */
+/** The body uses ShowSteps's own type (no branding font chosen). */
 function usesFunnel(input: ExportInput): boolean {
-  return (fontOf(input.guide) ?? 'Funnel Sans') === 'Funnel Sans';
+  return ownFont(input, brandOf(input).fonts.body);
 }
 
-const face = (family: string, weight: number, data: string) =>
-  `@font-face{font-family:'${family}';font-weight:${weight};font-style:normal;font-display:swap;src:url(data:font/woff2;base64,${data}) format('woff2')}`;
+const face = (family: string, weight: number, data: string, format = 'woff2') =>
+  `@font-face{font-family:'${family}';font-weight:${weight};font-style:normal;font-display:swap;src:url(data:font/${format};base64,${data}) format('${format === 'ttf' ? 'truetype' : format}')}`;
 
-/** Funnel Sans (400, 600) and Funnel Display (700), embedded so the page needs no network. */
+const b64 = (bytes: Uint8Array) => {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+
+/**
+ * Funnel Sans (400, 600) and Funnel Display (700) when the page uses ShowSteps's type, and the
+ * brand's own fonts, embedded so the page needs no network.
+ */
 function fontCss(input: ExportInput): string {
-  if (!usesFunnel(input)) return '';
-  return [
-    face('Funnel Sans', 400, WEB_SANS_400),
-    face('Funnel Sans', 600, WEB_SANS_600),
-    face('Funnel Display', 700, WEB_DISPLAY_700),
-  ].join('\n');
+  const { body, heading } = brandOf(input).fonts;
+  const out: string[] = [];
+  if (usesFunnel(input) || (heading !== undefined && ownFont(input, heading)))
+    out.push(
+      face('Funnel Sans', 400, WEB_SANS_400),
+      face('Funnel Sans', 600, WEB_SANS_600),
+      face('Funnel Display', 700, WEB_DISPLAY_700),
+    );
+  const bodyFont = customFont(input, body);
+  if (bodyFont) out.push(face('Brand Body', 400, b64(bodyFont), 'ttf'));
+  const headingFont = customFont(input, heading);
+  if (headingFont) out.push(face('Brand Heading', 700, b64(headingFont), 'ttf'));
+  return out.join('\n');
+}
+
+/** The font family for titles and headings. */
+function headingStack(input: ExportInput): string {
+  const { body, heading } = brandOf(input).fonts;
+  if (customFont(input, heading)) return "'Brand Heading',system-ui,sans-serif";
+  if (heading === undefined || heading === body) return usesFunnel(input) ? DISPLAY : 'inherit';
+  return ownFont(input, heading) ? DISPLAY : (BRAND_FONTS[heading] ?? 'inherit');
+}
+
+/**
+ * CSS for what a brand changes beyond today's look (B2): nothing at all for ShowSteps's own
+ * kit, so its pages stay exactly as they were.
+ */
+function brandCss(brand: ResolvedBrand): string {
+  const out: string[] = [];
+  if (brand.colors.headings !== SHOWSTEPS_KIT.colors.headings)
+    out.push(`h1,h2{color:${brand.colors.headings}}`);
+  // Links read as the text around them unless the brand gives them a colour of their own.
+  if (brand.colors.links !== brand.colors.accent)
+    out.push(`main a,.links a,.step__desc a{color:${brand.colors.links}}`);
+  if (brand.steps.numberStyle === 'square') out.push('.num{border-radius:6px}');
+  if (brand.steps.numberStyle === 'plain')
+    out.push('.num{background:none;color:var(--accent);min-width:0;padding:0}');
+  if (!brand.steps.pictureBorder) out.push('.shot{border:0}');
+  if (brand.page.notice)
+    out.push('.notice{margin:0 0 16px;color:var(--muted);font-size:13px;font-weight:600}');
+  return out.length ? `\n${out.join('\n')}` : '';
 }
 
 const DISPLAY = "'Funnel Display','Funnel Sans',system-ui,sans-serif";
 
-function head(title: string, css: string): string {
+function head(title: string, css: string, brand: ResolvedBrand): string {
+  const generator = brand.marks.generator === 'showsteps' ? 'ShowSteps' : brand.company;
   return [
     '<!doctype html>',
     '<html lang="en">',
@@ -60,11 +123,13 @@ function head(title: string, css: string): string {
     '<meta charset="utf-8">',
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">`,
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
-    '<meta name="generator" content="ShowSteps">',
+    generator ? `<meta name="generator" content="${escapeHtml(generator)}">` : '',
     `<title>${escapeHtml(title)}</title>`,
     `<style>${css}</style>`,
     '</head>',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 function img(src: string, alt: string, width: number, height: number, cls = ''): string {
@@ -72,10 +137,11 @@ function img(src: string, alt: string, width: number, height: number, cls = ''):
 }
 
 function themeCss(input: ExportInput): string {
-  const accent = accentOf(input.guide);
-  const heading = usesFunnel(input) ? DISPLAY : 'inherit';
+  const brand = brandOf(input);
+  const accent = brand.colors.accent;
+  const heading = headingStack(input);
   return `${fontCss(input)}
-:root{color-scheme:light dark;--accent:${accent};--on-accent:${textOn(accent)};--highlight:${HIGHLIGHT_COLOR};--bg:${LIGHT.bg};--surface:${LIGHT.surface};--border:${LIGHT.line};--text:${LIGHT.text};--muted:${LIGHT.textMuted};--tip:${TONES.light.tip};--note:${TONES.light.note};--warning:${TONES.light.warning};--alert:${TONES.light.alert};--tip-bg:${LIGHT.tipBg};--note-bg:${LIGHT.noteBg};--warning-bg:${LIGHT.warningBg};--alert-bg:${LIGHT.alertBg};--heading:${heading};font-family:${fontStack(input)}}
+:root{color-scheme:light dark;--accent:${accent};--on-accent:${textOn(accent)};--highlight:${brand.colors.highlight};--bg:${LIGHT.bg};--surface:${LIGHT.surface};--border:${LIGHT.line};--text:${LIGHT.text};--muted:${LIGHT.textMuted};--tip:${TONES.light.tip};--note:${TONES.light.note};--warning:${TONES.light.warning};--alert:${TONES.light.alert};--tip-bg:${LIGHT.tipBg};--note-bg:${LIGHT.noteBg};--warning-bg:${LIGHT.warningBg};--alert-bg:${LIGHT.alertBg};--heading:${heading};font-family:${fontStack(input)}}
 @media (prefers-color-scheme:dark){:root{--bg:${DARK.bg};--surface:${DARK.surface};--border:${DARK.line};--text:${DARK.text};--muted:${DARK.textMuted};--tip:${TONES.dark.tip};--note:${TONES.dark.note};--warning:${TONES.dark.warning};--alert:${TONES.dark.alert};--tip-bg:color-mix(in srgb,${DARK.tip} 14%,${DARK.surface});--note-bg:color-mix(in srgb,${DARK.note} 14%,${DARK.surface});--warning-bg:color-mix(in srgb,${DARK.warning} 14%,${DARK.surface});--alert-bg:color-mix(in srgb,${DARK.alert} 14%,${DARK.surface})}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -86,21 +152,24 @@ h1,h2{font-family:var(--heading);letter-spacing:-.02em}
 .callout strong{color:var(--tone)}
 .callout--tip{--tone:var(--tip);--tone-bg:var(--tip-bg)}.callout--note{--tone:var(--note);--tone-bg:var(--note-bg)}.callout--warning{--tone:var(--warning);--tone-bg:var(--warning-bg)}.callout--alert{--tone:var(--alert);--tone-bg:var(--alert-bg)}
 .num{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-family:var(--heading);font-weight:700;font-size:15px;text-decoration:none}
-.shot{display:block;border:1px solid var(--border);border-radius:12px;background:${LIGHT.surface}}`;
+.shot{display:block;border:1px solid var(--border);border-radius:12px;background:${LIGHT.surface}}${brandCss(brand)}`;
 }
 
-/** The cover band: the Trail pattern on navy with the title in white. */
-function coverCss(): string {
-  return `.cover{position:relative;overflow:hidden;margin:0 0 20px;padding:40px 32px;border-radius:16px;background:${CHROME.bg};color:${CHROME.fg}}
+/** The cover band: the Trail pattern on navy with the title in white (or the brand's band). */
+function coverCss(brand: ResolvedBrand = SHOWSTEPS_KIT): string {
+  const bg = brand.colors.coverBackground;
+  const fg = brand.colors.coverText;
+  const pad = { small: '24px 32px', medium: '40px 32px', large: '72px 32px' }[brand.cover.height];
+  return `.cover{position:relative;overflow:hidden;margin:0 0 20px;padding:${pad};border-radius:16px;background:${bg};color:${fg}}
 .cover__art{position:absolute;inset:0 0 0 35%}
 .cover__art svg{display:block;width:100%;height:100%}
-.cover::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,${CHROME.bg} 32%,transparent 80%)}
-.cover h1{position:relative;z-index:1;max-width:60%;margin:0;color:${CHROME.fg}}
+.cover::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,${bg} 32%,transparent 80%)}
+.cover h1{position:relative;z-index:1;max-width:60%;margin:0;color:${fg}}
 @media (max-width:820px){.cover h1{max-width:none}.cover__art{opacity:.35;left:0}}
 @media print{.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
 }
 
-const PAGE_CSS = `
+const pageCss = (brand: ResolvedBrand) => `
 .layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;padding:32px 24px}
 .toc{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;font-size:14px}
 .toc p{margin:0 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:var(--muted)}
@@ -112,7 +181,7 @@ const PAGE_CSS = `
 .toc .toc__n{color:var(--muted);min-width:1.6em;text-align:right}
 header{margin-bottom:24px}
 .logo{display:block;max-height:56px;width:auto;margin-bottom:16px}
-h1{font-size:30px;line-height:1.2;margin:0 0 8px}\n${coverCss()}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}\n${coverCss(brand)}
 .desc{font-size:17px;margin:0 0 8px}
 .meta{color:var(--muted);margin:0}
 .links{margin:0}.links small{display:block;color:var(--muted)}
@@ -155,22 +224,47 @@ function linksHtml(doc: ExportDocument, style = ''): string {
   return `<p class="links"${style ? ` style="${style}"` : ''}>${escapeHtml(L.openIn)} ${a(doc.links.guide, L.guideMe)} · ${a(doc.links.run, L.runForMe)}<br><small>${escapeHtml(L.linksNote)}</small></p>`;
 }
 
+/**
+ * The page's header: the cover and the rest in the brand's order. A logo shown with a cover band
+ * sits above it (it is made for light backgrounds), as it always has.
+ */
 function headerHtml(input: ExportInput, doc: ExportDocument): string {
+  const brand = brandOf(input);
   const parts = ['<header>'];
-  if (input.logo)
-    parts.push(img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo'));
-  parts.push(
-    `<div class="cover"><div class="cover__art" aria-hidden="true">${trailSvg()}</div><h1>${escapeHtml(doc.title)}</h1></div>`,
-  );
-  if (doc.links) parts.push(linksHtml(doc));
-  if (doc.description) parts.push(`<p class="desc">${multiline(doc.description)}</p>`);
-  parts.push(`<p class="meta">${escapeHtml(doc.meta)}</p>`);
-  if (doc.preconditions.length) {
-    parts.push(
-      `<section class="before"><h2>${escapeHtml(doc.labels.before)}</h2><ul>${doc.preconditions
-        .map((p) => `<li>${escapeHtml(p)}</li>`)
-        .join('')}</ul></section>`,
-    );
+  const banded = brand.cover.style !== 'plain';
+  const logo =
+    input.logo && brand.logoPlacement !== 'header'
+      ? img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo')
+      : '';
+  const order = coverOrder(brand);
+  if (banded && logo && order.includes('logo')) parts.push(logo);
+  if (brand.page.notice) parts.push(`<p class="notice">${escapeHtml(brand.page.notice)}</p>`);
+  for (const element of order) {
+    if (element === 'title') {
+      if (!banded) {
+        parts.push(`<h1>${escapeHtml(doc.title)}</h1>`);
+        continue;
+      }
+      const art =
+        brand.cover.style === 'pattern' && brand.marks.pattern
+          ? `<div class="cover__art" aria-hidden="true">${trailSvg()}</div>`
+          : '';
+      const picture =
+        brand.cover.style === 'image' && input.coverImage
+          ? ` style="background:${brand.colors.coverBackground} url(${dataUri(input.coverImage)}) center/cover"`
+          : '';
+      parts.push(`<div class="cover"${picture}>${art}<h1>${escapeHtml(doc.title)}</h1></div>`);
+    } else if (element === 'logo' && !banded && logo) parts.push(logo);
+    else if (element === 'links' && doc.links) parts.push(linksHtml(doc));
+    else if (element === 'description' && doc.description)
+      parts.push(`<p class="desc">${multiline(doc.description)}</p>`);
+    else if (element === 'meta') parts.push(`<p class="meta">${escapeHtml(doc.meta)}</p>`);
+    else if (element === 'preconditions' && doc.preconditions.length)
+      parts.push(
+        `<section class="before"><h2>${escapeHtml(doc.labels.before)}</h2><ul>${doc.preconditions
+          .map((p) => `<li>${escapeHtml(p)}</li>`)
+          .join('')}</ul></section>`,
+      );
   }
   parts.push('</header>');
   return parts.join('\n');
@@ -211,7 +305,7 @@ export function guideToHtml(input: ExportInput): string {
       .join('\n');
   });
   return [
-    head(doc.title, themeCss(input) + PAGE_CSS),
+    head(doc.title, themeCss(input) + pageCss(brandOf(input)), brandOf(input)),
     '<body id="top">',
     '<div class="layout">',
     `<nav class="toc" aria-label="${escapeHtml(L.contents)}"><p>${escapeHtml(L.contents)}</p><ol>`,
@@ -224,10 +318,12 @@ export function guideToHtml(input: ExportInput): string {
     doc.success
       ? `<p class="done"><strong>${escapeHtml(L.success)}:</strong> ${escapeHtml(doc.success)}</p>`
       : '',
-    `<footer class="agent-note">${escapeHtml(L.agentFooter)}</footer>`,
+    brandOf(input).marks.agentLine
+      ? `<footer class="agent-note">${escapeHtml(L.agentFooter)}</footer>`
+      : '',
     '</main>',
     '</div>',
-    procedureScript(input),
+    brandOf(input).marks.agentData ? procedureScript(input) : '',
     '</body>',
     '</html>',
     '',
@@ -297,10 +393,10 @@ export function guideToEmbedHtml(input: ExportInput): string {
       .join('\n');
   });
   return [
-    head(doc.title, themeCss(input) + EMBED_CSS),
+    head(doc.title, themeCss(input) + EMBED_CSS, brandOf(input)),
     '<body>',
     '<div class="card">',
-    `<div class="card__head">${input.logo ? img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo') : ''}<div><h1>${escapeHtml(doc.title)}</h1><p class="meta">${escapeHtml(doc.meta)}</p>${linksHtml(doc)}</div></div>`,
+    `<div class="card__head">${input.logo && brandOf(input).logoPlacement !== 'header' ? img(dataUri(input.logo), '', input.logo.width, input.logo.height, 'logo') : ''}<div><h1>${escapeHtml(doc.title)}</h1><p class="meta">${escapeHtml(doc.meta)}</p>${linksHtml(doc)}</div></div>`,
     '<div class="slides">',
     ...(slides.length ? slides : [`<p>${escapeHtml(L.noSteps)}</p>`]),
     '</div>',
@@ -330,10 +426,11 @@ const CLIP_TONE_BG = {
 export function guideToClipboardHtml(input: ExportInput): string {
   const doc = exportDocument(input);
   const L = doc.labels;
-  const accent = accentOf(input.guide);
+  const brand = brandOf(input);
+  const accent = brand.colors.accent;
   const font = fontStack(input).replace(/"/g, "'");
   const out: string[] = [`<div style="font-family:${font};color:${LIGHT.text};line-height:1.5">`];
-  if (input.logo) {
+  if (input.logo && brand.logoPlacement !== 'header') {
     const h = 48;
     const w = Math.round((input.logo.width / input.logo.height) * h);
     out.push(`<p>${img(dataUri(input.logo), '', w, h)}</p>`);

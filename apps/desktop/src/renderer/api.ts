@@ -1,9 +1,15 @@
 import type { InputMode } from '@showsteps/core';
-import { BRIDGE_STORE_METHODS, type GuideStore } from '@showsteps/core';
+import {
+  BRAND_STORE_METHODS,
+  BRIDGE_STORE_METHODS,
+  type BrandStore,
+  type GuideStore,
+} from '@showsteps/core';
 import { useEffect, useState } from 'preact/hooks';
 
 interface DesktopApi {
   store(which: string, method: string, args: unknown[]): Promise<unknown>;
+  brand(which: string, method: string, args: unknown[]): Promise<unknown>;
   invoke(channel: string, ...args: unknown[]): Promise<unknown>;
   on(channel: string, listener: (payload: unknown) => void): () => void;
   overlayInteractive(on: boolean): void;
@@ -27,6 +33,14 @@ export function ipcStore(which: 'active' | 'personal' | 'shared' = 'active'): Gu
     store[method] = (...args: unknown[]) => api().store(which, method, args);
   }
   return store as unknown as GuideStore;
+}
+
+/** The person's or the team folder's brand kits (B3), kept by the main process. */
+export function ipcBrandStore(which: 'personal' | 'team'): BrandStore {
+  const store: Record<string, unknown> = {};
+  for (const method of BRAND_STORE_METHODS)
+    store[method] = (...args: unknown[]) => api().brand(which, method, args);
+  return store as unknown as BrandStore;
 }
 
 export interface DesktopSettingsView {

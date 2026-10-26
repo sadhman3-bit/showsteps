@@ -1,6 +1,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { procedureJson, toProcedure } from '../agent/procedure.js';
 import { toMarkdown } from '../richText.js';
+import { resolveBrand } from '../brandkit.js';
 import { extensionFor, exportDocument, type ExportInput } from './model.js';
 
 function escapeText(text: string): string {
@@ -15,8 +16,11 @@ function escapeAlt(text: string): string {
 export function guideToMarkdown(input: ExportInput): string {
   const doc = exportDocument(input);
   const L = doc.labels;
+  const brand = input.brand ?? resolveBrand(input.guide);
   const out: string[] = [];
-  if (input.logo) out.push(`![](img/logo.${extensionFor(input.logo)})`);
+  if (input.logo && brand.logoPlacement !== 'header')
+    out.push(`![](img/logo.${extensionFor(input.logo)})`);
+  if (brand.page.notice) out.push(`*${escapeText(brand.page.notice)}*`);
   out.push(`# ${escapeText(doc.title)}`);
   if (doc.links)
     out.push(
@@ -46,19 +50,20 @@ export function guideToMarkdown(input: ExportInput): string {
     }
   }
   if (doc.success) out.push(`**${L.success}:** ${escapeText(doc.success)}`);
-  // U3: the structured procedure, collapsed at the end.
-  out.push(`*${L.agentFooter}*`);
-  out.push(
-    [
-      `<details><summary>${L.agentProcedure}</summary>`,
-      '',
-      '```json',
-      procedureJson(toProcedure(input.guide)),
-      '```',
-      '',
-      '</details>',
-    ].join('\n'),
-  );
+  // U3: the structured procedure, collapsed at the end (a kit can leave out either part).
+  if (brand.marks.agentLine) out.push(`*${L.agentFooter}*`);
+  if (brand.marks.agentData)
+    out.push(
+      [
+        `<details><summary>${L.agentProcedure}</summary>`,
+        '',
+        '```json',
+        procedureJson(toProcedure(input.guide)),
+        '```',
+        '',
+        '</details>',
+      ].join('\n'),
+    );
   return out.join('\n\n') + '\n';
 }
 

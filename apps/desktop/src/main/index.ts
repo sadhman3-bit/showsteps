@@ -1,7 +1,10 @@
 import {
+  BRAND_STORE_METHODS,
   BRIDGE_CAPABILITIES,
   BRIDGE_STORE_METHODS,
+  FolderBrandStore,
   FolderStore,
+  type BrandStore,
   parseGuide,
   type GuideStore,
 } from '@showsteps/core';
@@ -23,7 +26,7 @@ import {
 } from 'electron';
 import { mkdirSync } from 'node:fs';
 import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BridgeServer, pipePath } from './bridge';
 import { readDownload } from './downloads';
@@ -89,6 +92,9 @@ const shotDir = () => join(app.getPath('temp'), 'showsteps-shots');
 let settings: DesktopSettings;
 let personal: GuideStore;
 let shared: GuideStore | undefined;
+/** Brand kits (B3): the person's own, beside the library, and the team folder's `.brand`. */
+let brandPersonal: BrandStore;
+let brandTeam: BrandStore | undefined;
 let mainWindow: BrowserWindow | undefined;
 let controller: BrowserWindow | undefined;
 let overlay: BrowserWindow | undefined;
@@ -104,6 +110,25 @@ function openStores(): void {
         othersAreReceived: true,
       })
     : undefined;
+  brandPersonal = new FolderBrandStore(
+    nodeFileSystem,
+    join(dirname(settings.libraryPath), 'Brand'),
+  );
+  brandTeam = settings.sharedPath
+    ? new FolderBrandStore(nodeFileSystem, join(settings.sharedPath, '.brand'))
+    : undefined;
+}
+
+const BRAND_METHODS = new Set<string>(BRAND_STORE_METHODS);
+
+/** One call on the person's or the team's brand kits, for the window and the extension. */
+async function brandCall(which: unknown, method: unknown, args: unknown): Promise<unknown> {
+  if (typeof method !== 'string' || !BRAND_METHODS.has(method) || !Array.isArray(args))
+    throw new Error('invalid brand call');
+  const store = which === 'team' ? brandTeam : brandPersonal;
+  if (!store) return which === 'team' && method === 'listKits' ? [] : undefined;
+  const fn = (store as unknown as Record<string, (...a: unknown[]) => Promise<unknown>>)[method];
+  return fn?.apply(store, args);
 }
 
 /** The library shown in the window and used for new captures. */
@@ -127,7 +152,10 @@ const bridge = new BridgeServer(
     capabilities: [...BRIDGE_CAPABILITIES],
     startWithWindows: settings.startWithWindows,
   }),
-  { readDownload: (args) => readDownload(args) },
+  {
+    readDownload: (args) => readDownload(args),
+    brand: (which, method, args) => brandCall(which, method, args),
+  },
 );
 
 // ---------- Scheduled runs (S4) ----------
@@ -464,6 +492,9 @@ function registerIpc(): void {
     if (/^(save|trash|restore|purge|put|delete)/.test(method)) bridge.sendEvent('library-changed');
     return result;
   });
+  ipcMain.handle('brand', (_e, which: unknown, method: unknown, args: unknown) =>
+    brandCall(which, method, args),
+  );
   ipcMain.handle('settings:get', () => ({ ...settings, sharedAvailable: !!shared }));
   ipcMain.handle('settings:set', async (_e, value: unknown) => {
     const next = DesktopSettingsSchema.parse({

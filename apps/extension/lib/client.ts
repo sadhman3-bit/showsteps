@@ -1,6 +1,11 @@
 // Helpers for extension pages (side panel, library) to talk to the background.
-import { IndexedDbStore, type GuideStore } from '@showsteps/core';
-import { BridgeClient, bridgeStore, switchableStore } from './bridge';
+import {
+  IndexedDbBrandStore,
+  IndexedDbStore,
+  type BrandStore,
+  type GuideStore,
+} from '@showsteps/core';
+import { BridgeClient, bridgeBrandStore, bridgeStore, switchableStore } from './bridge';
 import { closeRunLogs } from './scheduleClient';
 import { readSettings } from './settings';
 import type { DownloadAccess, StepCheckView } from '@showsteps/ui';
@@ -90,6 +95,28 @@ export function getStore(): GuideStore {
     );
   }
   return store;
+}
+
+let localBrand: IndexedDbBrandStore | undefined;
+let desktopBrand: { personal: BrandStore; team: BrandStore } | undefined;
+
+/**
+ * B3: brand kits for exports: this browser's own (IndexedDB), or the desktop app's while the
+ * guides live there (the same kits in both apps). `team` is the team folder's, when there is one.
+ */
+export async function getBrandStores(): Promise<{ personal: BrandStore; team?: BrandStore }> {
+  if (await desktopLibraryOn()) {
+    if (!desktopBrand) {
+      const client = new BridgeClient('page');
+      desktopBrand = {
+        personal: bridgeBrandStore(client, 'personal'),
+        team: bridgeBrandStore(client, 'team'),
+      };
+    }
+    return desktopBrand;
+  }
+  localBrand ??= new IndexedDbBrandStore(indexedDB);
+  return { personal: localBrand };
 }
 
 export interface Reply {

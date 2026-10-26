@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SCHEMA_VERSION } from './version.js';
+import { BrandPatchSchema } from './brandkit.js';
 
 // ---------- Primitives ----------
 
@@ -300,6 +301,10 @@ export const GuideSchema = z
         logo: z.string().optional(),
         accent: z.string().optional(),
         font: z.string().optional(),
+        /** B1: the brand kit this guide uses (by id); the library's default when unset. */
+        kit: z.string().max(64).optional(),
+        /** B1: this guide's own changes on top of its kit. */
+        overrides: BrandPatchSchema.optional(),
       })
       .optional(),
     settings: z.object({ defaultInputMode: InputModeSchema }),
