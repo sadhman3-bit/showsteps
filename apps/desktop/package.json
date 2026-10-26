@@ -19,7 +19,7 @@
     "@preact/preset-vite": "^2.10.6",
     "@showsteps/core": "workspace:*",
     "@showsteps/ui": "workspace:*",
-    "electron": "^44.9.3",
+    "electron": "^45.0.0",
     "electron-builder": "^26.15.3",
     "preact": "^11.0.1",
     "vite": "^8.3.4",
