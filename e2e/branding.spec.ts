@@ -44,6 +44,14 @@ test('a brand kit made on the Branding page brands every PDF, with no ShowSteps 
   test.setTimeout(120_000);
   await serviceWorker.evaluate(() => __showsteps.installSamples());
   const page = await context.newPage();
+  // The logo is converted slowly, as on a busy machine: fields changed meanwhile must stay.
+  await page.addInitScript(() => {
+    const real = globalThis.createImageBitmap.bind(globalThis);
+    globalThis.createImageBitmap = (async (...args: Parameters<typeof createImageBitmap>) => {
+      await new Promise((done) => setTimeout(done, 1500));
+      return real(...args);
+    }) as typeof createImageBitmap;
+  });
   await page.goto(`chrome-extension://${extensionId}/library.html`);
   await page.getByRole('button', { name: 'Branding' }).click();
   await expect(page).toHaveURL(/#\/branding$/);
@@ -70,6 +78,7 @@ test('a brand kit made on the Branding page brands every PDF, with no ShowSteps 
     .getByRole('combobox', { name: 'Insert into Page footer, Right' })
     .selectOption('{page}');
   await kit.getByLabel('Notice on every page').fill('Confidential: internal use only');
+  await expect(kit.getByRole('button', { name: 'Remove', exact: true })).toBeVisible();
   await kit.getByLabel('Page size (PDF and Word)').selectOption('Letter');
   for (const mark of [
     'The trail pattern on the cover',

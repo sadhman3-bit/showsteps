@@ -223,7 +223,15 @@ function KitEditor(props: {
   onChange: (kit: BrandKit) => void;
 }) {
   const { kit, readOnly } = props;
-  const set = (change: Partial<BrandKit>) => props.onChange({ ...kit, ...change });
+  // Changes build on the newest kit, not this render's: a picture converting or a save in
+  // flight must not undo a field changed meanwhile.
+  const latest = useRef(kit);
+  latest.current = kit;
+  const change = (next: BrandKit) => {
+    latest.current = next;
+    props.onChange(next);
+  };
+  const set = (part: Partial<BrandKit>) => change({ ...latest.current, ...part });
   const setColor = (key: keyof Colors, value: string) =>
     set({ colors: { ...kit.colors, [key]: value } });
   const [assetError, setAssetError] = useState('');
@@ -309,7 +317,7 @@ function KitEditor(props: {
         aria-label={b.addFont}
         onChange={async (e) => {
           const name = await addAsset(e.currentTarget.files?.[0], 'font');
-          if (name) set({ fonts: { ...kit.fonts, [which]: `custom:${name}` } });
+          if (name) set({ fonts: { ...latest.current.fonts, [which]: `custom:${name}` } });
           e.currentTarget.value = '';
         }}
       />
@@ -348,7 +356,7 @@ function KitEditor(props: {
     </div>
   );
   const without = (key: 'company' | 'logo' | 'logoOnDark'): BrandKit => {
-    const { [key]: _gone, ...rest } = kit;
+    const { [key]: _gone, ...rest } = latest.current;
     return rest;
   };
 
@@ -439,7 +447,7 @@ function KitEditor(props: {
             value={kit.company ?? ''}
             onInput={(e) => {
               const company = e.currentTarget.value;
-              props.onChange(company ? { ...kit, company } : without('company'));
+              change(company ? { ...latest.current, company } : without('company'));
             }}
           />
         </label>
@@ -479,10 +487,10 @@ function KitEditor(props: {
       <fieldset class="ss-fieldset" disabled={readOnly}>
         <legend>{b.logosTitle}</legend>
         {picture(b.logo, kit.logo, (name) =>
-          props.onChange(name ? { ...kit, logo: name } : without('logo')),
+          change(name ? { ...latest.current, logo: name } : without('logo')),
         )}
         {picture(b.logoOnDark, kit.logoOnDark, (name) =>
-          props.onChange(name ? { ...kit, logoOnDark: name } : without('logoOnDark')),
+          change(name ? { ...latest.current, logoOnDark: name } : without('logoOnDark')),
         )}
         <label class="ss-field">
           {b.logoPlacement}
@@ -550,7 +558,7 @@ function KitEditor(props: {
         </div>
         {kit.cover.style === 'image'
           ? picture(b.coverImage, kit.cover.image, (name) => {
-              const cover = { ...kit.cover };
+              const cover = { ...latest.current.cover };
               if (name) cover.image = name;
               else delete cover.image;
               set({ cover });
