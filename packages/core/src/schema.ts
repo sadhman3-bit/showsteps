@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SCHEMA_VERSION } from './version.js';
+import { BrandPatchSchema } from './brandkit.js';
 
 // ---------- Primitives ----------
 
@@ -223,6 +224,8 @@ export const StepSchema = z
       at: z.string(),
       tabId: z.number().int().optional(),
       source: z.enum(['extension', 'desktop', 'upload', 'manual']),
+      /** H6: made from an event the page's script raised, not the person's own input. */
+      byPage: z.boolean().optional(),
     }),
   })
   .refine((s) => !(s.input?.sensitive && s.input.value), {
@@ -298,11 +301,26 @@ export const GuideSchema = z
         logo: z.string().optional(),
         accent: z.string().optional(),
         font: z.string().optional(),
+        /** B1: the brand kit this guide uses (by id); the library's default when unset. */
+        kit: z.string().max(64).optional(),
+        /** B1: this guide's own changes on top of its kit. */
+        overrides: BrandPatchSchema.optional(),
       })
       .optional(),
     settings: z.object({ defaultInputMode: InputModeSchema }),
     /** In a shared library: others view it and edit a personal copy (L6). */
     readOnly: z.boolean().optional(),
+    /**
+     * H4: from someone else (an imported file, or a team-folder guide another person saved last).
+     * Run for me shows what it does before its first run; "Trust this guide" removes it.
+     */
+    received: z
+      .object({
+        at: z.string(),
+        from: z.enum(['import', 'shared-folder']),
+        file: z.string().max(255).optional(),
+      })
+      .optional(),
   })
   .superRefine((g, ctx) => {
     const seen = new Set<string>();

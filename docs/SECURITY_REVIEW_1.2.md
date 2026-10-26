@@ -14,15 +14,16 @@ Reviewed on 24 October 2026 against the `update-1.2` branch. Each point names th
 ## 2. Which downloads belong to the run
 
 - Only with download access, decided when the run starts (`hasDownloadAccess`). Listeners exist only once `downloads` is granted (`watchDownloads`).
-- A download counts only if it starts within 10 seconds of a Run for me click (`DOWNLOAD_WINDOW_MS`), wasn't started by an extension (`byExtensionId`), and its referrer, when Chrome gives one, is on the run tab's site (`sameSite`).
+- A download counts only if it starts within 10 seconds of a Run for me click (`DOWNLOAD_WINDOW_MS`), wasn't started by an extension (`byExtensionId`), and **its own address is on the run tab's site** (`sameSite(downloadHost(item.url), site)`), with or without a referrer; a `blob:` address counts by the page that made it, a `data:` file is the page's own. When Chrome gives a referrer, it must be on that site too. (Updated in 1.2.1: before, only the referrer was checked, and a page could drop it with `referrerpolicy="no-referrer"` to have another site's file, fetched with that site's cookies, attached.)
+- Another site's download after the click is refused and the run stops at the attach step for the person, with reason `file-other-site`: "The file came from another site (bank.example) than this step (shop.example), so ShowSteps didn't attach it." The scheduled-run notice says the same.
 - Two downloads from one click: neither is attached and the run stops for the person (`ambiguous`).
 - A file the page already handed over for that click (a `blob:` link) wins; the download isn't fetched again.
-- Tests: extension `test/attachments.test.ts` ("ignores downloads that are late, from an extension, or from another site", "attaches neither of two downloads from one click").
+- Tests: extension `test/attachments.test.ts` ("ignores downloads that are late, from an extension, or from another site", "attaches neither of two downloads from one click", and "only the run's own site's files (H3)": no referrer and another site, no referrer and the same site, a redirect to another site), e2e `attach-run.spec.ts` ("a file from another site isn't attached, even without a referrer", on `exports-cross.html`).
 
 ## 3. Fetching a file
 
 - **In the page** (`grabLinkFile` in `apps/extension/lib/content/guide.ts`): only the element Run for me is about to click, only if it is or is inside a link, and only a `blob:`/`data:` address or (without download access) a same-origin link with a `download` attribute, fetched with the page's own cookies. An HTML response for a non-HTML name is refused (a sign-in page is not the file).
-- **From the background** (`refetch` in `entrypoints/background.ts`): only the finished download's own `finalUrl` (or `url`), only `http(s)`, only when ShowSteps has site access to that origin; the response must be OK, match `fileSize` when Chrome knows it, stay under the cap, and not be HTML unless the download was HTML.
+- **From the background** (`refetch` in `entrypoints/background.ts`): only the finished download's own `finalUrl` (or `url`), only `http(s)`, only when ShowSteps has site access to that origin; with cookies only when that address is on the run's site, and **without cookies (`credentials: 'omit'`) when Chrome was redirected to another site** (a signed storage link needs none), and then never through the desktop app's `readDownload`; the response must be OK, match `fileSize` when Chrome knows it, stay under the cap, and not be HTML unless the download was HTML.
 - Tests: extension `test/attachments.test.ts` (refused fetch), e2e `attach-run.spec.ts` (plain link with and without download access, `blob:` link, form POST stopping for the person).
 
 ## 4. The desktop app's `readDownload`

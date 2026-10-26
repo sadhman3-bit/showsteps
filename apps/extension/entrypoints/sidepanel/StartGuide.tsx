@@ -33,6 +33,7 @@ export function useStartGuide(tab?: { id?: number; windowId?: number }) {
     runDialog: runFor ? (
       <RunDialog
         guide={runFor}
+        onTrust={(trusted) => getStore().saveGuide(trusted)}
         onClose={() => setRunFor(null)}
         onStart={(opts) => {
           setRunFor(null);

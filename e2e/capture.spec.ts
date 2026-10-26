@@ -270,3 +270,139 @@ test('records the create-invoice flow across pages, iframes, shadow DOM and a di
   // Taken on pointerdown, before the click opened the dialog (no dark backdrop yet).
   expect(brightness, 'review screenshot taken after the dialog opened').toBeGreaterThan(220);
 });
+
+type SecretsHook = {
+  store: {
+    getGuide(id: string): Promise<{ blocks: (StoredStep & { human: { blurs: unknown[] } })[] }>;
+    listImages(id: string): Promise<string[]>;
+    getImage(id: string, name: string): Promise<Uint8Array | undefined>;
+  };
+  recorder: { control(a: string): Promise<unknown>; current: { stepCount: number } };
+};
+
+test('a revealed password stays out of the guide, its page text and its pictures (H6)', async ({
+  context,
+  serviceWorker: sw,
+}) => {
+  test.setTimeout(90_000);
+  const SECRET = 'reveal-me-9271';
+  const page = await context.newPage();
+  await page.goto('http://localhost:5173/login.html');
+  // Only `type="password"` says this field is secret: no autocomplete, and a name and label
+  // that don't (so the name test can't be what catches it).
+  await page.evaluate(() => {
+    const f = document.querySelector<HTMLInputElement>('input[type="password"]')!;
+    f.removeAttribute('autocomplete');
+    f.name = 'memorable';
+    f.labels![0]!.textContent = 'Memorable word';
+  });
+  await page.bringToFront();
+  const { guideId } = await startOn(sw, 'http://localhost:5173/');
+  await page.locator('showsteps-controller').getByRole('toolbar').waitFor();
+  await human(page);
+  await page.getByLabel('Username').fill('alex');
+  await human(page);
+  await page.getByLabel('Memorable word').fill(SECRET);
+  await human(page);
+  await page.getByRole('button', { name: 'Show password' }).click({ delay: 80 });
+  const shownField = page.getByRole('textbox', { name: 'Memorable word' });
+  await expect(shownField).toHaveValue(SECRET);
+  await human(page);
+  // Typing more into the now plain text field is still secret.
+  await shownField.press('End');
+  await shownField.pressSequentially('X');
+  await human(page);
+  // A click on the same page: its picture shows the revealed field.
+  await page.getByRole('heading', { name: 'Sign in' }).click({ delay: 80 });
+  await human(page);
+  await page.getByRole('button', { name: 'Sign in' }).click({ delay: 120 });
+  await page.waitForURL(/\/app\/$/);
+  await human(page);
+  await expect
+    .poll(
+      () =>
+        sw.evaluate(
+          () =>
+            (globalThis as unknown as { __showsteps: SecretsHook }).__showsteps.recorder.current
+              .stepCount,
+        ),
+      { timeout: 15_000 },
+    )
+    .toBeGreaterThanOrEqual(5);
+  await sw.evaluate(() =>
+    (globalThis as unknown as { __showsteps: SecretsHook }).__showsteps.recorder.control('finish'),
+  );
+
+  const { guide, words } = await sw.evaluate(async (id) => {
+    const h = (globalThis as unknown as { __showsteps: SecretsHook }).__showsteps;
+    const g = await h.store.getGuide(id);
+    const names = (await h.store.listImages(id)).filter((n) => n.endsWith('.words.json'));
+    const words: string[] = [];
+    for (const n of names) {
+      const b = await h.store.getImage(id, n);
+      if (b) words.push(new TextDecoder().decode(b));
+    }
+    return { guide: g, words };
+  }, guideId!);
+  expect(JSON.stringify(guide)).not.toContain(SECRET);
+  expect(JSON.stringify(guide)).not.toContain(`${SECRET}X`);
+  expect(words.length).toBeGreaterThan(0);
+  for (const w of words) expect(w).not.toContain(SECRET);
+  // The picture taken while the password showed has a blur over the field.
+  const heading = guide.blocks.find(
+    (b) => b.kind === 'step' && (b.target as { role?: string } | undefined)?.role === 'heading',
+  )!;
+  // (Its picture may be the one taken a moment earlier for the typing: the blur comes with it.)
+  expect(heading.human.screenshot).toBeTruthy();
+  expect(heading.human.blurs.length).toBeGreaterThan(0);
+});
+
+test('a step the page’s script made is marked, and the editor offers Delete or Keep (H6)', async ({
+  context,
+  serviceWorker: sw,
+  extensionId,
+}) => {
+  test.setTimeout(60_000);
+  const page = await context.newPage();
+  await page.goto('http://localhost:5173/login.html');
+  await page.bringToFront();
+  const { guideId } = await startOn(sw, 'http://localhost:5173/');
+  await page.locator('showsteps-controller').getByRole('toolbar').waitFor();
+  await human(page);
+  // A script sets a value and raises "change" (isTrusted is false).
+  await page.evaluate(() => {
+    const f = document.querySelector<HTMLInputElement>('input[name="username"]')!;
+    f.value = 'planted';
+    f.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await human(page);
+  await expect
+    .poll(() =>
+      sw.evaluate(
+        () =>
+          (globalThis as unknown as { __showsteps: SecretsHook }).__showsteps.recorder.current
+            .stepCount,
+      ),
+    )
+    .toBeGreaterThanOrEqual(2);
+  await sw.evaluate(() =>
+    (globalThis as unknown as { __showsteps: SecretsHook }).__showsteps.recorder.control('finish'),
+  );
+  const guide = await sw.evaluate(
+    (id) => (globalThis as unknown as { __showsteps: SecretsHook }).__showsteps.store.getGuide(id),
+    guideId!,
+  );
+  const typed = guide.blocks.find((b) => b.kind === 'step' && b.action === 'type') as unknown as {
+    capture: { byPage?: boolean };
+  };
+  expect(typed.capture.byPage).toBe(true);
+
+  const editor = await context.newPage();
+  await editor.goto(`chrome-extension://${extensionId}/library.html#/guide/${guideId}`);
+  const note = editor
+    .getByRole('note')
+    .filter({ hasText: 'This step came from the page, not from you.' });
+  await expect(note).toBeVisible();
+  await note.getByRole('button', { name: 'Keep' }).click();
+  await expect(note).toHaveCount(0);
+});

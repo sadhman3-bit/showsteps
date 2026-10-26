@@ -1,4 +1,5 @@
 import { stepNumbers } from '../editor/ops.js';
+import type { ResolvedBrand } from '../brandkit.js';
 import { buildStartLink } from '../guidance/links.js';
 import { toPlainText } from '../richText.js';
 import type { CalloutTone, Guide, RichText } from '../schema.js';
@@ -17,6 +18,13 @@ export interface ExportInput {
   /** Flattened step pictures by step id. Steps without one export as text only. */
   images: ReadonlyMap<string, ExportImage>;
   logo?: ExportImage;
+  /** B2: the brand's logo for dark covers, and its cover picture. */
+  logoOnDark?: ExportImage;
+  coverImage?: ExportImage;
+  /** B2: the brand to draw with (from `resolveBrand`); the guide's own when left out. */
+  brand?: ResolvedBrand;
+  /** B2: the brand's custom fonts (TTF or OTF bytes), by asset name. */
+  fonts?: ReadonlyMap<string, Uint8Array>;
   labels?: ExportLabels;
   /** Add "Open in ShowSteps: Guide Me · Run for me" links under the title (1.2). */
   startLinks?: boolean;
@@ -46,6 +54,8 @@ export interface ExportDocument {
   success?: string;
   /** "17 steps · Updated 10 October 2026" */
   meta: string;
+  /** When the guide was last updated, written out ("10 October 2026"; for `{date}`). */
+  date: string;
   stepCount: number;
   items: ExportItem[];
   labels: ExportLabels;
@@ -100,6 +110,7 @@ export function exportDocument(input: ExportInput): ExportDocument {
     ...(guide.description?.trim() ? { description: guide.description.trim() } : {}),
     preconditions: guide.preconditions.filter((p) => p.trim()),
     ...(guide.success?.trim() ? { success: guide.success.trim() } : {}),
+    date,
     meta: [labels.steps(numbers.size), date ? labels.updated(date) : '']
       .filter(Boolean)
       .join(' · '),

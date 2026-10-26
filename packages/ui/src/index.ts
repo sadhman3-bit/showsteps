@@ -41,8 +41,13 @@ export { brandStyle, BRAND_FONTS, textOn } from './brand.js';
 export { ImageLayers, blurRadius } from './guide/Screenshot.js';
 export { PrintView } from './guide/PrintView.js';
 export { ShareDialog, fileNameFor, type ShareDialogProps } from './export/ShareDialog.js';
-export { flattenStepImage, prepareExport } from './export/flatten.js';
-export { RunDialog, type RunOptions, type RunSpeed } from './guidance/RunDialog.js';
+export {
+  flattenStepImage,
+  prepareExport,
+  redactStepImage,
+  shareRedactor,
+} from './export/flatten.js';
+export { ReceivedPanel, RunDialog, type RunOptions, type RunSpeed } from './guidance/RunDialog.js';
 export { CommentBox, useComments, type CommentsApi } from './guidance/Comments.js';
 export { Insights } from './guidance/Insights.js';
 export { ScheduleDialog, type ScheduleDialogProps } from './schedule/ScheduleDialog.js';
@@ -55,3 +60,15 @@ export { describeSchedule, formatWhen } from './schedule/format.js';
 export { SettingsDialog, type UserSettings } from './guidance/SettingsDialog.js';
 export { detectAi, anyAi, type AiCapabilities } from './ai/builtin.js';
 export { AiTools } from './editor/AiTools.js';
+export { BrandPage, BrandSettings } from './brand/BrandSettings.js';
+export { BrandPreview } from './brand/BrandPreview.js';
+export {
+  BrandSourcesContext,
+  TEAM_PREFIX,
+  brandFor,
+  kitAsset,
+  listKits,
+  useBrandSources,
+  type BrandSources,
+  type KitList,
+} from './brand/sources.js';

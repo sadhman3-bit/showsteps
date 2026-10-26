@@ -11,12 +11,14 @@ import {
 } from '@showsteps/core';
 import { EventEmitter } from 'node:events';
 import { createServer, type Server, type Socket } from 'node:net';
-import { userInfo } from 'node:os';
 import { createInterface } from 'node:readline';
 
-/** The pipe showsteps-host.exe connects to (one per Windows user). */
-export function pipePath(user = userInfo().username): string {
-  return `\\\\.\\pipe\\showsteps-${user.toLowerCase()}`;
+/**
+ * The pipe showsteps-host.exe connects to: one per Windows account, named by its SID, so it's
+ * the same name the host builds and never another account's (H7).
+ */
+export function pipePath(sid: string): string {
+  return `\\\\.\\pipe\\showsteps-${sid}`;
 }
 
 interface Client {
@@ -54,7 +56,7 @@ export class BridgeServer extends EventEmitter<{
     return [...this.clients].some((c) => c.background);
   }
 
-  listen(path = pipePath()): Promise<void> {
+  listen(path: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.server = createServer((socket) => this.accept(socket));
       this.server.once('error', reject);

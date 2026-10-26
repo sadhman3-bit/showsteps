@@ -43,11 +43,12 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 > PRIVATE BY DESIGN
 > • Everything stays on your computer. No account, no cloud, no tracking.
 > • Values typed into password, one-time-code and payment-card fields are never stored.
-> • Secure Blur helps you find emails, phone numbers, and card, bank and tax numbers in your screenshots so you can blur them before sharing.
+> • Secure Blur helps you find emails, phone numbers, and card, bank and tax numbers in your screenshots so you can blur them before sharing. Shared files carry the blur burned into the picture, never what was under it.
 >
 > EDIT AND SHARE
 > • Reorder steps, add sections, tips and warnings, crop and annotate screenshots.
 > • Export to PDF, Word, Markdown or HTML, or copy into a document or wiki.
+> • Brand kits: your colours, fonts, logo, cover, header, footer and page notice on every export, with ShowSteps's own marks optional.
 > • Version history: go back to any earlier version.
 >
 > GUIDE PEOPLE THROUGH IT

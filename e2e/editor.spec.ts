@@ -18,10 +18,22 @@ type Stored = {
     };
   }[];
 };
-declare const __showsteps: { store: { getGuide(id: string): Promise<Stored | undefined> } };
+declare const __showsteps: {
+  store: {
+    getGuide(id: string): Promise<Stored | undefined>;
+    saveGuide(g: Stored, opts?: { snapshot?: boolean }): Promise<void>;
+  };
+};
 
 async function openEditor(context: BrowserContext, sw: Worker, extensionId: string) {
   const { id } = await recordShortGuide(context, sw);
+  // These tests are about the editor: no blurs to start with. (The password step's picture
+  // has one over the password field (H6); capture.spec.ts checks that.)
+  await sw.evaluate(async (g) => {
+    const guide = (await __showsteps.store.getGuide(g))!;
+    for (const b of guide.blocks) if (b.human) b.human.blurs = [];
+    await __showsteps.store.saveGuide(guide, { snapshot: false });
+  }, id);
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/library.html#/guide/${id}`);
   await expect(page.getByRole('textbox', { name: 'Guide title' })).toHaveValue(

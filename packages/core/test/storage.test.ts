@@ -272,3 +272,24 @@ describe('storage helpers', () => {
     expect(userSlug('***')).toBe('user');
   });
 });
+
+describe('a team folder marks guides others saved last (H4)', () => {
+  it('reads them as received from the shared folder, and the person’s own as theirs', async () => {
+    const fs = memoryFs();
+    const priya = new FolderStore(fs, '/team', { user: 'Priya Raman', othersAreReceived: true });
+    const alex = new FolderStore(fs, '/team', { user: 'Alex', othersAreReceived: true });
+    const g = createGuide({ title: 'Pay a supplier' });
+    await priya.saveGuide(g);
+    expect((await priya.getGuide(g.id))!.received).toBeUndefined();
+    const seen = (await alex.getGuide(g.id))!;
+    expect(seen.received).toMatchObject({ from: 'shared-folder' });
+    // Alex trusts it (a save without the mark): now it's Alex's, and received for Priya.
+    const { received: _r, ...trusted } = seen;
+    await alex.saveGuide(trusted);
+    expect((await alex.getGuide(g.id))!.received).toBeUndefined();
+    expect((await priya.getGuide(g.id))!.received?.from).toBe('shared-folder');
+    // A personal library never marks.
+    const own = new FolderStore(fs, '/team', { user: 'Alex' });
+    expect((await own.getGuide(g.id))!.received?.from).toBeUndefined();
+  });
+});

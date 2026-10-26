@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import ts from 'typescript';
 import { strFromU8, unzipSync } from 'fflate';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
@@ -31,6 +32,7 @@ import {
   procedureFromDocx,
   procedureFromPdf,
   replaySpec,
+  skillMarkdown,
   skillName,
   validateAgentPack,
   type ExportInput,
@@ -221,7 +223,7 @@ describe('Agent Pack (U2)', () => {
     expect(agents).not.toMatch(/\byou\b/i);
     // A callout sits between the steps it was written between.
     expect(skill).toMatch(
-      /Type 1280\.50[^]*> Note: Enter the amount including GST[^]*9\. Select AUD/,
+      /Type `1280\.50`[^]*> Note: Enter the amount including GST[^]*9\. Select `AUD`/,
     );
     expect(skill).not.toMatch(/\bignore\b|you must/i);
     // A confirm step carries the marker.
@@ -232,7 +234,7 @@ describe('Agent Pack (U2)', () => {
       ),
     };
     const c = strFromU8(agentPackFiles(input(confirmed)).files['SKILL.md']!);
-    expect(c).toMatch(/^17\. \*\*CONFIRM\*\* Click Submit invoice/m);
+    expect(c).toMatch(/^17\. \*\*CONFIRM\*\* Click `Submit invoice`/m);
     // Zip has one top-level folder named after the skill.
     const zip = unzipSync(guideToAgentPack(input(g), { screenshots: false }));
     expect(Object.keys(zip).every((p) => p.startsWith(`${name}/`))).toBe(true);
@@ -443,5 +445,83 @@ describe('expectations inside iframes', () => {
     );
     expect(spec).toContain('await expect(page.getByText("Cost centre set").first()).toBeVisible');
     expect(() => parseGuide(g)).not.toThrow();
+  });
+});
+
+describe('guide text in the replay script and SKILL.md (H2)', () => {
+  const EXEC = "require('child_process').execSync('calc')";
+  const payloads = [
+    `Click OK\r${EXEC}//`,
+    `Click OK\n${EXEC}//`,
+    `Click OK\u2028${EXEC}//`,
+    `Click OK\u2029${EXEC}//`,
+    `Click OK */ ${EXEC} /*`,
+    `Click \`OK\` ${EXEC}`,
+    `Click \${${EXEC}}`,
+  ];
+
+  /** The sample with the payload in the title, every instruction, a target name and a label. */
+  function planted(text: string): Procedure {
+    const g = sample();
+    const p = toProcedure(setInputMode(g, byTitle(g, 'Type INV-1043').id, 'ask'));
+    return {
+      ...p,
+      title: text,
+      steps: p.steps.map((s, i) => ({
+        ...s,
+        instruction: text,
+        ...(i === 4 && s.target ? { target: { ...s.target, name: text } } : {}),
+      })),
+      variables: p.variables.map((v) => ({ ...v, label: text, defaultValue: text })),
+    };
+  }
+
+  it.each(payloads.map((t) => [JSON.stringify(t), t]))(
+    'replay.spec.ts stays the expected program for %s',
+    (_name, text) => {
+      const spec = replaySpec(planted(text));
+      const file = ts.createSourceFile('replay.spec.ts', spec, ts.ScriptTarget.Latest, true);
+      const diagnostics = (file as unknown as { parseDiagnostics: unknown[] }).parseDiagnostics;
+      expect(diagnostics).toEqual([]);
+      const top = file.statements.map((st) => {
+        if (ts.isImportDeclaration(st)) return 'import';
+        if (ts.isVariableStatement(st))
+          return `const ${st.declarationList.declarations.map((d) => d.name.getText(file)).join()}`;
+        if (ts.isFunctionDeclaration(st)) return `function ${st.name?.text}`;
+        if (
+          ts.isExpressionStatement(st) &&
+          ts.isCallExpression(st.expression) &&
+          st.expression.expression.getText(file) === 'test'
+        )
+          return 'test()';
+        return `unexpected: ${st.getText(file).slice(0, 80)}`;
+      });
+      expect(top).toEqual([
+        'import',
+        'const defaults',
+        'const allowConfirm',
+        'function value',
+        'test()',
+      ]);
+      const calls: string[] = [];
+      const visit = (n: ts.Node) => {
+        if (ts.isCallExpression(n)) calls.push(n.expression.getText(file));
+        ts.forEachChild(n, visit);
+      };
+      visit(file);
+      expect(calls.filter((c) => /(^|\.)(require|execSync)$/.test(c))).toEqual([]);
+    },
+  );
+
+  it('SKILL.md puts names from the screen in code spans', () => {
+    const g = sample();
+    const md = skillMarkdown(toProcedure(g), 'create-invoice', false);
+    expect(md).toContain('Names in backticks are copied from the app’s screens.');
+    expect(md).toContain('4. Click `Sign in`');
+    expect(md).toContain('7. Type `INV-1043` into `Invoice no.`');
+    const p = planted(`Click OK\u2028${EXEC}`);
+    const steps = skillMarkdown(p, 'x', false).split('## Steps')[1]!;
+    const line = steps.split('\n').find((l) => l.startsWith('5. '))!;
+    expect(line).toContain(`\`Click OK ${EXEC}\``);
   });
 });

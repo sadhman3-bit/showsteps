@@ -10,7 +10,8 @@ import { Button } from '../Button.js';
 import { Dialog } from '../components/Dialog.js';
 import { downloadBytes, safeFileName, usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
-import { prepareExport } from './flatten.js';
+import { brandFor, listKits, useBrandSources, type KitList } from '../brand/sources.js';
+import { prepareExport, shareRedactor } from './flatten.js';
 import { canPickFolder, pickFolder, rememberedFolder, saveFiles } from './folder.js';
 
 const s = strings.share;
@@ -62,6 +63,11 @@ export interface ShareDialogProps {
 /** X8: every way to share a guide without a server: files, rich clipboard, print and a folder. */
 export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps) {
   const prepared = useRef<Promise<ExportInput> | null>(null);
+  const getSources = useBrandSources();
+  // B6: the brand for these files: the guide's own (its kit, or the library's), or another kit.
+  const [kits, setKits] = useState<KitList>();
+  const [kit, setKit] = useState('');
+  const [linksShown, setLinksShown] = useState(true);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [folder, setFolder] = useState<Awaited<ReturnType<typeof rememberedFolder>>>();
@@ -72,15 +78,26 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
   useEffect(() => {
     void rememberedFolder().then(setFolder);
   }, []);
+  useEffect(() => {
+    void getSources().then(async (sources) => {
+      setKits(await listKits(sources));
+      // A kit that leaves the links out starts the toggle off; it can still be ticked.
+      const brand = await brandFor(sources, guide, kit || undefined);
+      setLinksShown(brand.marks.openInLinks);
+    });
+  }, [kit]);
 
   /** Pictures are flattened once per dialog and shared by every export. */
   const input = async (): Promise<ExportInput> => ({
-    ...(await (prepared.current ??= prepareExport(store, guide))),
-    startLinks: hasWebStep && links === 'on',
+    ...(await (prepared.current ??= getSources().then((sources) =>
+      prepareExport(store, guide, { sources, ...(kit ? { kit } : {}) }),
+    ))),
+    startLinks: hasWebStep && links === 'on' && linksShown,
   });
 
   async function bytesFor(format: Format): Promise<Uint8Array> {
-    if (format === 'showsteps') return exportGuideArchive(store, guide.id);
+    if (format === 'showsteps')
+      return exportGuideArchive(store, guide.id, { mode: 'share', redact: shareRedactor });
     const [x, data] = await Promise.all([exporters(), input()]);
     switch (format) {
       case 'pdf':
@@ -161,12 +178,37 @@ export function ShareDialog({ store, guide, onClose, onPrint }: ShareDialogProps
     <Dialog title={s.title} onClose={onClose}>
       <div class="ss-share" aria-busy={busy}>
         <p class="ss-muted">{s.privacy}</p>
+        {kits?.kits.length ? (
+          <label class="ss-field ss-share__brand">
+            {s.brand}
+            <select
+              class="ss-input"
+              value={kit}
+              disabled={busy}
+              onChange={(e) => {
+                setKit(e.currentTarget.value);
+                prepared.current = null;
+              }}
+            >
+              <option value="">{s.brandGuide}</option>
+              <option value="showsteps">{s.brandShowSteps}</option>
+              {kits.kits.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {kits.teamIds.has(k.id) ? s.brandTeam(k.name) : k.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         {hasWebStep ? (
           <label class="ss-check">
             <input
               type="checkbox"
-              checked={links === 'on'}
-              onChange={(e) => setLinks(e.currentTarget.checked ? 'on' : 'off')}
+              checked={links === 'on' && linksShown}
+              onChange={(e) => {
+                setLinks(e.currentTarget.checked ? 'on' : 'off');
+                setLinksShown(true);
+              }}
             />{' '}
             {s.startLinks}
           </label>

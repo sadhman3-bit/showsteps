@@ -4,6 +4,7 @@ import {
   Document,
   ExternalHyperlink,
   Footer,
+  Header,
   HeadingLevel,
   ImageRun,
   LevelFormat,
@@ -11,11 +12,14 @@ import {
   PageNumber,
   Paragraph,
   ShadingType,
+  TabStopType,
   TextRun,
 } from 'docx';
+import fontkit from '@pdf-lib/fontkit';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { PROCEDURE_FORMAT, procedureJson, toProcedure } from '../agent/procedure.js';
-import { accentOf, fontOf } from '../branding.js';
+import { BRAND_FONTS } from '../branding.js';
+import { coverOrder, expandTokens, resolveBrand, type TokenValues } from '../brandkit.js';
 import { LIGHT } from '../tokens.js';
 import { PDF_DISPLAY_800, PDF_SANS_400 } from './fonts.generated.js';
 import type { RichText } from '../schema.js';
@@ -36,7 +40,6 @@ const TONE_FILL = {
   alert: word(LIGHT.alertBg),
 };
 const MUTED = word(LIGHT.textMuted);
-const TEXT = word(LIGHT.text);
 
 const base64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 const INDENT = 540; // twips: step text and pictures sit right of the number
@@ -94,52 +97,81 @@ function imageRun(image: ExportImage, maxW: number, maxH: number, name: string, 
 export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
   const doc = exportDocument(input);
   const L = doc.labels;
-  const accent = accentOf(input.guide).slice(1).toUpperCase();
-  // ShowSteps's own type, embedded in the file, unless the guide's branding picks a font.
-  const branded = fontOf(input.guide);
-  const own = !branded || branded === 'Funnel Sans';
-  const font = own ? 'Funnel Sans' : branded;
-  const headingFont = own ? 'Funnel Display' : branded;
+  const brand = input.brand ?? resolveBrand(input.guide);
+  const accent = word(brand.colors.accent);
+  const headings = word(brand.colors.headings);
+  // ShowSteps's own type, embedded in the file, unless the brand picks a font; a font the
+  // person added is embedded under its own family name.
+  const embeddedFonts: { name: string; data: Buffer }[] = [];
+  const family = (name: string | undefined, own: string): string => {
+    const custom = name?.startsWith('custom:') ? input.fonts?.get(name.slice(7)) : undefined;
+    if (custom) {
+      let familyName = 'Custom';
+      try {
+        familyName = (fontkit.create(custom) as { familyName?: string }).familyName ?? familyName;
+      } catch {
+        // An unreadable font: Word falls back to its own.
+      }
+      if (!embeddedFonts.some((f) => f.name === familyName))
+        embeddedFonts.push({ name: familyName, data: custom as Buffer });
+      return familyName;
+    }
+    if (!name || name === 'Funnel Sans' || !BRAND_FONTS[name]) {
+      if (!embeddedFonts.some((f) => f.name === own))
+        embeddedFonts.push({
+          name: own,
+          data: base64(own === 'Funnel Sans' ? PDF_SANS_400 : PDF_DISPLAY_800) as Buffer,
+        });
+      return own;
+    }
+    return name;
+  };
+  const font = family(brand.fonts.body, 'Funnel Sans');
+  const headingFont = family(brand.fonts.heading ?? brand.fonts.body, 'Funnel Display');
   const children: Paragraph[] = [];
+  const logoOnCover = !!input.logo && brand.logoPlacement !== 'header';
 
-  if (input.logo) {
-    children.push(
-      new Paragraph({
-        children: [imageRun(input.logo, 240, 56, 'Logo', '')],
-        spacing: { after: 240 },
-      }),
-    );
-  }
-  children.push(new Paragraph({ heading: HeadingLevel.TITLE, children: textRuns(doc.title) }));
-  if (doc.links) {
-    const link = (href: string, text: string) =>
-      new ExternalHyperlink({
-        link: href,
-        children: [new TextRun({ text, style: 'Hyperlink', bold: true })],
-      });
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({ text: `${L.openIn} ` }),
-          link(doc.links.guide, L.guideMe),
-          new TextRun({ text: ' · ' }),
-          link(doc.links.run, L.runForMe),
-        ],
-      }),
-      new Paragraph({ children: textRuns(L.linksNote, { color: MUTED }) }),
-    );
-  }
-  if (doc.description) children.push(new Paragraph({ children: textRuns(doc.description) }));
-  children.push(new Paragraph({ children: textRuns(doc.meta, { color: MUTED }) }));
-  if (doc.preconditions.length) {
-    children.push(
-      new Paragraph({
-        children: [new TextRun({ text: L.before, bold: true })],
-        spacing: { before: 200 },
-      }),
-    );
-    for (const p of doc.preconditions) {
-      children.push(new Paragraph({ bullet: { level: 0 }, children: textRuns(p) }));
+  for (const element of coverOrder(brand)) {
+    if (element === 'logo' && logoOnCover && input.logo) {
+      children.push(
+        new Paragraph({
+          children: [imageRun(input.logo, 240, 56, 'Logo', '')],
+          spacing: { after: 240 },
+        }),
+      );
+    } else if (element === 'title') {
+      children.push(new Paragraph({ heading: HeadingLevel.TITLE, children: textRuns(doc.title) }));
+    } else if (element === 'links' && doc.links) {
+      const link = (href: string, text: string) =>
+        new ExternalHyperlink({
+          link: href,
+          children: [new TextRun({ text, style: 'Hyperlink', bold: true })],
+        });
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: `${L.openIn} ` }),
+            link(doc.links.guide, L.guideMe),
+            new TextRun({ text: ' · ' }),
+            link(doc.links.run, L.runForMe),
+          ],
+        }),
+        new Paragraph({ children: textRuns(L.linksNote, { color: MUTED }) }),
+      );
+    } else if (element === 'description' && doc.description) {
+      children.push(new Paragraph({ children: textRuns(doc.description) }));
+    } else if (element === 'meta') {
+      children.push(new Paragraph({ children: textRuns(doc.meta, { color: MUTED }) }));
+    } else if (element === 'preconditions' && doc.preconditions.length) {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: L.before, bold: true })],
+          spacing: { before: 200 },
+        }),
+      );
+      for (const p of doc.preconditions) {
+        children.push(new Paragraph({ bullet: { level: 0 }, children: textRuns(p) }));
+      }
     }
   }
   if (!doc.items.length) children.push(new Paragraph({ children: textRuns(L.noSteps) }));
@@ -209,40 +241,68 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
     );
   }
 
-  // U3: one visible line; the procedure itself goes into a custom XML part (below).
-  children.push(
-    new Paragraph({
-      spacing: { before: 360 },
-      children: [new TextRun({ text: L.agentFooter, color: MUTED, size: 16 })],
-    }),
-  );
-
-  // "Page {n} of {total}" with live page fields in place of the numbers.
-  const pageParts = L.page(-1, -2)
-    .split(/(-1|-2)/)
-    .filter(Boolean)
-    .map((part) =>
-      part === '-1' ? PageNumber.CURRENT : part === '-2' ? PageNumber.TOTAL_PAGES : part,
+  // U3: one visible line; the procedure itself goes into a custom XML part (below). A kit can
+  // leave either out.
+  if (brand.marks.agentLine)
+    children.push(
+      new Paragraph({
+        spacing: { before: 360 },
+        children: [new TextRun({ text: L.agentFooter, color: MUTED, size: 16 })],
+      }),
     );
 
+  // Header and footer slots, with live page fields for {page}, {pages} and {pageOf}.
+  const values: Omit<TokenValues, 'page' | 'pages' | 'pageOf'> = {
+    title: doc.title,
+    ...(brand.company ? { company: brand.company } : {}),
+    date: doc.date,
+    ...(input.guide.author ? { author: input.guide.author } : {}),
+  };
+  const fieldParts = (
+    template: string,
+  ): (string | (typeof PageNumber)[keyof typeof PageNumber])[] =>
+    template
+      .split(/(\{page\}|\{pages\}|\{pageOf\})/)
+      .filter(Boolean)
+      .flatMap((part) =>
+        part === '{page}'
+          ? [PageNumber.CURRENT]
+          : part === '{pages}'
+            ? [PageNumber.TOTAL_PAGES]
+            : part === '{pageOf}'
+              ? fieldParts(L.page(-1, -2).replace('-1', '{page}').replace('-2', '{pages}'))
+              : [expandTokens(part, { ...values, page: 0, pages: 0, pageOf: '' })],
+      );
+  // Content width in twips (A4 or Letter, less the margins): centre and right tab stops.
+  const [pageW, pageH] = brand.page.size === 'Letter' ? [12240, 15840] : [11906, 16838];
+  const contentW = pageW - 1134 * 2;
+  const slotParagraph = (row: { left: string; centre: string; right: string }) =>
+    new Paragraph({
+      tabStops: [
+        { type: TabStopType.CENTER, position: contentW / 2 },
+        { type: TabStopType.RIGHT, position: contentW },
+      ],
+      children: [
+        new TextRun({ children: fieldParts(row.left), color: MUTED, size: 18 }),
+        new TextRun({ children: ['\t', ...fieldParts(row.centre)], color: MUTED, size: 18 }),
+        new TextRun({ children: ['\t', ...fieldParts(row.right)], color: MUTED, size: 18 }),
+      ],
+    });
+  const { header, footer, notice } = brand.page;
+  const headerLogo = !!input.logo && brand.logoPlacement !== 'cover';
+  const hasHeader = headerLogo || !!(header.left || header.centre || header.right);
+
   const file = new Document({
-    creator: 'ShowSteps',
-    ...(own
-      ? {
-          fonts: [
-            { name: 'Funnel Sans', data: base64(PDF_SANS_400) as Buffer },
-            { name: 'Funnel Display', data: base64(PDF_DISPLAY_800) as Buffer },
-          ],
-        }
-      : {}),
+    creator: brand.marks.generator === 'showsteps' ? 'ShowSteps' : (brand.company ?? ''),
+    ...(embeddedFonts.length ? { fonts: embeddedFonts } : {}),
     title: doc.title,
     ...(doc.description ? { description: doc.description } : {}),
     styles: {
       default: {
         document: { run: { font, size: 21 }, paragraph: { spacing: { after: 80 } } },
-        title: { run: { font: headingFont, size: 52, bold: true, color: TEXT } },
+        title: { run: { font: headingFont, size: 52, bold: true, color: headings } },
         heading1: {
-          run: { font: headingFont, size: 32, bold: true, color: TEXT },
+          run: { font: headingFont, size: 32, bold: true, color: headings },
           paragraph: { spacing: { before: 360, after: 120 }, keepNext: true },
         },
       },
@@ -270,17 +330,38 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
       {
         properties: {
           page: {
-            size: { width: 11906, height: 16838 }, // A4
+            size: { width: pageW, height: pageH }, // A4 or Letter
             margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 },
           },
         },
+        ...(hasHeader
+          ? {
+              headers: {
+                default: new Header({
+                  children: [
+                    ...(headerLogo && input.logo
+                      ? [new Paragraph({ children: [imageRun(input.logo, 120, 24, 'Logo', '')] })]
+                      : []),
+                    ...(header.left || header.centre || header.right
+                      ? [slotParagraph(header)]
+                      : []),
+                  ],
+                }),
+              },
+            }
+          : {}),
         footers: {
           default: new Footer({
             children: [
-              new Paragraph({
-                alignment: AlignmentType.RIGHT,
-                children: [new TextRun({ children: pageParts, color: MUTED, size: 18 })],
-              }),
+              ...(notice
+                ? [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [new TextRun({ text: notice, bold: true, color: MUTED, size: 17 })],
+                    }),
+                  ]
+                : []),
+              slotParagraph(footer),
             ],
           }),
         },
@@ -288,10 +369,10 @@ export async function guideToDocx(input: ExportInput): Promise<Uint8Array> {
       },
     ],
   });
-  return withProcedurePart(
-    new Uint8Array(await Packer.toArrayBuffer(file)),
-    procedureJson(toProcedure(input.guide)),
-  );
+  const packed = new Uint8Array(await Packer.toArrayBuffer(file));
+  return brand.marks.agentData
+    ? withProcedurePart(packed, procedureJson(toProcedure(input.guide)))
+    : packed;
 }
 
 export const PROCEDURE_XML_NAMESPACE = 'urn:showsteps:procedure:v1';

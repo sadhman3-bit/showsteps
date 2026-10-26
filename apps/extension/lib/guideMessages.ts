@@ -15,6 +15,9 @@ export type Speed = z.infer<typeof SpeedSchema>;
 export const FileHintSchema = z.object({
   name: z.string().max(255).optional(),
   step: z.number().int().positive().optional(),
+  /** `file-other-site`: the host the file came from and the step's own (H3). */
+  from: z.string().max(255).optional(),
+  site: z.string().max(255).optional(),
 });
 export type FileHint = z.infer<typeof FileHintSchema>;
 
@@ -219,6 +222,10 @@ export const GuideToContentSchema = z.discriminatedUnion('type', [
     grab: z.object({ fetchLink: z.boolean() }).optional(),
     /** An attach step: put this file in the step's file field. */
     attach: FilePayloadSchema.optional(),
+    /** H4: the person confirmed this step in this run, so the live element's name can't stop it. */
+    confirmed: z.boolean().optional(),
+    /** H4: a schedule approved this step; it acts only while the live name is this one. */
+    approvedName: z.string().max(1000).optional(),
   }),
   z.object({ type: z.literal('guide-clear') }),
   /** Top frame: scroll the iframe that holds the next target into view. */
@@ -248,8 +255,13 @@ export type GuideToContent = z.infer<typeof GuideToContentSchema>;
 export const ShowReplySchema = z.object({ found: z.boolean() });
 export const RunReplySchema = z.object({
   result: z.enum(['acted', 'not-found', 'cannot']),
-  /** `file-type`: the field doesn't take this file (or is disabled). */
-  reason: z.enum(['file-type']).optional(),
+  /**
+   * `file-type`: the field doesn't take this file (or is disabled). `needs-confirm` (H4): the
+   * live element's name is an action that can't be undone, so a person confirms it first.
+   */
+  reason: z.enum(['file-type', 'needs-confirm']).optional(),
+  /** `needs-confirm`: the live element's name. */
+  name: z.string().max(1000).optional(),
   /** `grab`: the file the link holds, or its name when it is over the size cap. */
   file: FilePayloadSchema.optional(),
   tooBig: z.object({ name: z.string().max(255) }).optional(),

@@ -59,6 +59,12 @@ export class PageRecorder {
   private controller: Controller | undefined;
   private readonly blur = new LiveBlur();
   private outline: HTMLElement | undefined;
+  /**
+   * H6: fields seen as secret at any time during this capture. A Show password button makes the
+   * field `type="text"`, but its value stays secret for the rest of the capture.
+   */
+  private readonly secretFields = new WeakSet<Element>();
+  private typeWatch: MutationObserver | undefined;
 
   async init(): Promise<void> {
     window.addEventListener('message', this.onWindowMessage);
@@ -109,6 +115,8 @@ export class PageRecorder {
       window.removeEventListener('pointerover', this.onPointerOver, true);
       window.removeEventListener('resize', this.reportViewport);
       window.removeEventListener('blur', this.onWindowBlur);
+      this.typeWatch?.disconnect();
+      this.typeWatch = undefined;
       this.listening = false;
     }
     this.controller?.unmount();
@@ -129,6 +137,48 @@ export class PageRecorder {
     window.addEventListener('pointerover', this.onPointerOver, true);
     if (this.isTop) window.addEventListener('resize', this.reportViewport);
     window.addEventListener('blur', this.onWindowBlur);
+    this.watchSecrets();
+  }
+
+  /** Note every secret field now, and any field whose `type` stops being "password" later. */
+  private watchSecrets(): void {
+    for (const el of deepElements(document)) if (isSensitiveField(el)) this.secretFields.add(el);
+    this.typeWatch = new MutationObserver((records) => {
+      for (const r of records)
+        if (r.oldValue?.toLowerCase() === 'password' && r.target instanceof Element)
+          this.secretFields.add(r.target);
+    });
+    this.typeWatch.observe(document, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['type'],
+      attributeOldValue: true,
+    });
+  }
+
+  /** Secret now, or at any time during this capture (H6). */
+  private isSecret(el: Element): boolean {
+    if (this.secretFields.has(el)) return true;
+    if (!isSensitiveField(el)) return false;
+    this.secretFields.add(el);
+    return true;
+  }
+
+  /** Boxes of the secret fields with a value on screen in this (top) frame, in CSS pixels (H6). */
+  private secretBoxes(): { x: number; y: number; w: number; h: number }[] {
+    const out: { x: number; y: number; w: number; h: number }[] = [];
+    for (const el of deepElements(document)) {
+      if (out.length >= 50) break;
+      if (!(el.localName === 'input' || el.localName === 'textarea') || !this.isSecret(el))
+        continue;
+      // An empty field shows nothing to hide.
+      if (!(el as HTMLInputElement).value) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) continue;
+      if (r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) continue;
+      out.push({ x: r.left, y: r.top, w: r.width, h: r.height });
+    }
+    return out;
   }
 
   private readonly reportViewport = () => {
@@ -173,7 +223,7 @@ export class PageRecorder {
    * Request the screenshot, then send the event straight away: the page may unload right after
    * this input (e.g. a sign-in that loads a new page), and the background pairs the two by id.
    */
-  private record(event: ContentEvent, withShot: boolean): void {
+  private record(event: ContentEvent, withShot: boolean, byPage = false): void {
     const shotId = withShot ? crypto.randomUUID() : undefined;
     if (shotId) {
       // Hide our toolbar, then ask for the picture once that has been painted. The input time
@@ -186,8 +236,10 @@ export class PageRecorder {
         if (window !== window.top) return;
         const words = collectPageText(document, {
           skip: (el) => el.localName.startsWith('showsteps-'),
+          sensitive: (el) => this.isSecret(el),
         });
-        void send({ type: 'shot-words', shotId, words });
+        const secrets = this.secretBoxes();
+        void send({ type: 'shot-words', shotId, words, ...(secrets.length ? { secrets } : {}) });
       };
       const controller = this.controller;
       if (controller)
@@ -206,6 +258,7 @@ export class PageRecorder {
       ...(shotId ? { shotId } : {}),
       ...(observeId ? { observeId } : {}),
       event,
+      ...(byPage ? { byPage: true } : {}),
     });
   }
 
@@ -253,7 +306,7 @@ export class PageRecorder {
     const before = this.committed.get(el) ?? this.baseline.get(el) ?? '';
     if (value === before) return undefined;
     this.committed.set(el, value);
-    const sensitive = isSensitiveField(el);
+    const sensitive = this.isSecret(el);
     return {
       kind: 'type',
       target: this.describe(el),
@@ -264,9 +317,9 @@ export class PageRecorder {
   }
 
   /** Record typed text if the field's value changed since focus or the last commit. */
-  private commitTyping(el: Element, withShot = true): boolean {
+  private commitTyping(el: Element, withShot = true, byPage = false): boolean {
     const event = this.takeTyping(el);
-    if (event) this.record(event, withShot);
+    if (event) this.record(event, withShot, byPage);
     return !!event;
   }
 
@@ -336,9 +389,11 @@ export class PageRecorder {
     this.record({ kind: 'dblclick', target: this.describe(el), element: this.keyOf(el) }, false);
   };
 
-  // Value changes are accepted from scripts too (frameworks and test tools set values that way).
+  // Value changes are accepted from scripts too (frameworks and test tools set values that way),
+  // but steps made from them are marked as the page's (H6), for the person to keep or delete.
   private readonly onChange = (e: Event) => {
     if (!this.recording || this.ours(e)) return;
+    const byPage = !e.isTrusted;
     const el = e.composedPath()[0];
     if (!(el instanceof Element)) return;
     const shot = !this.justClicked(el);
@@ -347,7 +402,7 @@ export class PageRecorder {
     const type = (el.getAttribute('type') ?? '').toLowerCase();
     if (tag === 'select') {
       const select = el as HTMLSelectElement;
-      const value = isSensitiveField(el)
+      const value = this.isSecret(el)
         ? ''
         : Array.from(select.selectedOptions)
             .map((o) => o.label || o.text)
@@ -355,6 +410,7 @@ export class PageRecorder {
       this.record(
         { kind: 'select', target: this.describe(el), element: this.keyOf(el), value },
         shot,
+        byPage,
       );
     } else if (tag === 'input' && (type === 'checkbox' || type === 'radio')) {
       const role = type === 'radio' ? 'radio' : 'checkbox';
@@ -362,6 +418,7 @@ export class PageRecorder {
       this.record(
         { kind: 'check', target: this.describe(el), element: this.keyOf(el), checked, role },
         shot,
+        byPage,
       );
     } else if (tag === 'input' && type === 'file') {
       const files = Array.from((el as HTMLInputElement).files ?? []).map((f) => f.name);
@@ -369,14 +426,16 @@ export class PageRecorder {
         this.record(
           { kind: 'upload', target: this.describe(el), element: this.keyOf(el), files },
           shot,
+          byPage,
         );
     } else if (isTextEntry(el)) {
-      this.commitTyping(el);
+      this.commitTyping(el, true, byPage);
     }
   };
 
   private readonly onFocusIn = (e: FocusEvent) => {
     const el = e.composedPath()[0];
+    if (el instanceof Element) this.isSecret(el); // note it while it is still secret (H6)
     if (el instanceof Element && isTextEntry(el) && !this.baseline.has(el))
       this.baseline.set(el, this.valueOf(el));
   };

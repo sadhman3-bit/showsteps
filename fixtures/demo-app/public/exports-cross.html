@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Exports · Ledgerline</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <strong>Ledgerline</strong>
+      <nav aria-label="Main"><a href="/app/">Dashboard</a> <a href="/send.html">Send</a></nav>
+    </header>
+    <main>
+      <section class="panel" aria-labelledby="exports-h">
+        <h1 id="exports-h">Exports</h1>
+        <p>
+          Open this page on 127.0.0.1: its link downloads from localhost, another site, and sends no
+          referrer (security tests: such a file is never attached).
+        </p>
+        <ul class="downloads">
+          <li>
+            <a
+              href="http://localhost:5173/files/report.pdf?attach=1"
+              data-stable-id="pdf"
+              referrerpolicy="no-referrer"
+              >Download PDF</a
+            >
+          </li>
+        </ul>
+      </section>
+    </main>
+    <script src="/scramble.js"></script>
+    <script>
+      window.demoScramble(document);
+    </script>
+  </body>
+</html>

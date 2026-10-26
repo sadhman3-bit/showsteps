@@ -9,7 +9,7 @@ import {
   importGuideArchive,
 } from '../src/archive.js';
 import { CaptureSession, attachScreenshot, type CaptureEvent } from '../src/capture/session.js';
-import { isSensitiveField, isTextEntry } from '../src/dom/sensitive.js';
+import { hasSecretName, isSensitiveField, isTextEntry } from '../src/dom/sensitive.js';
 import { createGuide, createHeading, createStep } from '../src/factory.js';
 import { actionBoxFor, autoCrop, clampRect, fitWidth } from '../src/geometry.js';
 import { GuideFormatError, serializeGuide } from '../src/migrations.js';
@@ -294,6 +294,38 @@ describe('field detection', () => {
     expect(isSensitiveField(make('<button>Password</button>'))).toBe(false);
   });
 
+  it('flags inputs whose name, id, label or placeholder names a secret (H6)', () => {
+    const secret = [
+      '<input name="pin">',
+      '<input id="passcode">',
+      '<input aria-label="CVV">',
+      '<input placeholder="Security code">',
+      '<input name="oneTimeCode">',
+      '<input name="otp">',
+      '<input name="tfn">',
+      '<input placeholder="Tax file number">',
+      '<input name="bsb">',
+      '<input aria-label="Account number">',
+      '<input aria-label="Card number">',
+      '<label>Your PIN <input name="x"></label>',
+    ];
+    for (const html of secret) {
+      const el = make(html);
+      const input = el.localName === 'input' ? el : el.querySelector('input')!;
+      expect(isSensitiveField(input), html).toBe(true);
+      expect(hasSecretName(input), html).toBe(true);
+    }
+    const plain = [
+      '<input name="username">',
+      '<input name="spinner">',
+      '<input aria-label="Pinned notes">',
+      '<input placeholder="Supplier">',
+      '<button aria-label="Pin to top">Pin to top</button>',
+      '<textarea name="pin"></textarea>',
+    ];
+    for (const html of plain) expect(hasSecretName(make(html)), html).toBe(false);
+  });
+
   it('knows which elements take typing', () => {
     expect(isTextEntry(make('<input>'))).toBe(true);
     expect(isTextEntry(make('<input type="date">'))).toBe(true);
@@ -316,7 +348,7 @@ describe('.showsteps archives', () => {
 
   it('round-trips a guide with its images into another library', async () => {
     const { store, guide, step } = await seeded();
-    const bytes = await exportGuideArchive(store, guide.id);
+    const bytes = await exportGuideArchive(store, guide.id, { mode: 'backup' });
     expect(ARCHIVE_EXTENSION).toBe('.showsteps');
     // Archives saved before the rename still show in the import picker.
     expect(ARCHIVE_ACCEPT.split(',')).toEqual(['.showsteps', '.trailmark', 'application/zip']);
@@ -329,7 +361,10 @@ describe('.showsteps archives', () => {
 
   it('assigns a new id when importing a guide that already exists', async () => {
     const { store, guide } = await seeded();
-    const result = await importGuideArchive(store, await exportGuideArchive(store, guide.id));
+    const result = await importGuideArchive(
+      store,
+      await exportGuideArchive(store, guide.id, { mode: 'backup' }),
+    );
     expect(result.renamed).toBe(true);
     expect(result.guideId).not.toBe(guide.id);
     expect(await store.listGuides()).toHaveLength(2);
@@ -341,14 +376,19 @@ describe('.showsteps archives', () => {
       GuideFormatError,
     );
     const { zipSync, strToU8 } = await import('fflate');
+    // Files other than guide.json and pictures are refused outright (H8)…
     await expect(importGuideArchive(store, zipSync({ 'x.txt': strToU8('hi') }))).rejects.toThrow(
-      /no guide.json/,
+      /holds "x.txt"/,
     );
+    // …and pictures without a guide.json aren't a guide.
+    await expect(
+      importGuideArchive(store, zipSync({ 'img/a.png': strToU8('hi') })),
+    ).rejects.toThrow(/no guide.json/);
     const evil = zipSync({
       'guide.json': strToU8(serializeGuide(createGuide())),
       img: { '..%2f..%2fx': strToU8('x') },
     });
-    await expect(importGuideArchive(store, evil)).rejects.toThrow(/Invalid image name/);
+    await expect(importGuideArchive(store, evil)).rejects.toThrow(GuideFormatError); // refused before unpacking (H8)
   });
 
   it('duplicates a guide with its images', async () => {

@@ -24,6 +24,8 @@ const EVENTS = new Set([
 contextBridge.exposeInMainWorld('showsteps', {
   store: (which: string, method: string, args: unknown[]) =>
     ipcRenderer.invoke('store', which, method, args),
+  brand: (which: string, method: string, args: unknown[]) =>
+    ipcRenderer.invoke('brand', which, method, args),
   invoke: (channel: string, ...args: unknown[]) => {
     if (!INVOKE.has(channel)) return Promise.reject(new Error(`blocked channel ${channel}`));
     return ipcRenderer.invoke(channel, ...args);

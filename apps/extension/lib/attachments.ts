@@ -12,13 +12,21 @@ export interface RunFileMeta {
 }
 
 /** Why a step's download can't be attached. */
-export type FileProblem = 'big' | 'ambiguous' | 'failed';
+export type FileProblem = 'big' | 'ambiguous' | 'failed' | 'other-site';
+
+/** A problem with the hosts involved (`other-site`: the file's host and the step's). */
+interface Problem {
+  problem: FileProblem;
+  name?: string;
+  from?: string;
+  site?: string;
+}
 
 /** What a run knows about the file an attach step wants. */
 export type FileLookup =
   | { kind: 'ready'; meta: RunFileMeta }
   | { kind: 'pending'; stepId: string; name?: string }
-  | { kind: 'problem'; stepId: string; problem: FileProblem; name?: string }
+  | ({ kind: 'problem'; stepId: string } & Problem)
   | { kind: 'none'; stepId?: string };
 
 /** The parts of `chrome.downloads.DownloadItem` the watch reads. */
@@ -37,8 +45,14 @@ export interface DownloadInfo {
 
 export interface AttachDeps {
   files: RunFileStore;
-  /** Fetch a completed download's URL again (with the site's cookies), checked; or undefined. */
-  refetch(download: DownloadInfo): Promise<Blob | undefined>;
+  /**
+   * Fetch a completed download's URL again, checked; or undefined. `include` sends the site's
+   * cookies (the run's own site); `omit` is for an address on another site (a redirect).
+   */
+  refetch(
+    download: DownloadInfo,
+    options: { credentials: 'include' | 'omit' },
+  ): Promise<Blob | undefined>;
   /** The desktop app reads the downloaded file (capability `read-download`), when connected. */
   readDownload?(download: DownloadInfo): Promise<Blob | undefined>;
   now(): number;
@@ -91,6 +105,11 @@ export function hostOf(url: string | undefined): string {
   }
 }
 
+/** The host a download comes from: a `blob:` URL's page, or '' for `data:` and bad URLs. */
+export function downloadHost(url: string | undefined): string {
+  return url?.startsWith('blob:') ? hostOf(url.slice(5)) : hostOf(url);
+}
+
 /** Same site: the same host, or one inside the other (app.example.com and example.com). */
 export function sameSite(a: string, b: string): boolean {
   if (!a || !b) return false;
@@ -109,9 +128,9 @@ export function htmlAllowed(download: Pick<DownloadInfo, 'mime' | 'filename'>): 
  */
 export class RunAttachments {
   private files: RunFileMeta[];
-  private problems = new Map<string, { problem: FileProblem; name?: string }>();
+  private problems = new Map<string, Problem>();
   /** Downloads in progress, by download ID: the step whose click started each. */
-  private pending = new Map<number, { stepId: string; name?: string }>();
+  private pending = new Map<number, { stepId: string; name?: string; site: string }>();
   /** Steps whose click started a download (to tell "didn't arrive" from "nothing seen"). */
   private seen = new Set<string>();
   private lastClick: { stepId: string; at: number } | undefined;
@@ -173,11 +192,25 @@ export class RunAttachments {
     const click = this.lastClick;
     if (!click || this.deps.now() - click.at > DOWNLOAD_WINDOW_MS) return false;
     if (item.byExtensionId) return false;
-    const referrer = hostOf(item.referrer);
-    if (referrer && !sameSite(referrer, hostOf(this.site()))) return false;
     // The page already handed this step's file over (a blob: link): nothing more to fetch.
     if (this.files.some((f) => f.stepId === click.stepId)) return true;
     const name = nameFromUrl(item.finalUrl || item.url) || baseName(item.filename) || undefined;
+    // Only the run's own site's files: its address must be on that site whether or not Chrome
+    // gives a referrer (a page can drop it), and the referrer too when there is one. A `data:`
+    // file is the page's own.
+    const site = hostOf(this.site());
+    const host = item.url.startsWith('data:') ? site : downloadHost(item.url);
+    const referrer = hostOf(item.referrer);
+    if (!sameSite(host, site) || (referrer && !sameSite(referrer, site))) {
+      if (!this.seen.has(click.stepId) && host && site)
+        this.problems.set(click.stepId, {
+          problem: 'other-site',
+          ...(name ? { name } : {}),
+          from: sameSite(host, site) ? referrer : host,
+          site,
+        });
+      return false;
+    }
     // Two downloads from one click: which one the person meant can't be told, so neither.
     if (
       [...this.pending.values()].some((p) => p.stepId === click.stepId) ||
@@ -188,7 +221,7 @@ export class RunAttachments {
       return true;
     }
     this.seen.add(click.stepId);
-    this.pending.set(item.id, { stepId: click.stepId, ...(name ? { name } : {}) });
+    this.pending.set(item.id, { stepId: click.stepId, ...(name ? { name } : {}), site });
     if ((item.fileSize ?? item.totalBytes ?? 0) > MAX_FILE_BYTES) {
       this.pending.delete(item.id);
       this.problems.set(click.stepId, { problem: 'big', ...(name ? { name } : {}) });
@@ -213,9 +246,13 @@ export class RunAttachments {
       this.problems.set(p.stepId, { problem: 'big', name });
       return;
     }
-    const blob =
-      (await this.deps.readDownload?.(item).catch(() => undefined)) ??
-      (await this.deps.refetch(item).catch(() => undefined));
+    // Redirected to another site (a storage service, say): fetched again without cookies, and
+    // never read from disk, where Chrome saved what it fetched with them.
+    const own = sameSite(downloadHost(item.finalUrl || item.url), p.site);
+    const blob = own
+      ? ((await this.deps.readDownload?.(item).catch(() => undefined)) ??
+        (await this.deps.refetch(item, { credentials: 'include' }).catch(() => undefined)))
+      : await this.deps.refetch(item, { credentials: 'omit' }).catch(() => undefined);
     if (!blob) {
       this.problems.set(p.stepId, { problem: 'failed', name });
       return;

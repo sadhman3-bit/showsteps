@@ -32,7 +32,15 @@ export type PauseReason = 'confirm' | 'manual' | 'sign-in' | 'not-found' | 'fail
 
 /** What the person is told (notifications, and the toolbar badge for stops and failures). */
 export type Notice =
-  | { kind: 'paused'; reason: PauseReason; scheduleId: string; name: string; step: number }
+  | {
+      kind: 'paused';
+      reason: PauseReason;
+      scheduleId: string;
+      name: string;
+      step: number;
+      /** A file from another site wasn't attached (H3): its host and the step's. */
+      sites?: { from: string; site: string };
+    }
   | { kind: 'due'; scheduleId: string; name: string }
   | { kind: 'finished'; outcome: RunOutcome; scheduleId: string; name: string; reason?: string }
   | { kind: 'check-failed'; scheduleId: string; name: string; step: number };
@@ -185,6 +193,8 @@ export class Scheduler {
     return this.serial(async () => {
       const guide = await this.deps.getGuide(input.guideId);
       if (!guide) throw new Error('not-found');
+      // H4: someone else's guide runs unattended only after the person trusts it.
+      if (guide.received) throw new Error('received');
       const schedule = ScheduleSchema.parse({ ...input, guideVersion: guideVersion(guide) });
       const all = await this.list();
       const isNew = !all.some((s) => s.id === schedule.id);
@@ -363,6 +373,7 @@ export class Scheduler {
       values: {},
     };
     if (!guide) return this.close(log, 'failed', 'guide-missing');
+    if (guide.received) return this.close(log, 'failed', 'guide-received');
     const steps = guideSteps(guide);
     const first = steps.find((x) => x.app.kind === 'web');
     if (!first || first.app.kind !== 'web') return this.close(log, 'failed', 'no-web-steps');
@@ -453,6 +464,9 @@ export class Scheduler {
               scheduleId: a.scheduleId,
               name: s?.name ?? g.title ?? '',
               step: g.index + 1,
+              ...(g.reason === 'file-other-site' && g.file?.from && g.file.site
+                ? { sites: { from: g.file.from, site: g.file.site } }
+                : {}),
             });
           }
         } else if (!key && a.pauseKey && g.phase !== 'paused') {

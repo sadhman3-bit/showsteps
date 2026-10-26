@@ -119,6 +119,10 @@ export function StartLinkPage({ store, link }: { store: GuideStore; link: StartL
               guide={guide}
               cancelLabel={s.notNow}
               {...(changed ? { notice: changed } : {})}
+              onTrust={async (trusted) => {
+                await store.saveGuide(trusted);
+                setGuide(trusted);
+              }}
               onClose={notNow}
               onStart={start}
             />

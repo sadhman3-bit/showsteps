@@ -2,6 +2,10 @@
  * Every user-facing string in ShowSteps lives here, keyed by area, so the UI can be
  * translated later by swapping this object.
  */
+/** Why Run for me didn’t attach another site’s file (H3); the same words in the run and its notice. */
+const fileOtherSite = (from = 'another site', site = 'this site') =>
+  `The file came from another site (${from}) than this step (${site}), so ShowSteps didn’t attach it.`;
+
 export const strings = {
   app: {
     name: 'ShowSteps',
@@ -106,6 +110,11 @@ export const strings = {
     duplicate: 'Duplicate',
     copyOf: (title: string) => `Copy of ${title}`,
     export: 'Export (.showsteps)',
+    /** H1: a full copy with everything under the blurs, for the person's own safekeeping. */
+    backup: 'Back up (includes hidden details)',
+    backupConfirm: 'This file includes everything under your blurs. Keep it to yourself.',
+    backupDo: 'Download backup',
+    backupName: (title: string) => `${title} (backup)`,
     moveToTrash: 'Move to Trash',
     restore: 'Restore',
     deleteForever: 'Delete permanently',
@@ -136,6 +145,10 @@ export const strings = {
     guideDescription: 'Description',
     guideDescriptionPlaceholder: 'What this guide helps someone do',
     stepTitle: (n: number) => `Step ${n} title`,
+    /** H6: a step made from an event the page's script raised. */
+    byPage: 'This step came from the page, not from you.',
+    byPageDelete: 'Delete',
+    byPageKeep: 'Keep',
     stepDescription: (n: number) => `Step ${n} description`,
     descriptionPlaceholder: 'Add more detail (optional)',
     altText: 'Alt text',
@@ -250,6 +263,134 @@ export const strings = {
     by: (who: string) => `by ${who}`,
     back: 'Back to versions',
   },
+  /** B4: Settings → Branding (brand kits for every export). */
+  brandKits: {
+    button: 'Branding',
+    title: 'Branding',
+    intro:
+      'A brand kit sets how every PDF, Word file, web page and embed looks: colours, fonts, logo, cover, header and footer, and whether ShowSteps’s own marks appear. Guides use the default kit unless one picks another.',
+    default: 'Default for all guides',
+    showStepsLook: 'ShowSteps (no kit)',
+    kits: 'Brand kits',
+    team: '(team)',
+    isDefault: '(default)',
+    new: 'New kit',
+    import: 'Import…',
+    duplicate: 'Duplicate',
+    export: 'Export…',
+    delete: 'Delete',
+    editorLabel: (name: string) => `Brand kit: ${name}`,
+    teamReadOnly: 'This kit belongs to the team folder. Duplicate it to change it.',
+    none: 'No brand kit yet. Create one to brand your exports.',
+    invalid: 'That change can’t be saved.',
+    saved: 'Saved.',
+    newName: 'My brand',
+    copyName: (name: string) => `Copy of ${name}`,
+    imported: (name: string) => `Added “${name}”.`,
+    importFailed: 'This brand file couldn’t be added.',
+    badPicture: 'This picture can’t be read.',
+    wrongKind: 'That file isn’t the right kind here.',
+    identity: 'Name and company',
+    name: 'Kit name',
+    company: 'Company name (for headers, footers and the file’s creator)',
+    colorsTitle: 'Colours',
+    colors: {
+      accent: 'Accent (step numbers)',
+      coverBackground: 'Cover background',
+      coverText: 'Cover text',
+      headings: 'Headings',
+      links: 'Links',
+      highlight: 'Highlight in pictures',
+    },
+    lowCover: 'The cover text is hard to read on the cover background.',
+    lowHeadings: 'Headings are hard to read on a white page.',
+    lowLinks: 'Links are hard to read on a white page.',
+    useSuggested: 'Use the suggested colour',
+    fontsTitle: 'Fonts',
+    bodyFont: 'Text',
+    headingFont: 'Titles and headings',
+    showStepsType: 'ShowSteps’s type',
+    sameAsBody: 'Same as the text',
+    customFont: (name: string) => `Your font (${name})`,
+    addFont: 'Add a font (TTF or OTF)…',
+    logosTitle: 'Logos',
+    logo: 'Logo (for light backgrounds)',
+    logoOnDark: 'Logo for dark covers',
+    choosePicture: 'Choose…',
+    replacePicture: 'Replace…',
+    removePicture: 'Remove',
+    logoPlacement: 'Where the logo goes',
+    placements: { cover: 'On the cover', header: 'In the page header', both: 'Both' },
+    coverTitle: 'Cover',
+    coverStyle: 'Style',
+    coverStyles: {
+      pattern: 'Band with the trail pattern',
+      solid: 'Plain colour band',
+      plain: 'No band (white page)',
+      image: 'Band with your picture',
+    },
+    coverHeight: 'Band height',
+    heights: { small: 'Small', medium: 'Medium', large: 'Large' },
+    coverImage: 'Cover picture',
+    coverOrder: 'Cover elements, in order',
+    coverOrderHint: 'Untick to hide; move to change the order.',
+    elements: {
+      title: 'Title',
+      links: 'Guide Me and Run for me links',
+      logo: 'Logo',
+      description: 'Description',
+      meta: 'Steps and last update',
+      preconditions: 'Before you start, and Done when',
+    },
+    moveUp: (what: string) => `Move up: ${what}`,
+    moveDown: (what: string) => `Move down: ${what}`,
+    header: 'Page header',
+    footer: 'Page footer',
+    slots: { left: 'Left', centre: 'Centre', right: 'Right' },
+    insert: 'Insert…',
+    insertToken: (row: string, slot: string) => `Insert into ${row}, ${slot}`,
+    tokens: {
+      '{title}': 'Guide title',
+      '{company}': 'Company name',
+      '{page}': 'Page number',
+      '{pages}': 'Number of pages',
+      '{pageOf}': '“Page 2 of 9”',
+      '{date}': 'Last updated',
+      '{author}': 'Author',
+    },
+    pagesTitle: 'Pages and steps',
+    notice: 'Notice on every page',
+    noticePlaceholder: 'Confidential: internal use only',
+    pageSize: 'Page size (PDF and Word)',
+    letter: 'US Letter',
+    numberStyle: 'Step numbers',
+    numberStyles: { circle: 'In a circle', square: 'In a square', plain: 'Just the number' },
+    pictureBorder: 'Border round pictures',
+    marksTitle: 'ShowSteps marks',
+    marksHint: 'Choose which of ShowSteps’s own marks appear in your files.',
+    marks: {
+      pattern: 'The trail pattern on the cover',
+      openInLinks: 'Guide Me and Run for me links (can still be ticked in Share)',
+      agentLine: 'The line “Agent-readable procedure embedded”',
+      agentData: 'The procedure for AI agents inside PDF and Word files',
+    },
+    generator: 'File made by (in the file’s details)',
+    generatorShowSteps: 'ShowSteps',
+    generatorCompany: 'Your company name',
+    preview: 'Preview',
+    previewPdf: 'Open a PDF preview',
+    previewFrame: 'Preview of a guide in this kit',
+    sample: {
+      title: 'Pay a supplier invoice',
+      section: 'Create the invoice',
+      step1: 'Click New invoice',
+      step2: 'Click Save',
+      step3: 'Click Send',
+      description: 'How the accounts team records and sends a supplier invoice.',
+      before: 'You can sign in to the accounts system',
+      author: 'Alex',
+    },
+  },
   brand: {
     title: 'Branding',
     logo: 'Logo',
@@ -260,6 +401,11 @@ export const strings = {
     fontDefault: 'Default',
     preview: 'Preview',
     hint: 'Applied to this guide when it is viewed and exported.',
+    /** B6: the guide's brand kit, and its own changes on top. */
+    kit: 'Brand kit',
+    kitDefault: (name?: string) => (name ? `Library default (${name})` : 'Library default'),
+    ownHint: 'Changes below are for this guide only, on top of its kit.',
+    reset: 'Reset to the kit',
   },
   shortcuts: {
     title: 'Keyboard shortcuts',
@@ -281,6 +427,11 @@ export const strings = {
     title: 'Share this guide',
     privacy: 'Files are made on this computer. Nothing is uploaded.',
     startLinks: 'Include Guide Me and Run for me links',
+    /** B6: the brand these files use. */
+    brand: 'Brand',
+    brandGuide: 'This guide’s brand',
+    brandShowSteps: 'ShowSteps',
+    brandTeam: (name: string) => `${name} (team)`,
     download: 'Download',
     formats: {
       pdf: ['PDF', 'For printing and attaching to email'],
@@ -385,7 +536,10 @@ export const strings = {
     chooseFileNamed: (name: string, step?: number) =>
       `Choose ${name} from your Downloads folder${step ? ` (downloaded in step ${step})` : ''}.`,
     /** Why Run for me waits or stops at an attach step (`file-…` reasons). */
-    fileReason: (reason: string, file: { name?: string; step?: number } = {}): string => {
+    fileReason: (
+      reason: string,
+      file: { name?: string; step?: number; from?: string; site?: string } = {},
+    ): string => {
       const name = file.name ?? 'the file';
       const from = file.step ? ` from step ${file.step}` : '';
       const choose = file.name
@@ -404,6 +558,8 @@ export const strings = {
           return `More than one file was downloaded${from}. ${choose}`;
         case 'file-type':
           return `This field doesn’t take ${name}.`;
+        case 'file-other-site':
+          return fileOtherSite(file.from, file.site);
         default:
           return choose;
       }
@@ -417,6 +573,30 @@ export const strings = {
       'ShowSteps will do the steps in a browser tab with a visible pointer. It stops for steps marked to confirm, for passwords and other secrets, and if something unexpected happens.',
     runValues: 'Values to use',
     runStart: 'Start',
+    /** H4: a guide from someone else, before its first run. */
+    received: {
+      title: 'From someone else',
+      intro: (file?: string) =>
+        `This guide came from someone else${file ? ` (${file})` : ''}. Run for me acts with your sign-ins, so check what it does first.`,
+      fromFolder: 'Someone else saved this guide in the team folder last.',
+      sites: 'Sites it acts on',
+      typed: 'Values it types that you didn’t enter',
+      typedItem: (step: number, field: string, value: string) => `Step ${step}, ${field}: ${value}`,
+      attaches: 'Files it moves between sites',
+      attachItem: (step: number, to: string, from?: string) =>
+        from
+          ? `Step ${step} attaches the file downloaded from ${from} on ${to}`
+          : `Step ${step} attaches the latest downloaded file on ${to}`,
+      stops: 'Steps it stops at for you',
+      stopItem: (step: number, title: string, why: 'confirm' | 'person') =>
+        `Step ${step}: ${title} (${why === 'confirm' ? 'you confirm it' : 'you do it'})`,
+      none: 'None',
+      checked: 'I’ve checked this guide',
+      trust: 'Trust this guide',
+      trustHint: 'Run for me won’t ask again for this guide on this computer.',
+      noSchedule:
+        'This guide came from someone else. Run it once with Run for me and choose Trust this guide before scheduling it.',
+    },
     noWebSteps: 'This guide has no web steps to guide.',
     startFailed: 'Could not start. Open a website tab and try again.',
     permission:
@@ -436,6 +616,8 @@ export const strings = {
           `ShowSteps paused ${name}: step ${step} didn’t work`,
         file: (name: string, step: number) =>
           `ShowSteps paused ${name}: step ${step} needs the downloaded file`,
+        'file-other-site': (name: string, step: number, from?: string, site?: string) =>
+          `ShowSteps paused ${name} at step ${step}. ${fileOtherSite(from, site)}`,
       },
       due: (name: string) => `${name} is due. Start now?`,
       finished: {
@@ -569,6 +751,7 @@ export const strings = {
       closed: 'Chrome was closed or the computer was asleep',
       'not-started': 'Not started in time',
       'guide-missing': 'The guide was deleted',
+      'guide-received': 'The guide came from someone else and isn’t trusted yet',
       'no-web-steps': 'The guide has no browser steps',
       values: 'A value couldn’t be filled in',
       start: 'The run couldn’t start',
@@ -579,6 +762,7 @@ export const strings = {
       'file-slow': 'The download took too long',
       'file-big': 'The downloaded file was over 25 MB',
       'file-ambiguous': 'More than one file was downloaded',
+      'file-other-site': 'The file came from another site than the step',
       'file-type': 'The upload field didn’t take the downloaded file',
     } as Record<string, string>,
     /** "Attached invoice.pdf (240 KB), downloaded in step 4" (1.2). */

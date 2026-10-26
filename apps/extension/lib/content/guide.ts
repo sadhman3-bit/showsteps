@@ -7,6 +7,7 @@ import {
   describeElement,
   failedExpectations,
   isSensitiveField,
+  liveNeedsConfirm,
   pageKey,
   performStep,
   toActionable,
@@ -18,6 +19,7 @@ import {
 import { iconSvg } from '@showsteps/ui/icons';
 import { strings } from '@showsteps/ui/strings';
 import { CHROME_BASE_CSS } from './chromeStyle';
+import { trusted } from './trusted';
 import { base64ToBytes, blobToBase64, linkFileName } from '../fileData';
 import { MAX_FILE_BYTES } from '../runfiles';
 import type { z } from 'zod';
@@ -441,11 +443,17 @@ export class GuidePage {
       title: g.close,
     });
     close.innerHTML = iconSvg('x', 18);
-    close.addEventListener('click', () => this.control('stop'));
+    close.addEventListener(
+      'click',
+      trusted(() => this.control('stop')),
+    );
     const row = el('div', { class: 'row' });
     const button = (label: string, action: GuideControl, cls = '') => {
       const b = el('button', { type: 'button', ...(cls ? { class: cls } : {}) }, label);
-      b.addEventListener('click', () => this.control(action));
+      b.addEventListener(
+        'click',
+        trusted(() => this.control(action)),
+      );
       row.append(b);
     };
     if (confirm) {
@@ -561,6 +569,18 @@ export class GuidePage {
     if (msg.attach) return this.attach(msg.step, msg.attach, msg.timeoutMs, msg.speed);
     const target = await this.find(msg.step, msg.timeoutMs);
     if (!target) return { result: 'not-found' };
+    // H4: what the page shows now decides, not only what the guide recorded.
+    const live = describeElement(target);
+    const run = {
+      confirmed: msg.confirmed ?? false,
+      ...(msg.approvedName !== undefined ? { approvedName: msg.approvedName } : {}),
+    };
+    if (liveNeedsConfirm(msg.step, live, run))
+      return {
+        result: 'cannot',
+        reason: 'needs-confirm',
+        ...(live.name ? { name: live.name.slice(0, 1000) } : {}),
+      };
     if (!canPerform(target, msg.step, msg.value)) return { result: 'cannot' };
     // Read the link's file before the click: pages often revoke a blob: address right after.
     const grabbed = msg.grab ? await grabLinkFile(target, msg.grab.fetchLink) : undefined;
@@ -645,8 +665,14 @@ export class GuidePage {
       );
       badge.hidden = true;
       const placed: Placed = { mark, target: null, badge };
-      badge.addEventListener('click', () => this.openPop(placed));
-      badge.addEventListener('mouseenter', () => this.openPop(placed));
+      badge.addEventListener(
+        'click',
+        trusted(() => this.openPop(placed)),
+      );
+      badge.addEventListener(
+        'mouseenter',
+        trusted(() => this.openPop(placed)),
+      );
       root.append(badge);
       this.marks.push(placed);
       if (mark.target) {
@@ -698,18 +724,24 @@ export class GuidePage {
       const open = el('button', { type: 'button' }, m.openGuide);
       open.addEventListener(
         'click',
-        () => void send({ type: 'open-guide', guideId, mode: 'view' }),
+        trusted(() => void send({ type: 'open-guide', guideId, mode: 'view' })),
       );
       const guide = el('button', { type: 'button', class: 'primary' }, m.guideMe);
-      guide.addEventListener('click', () => {
-        pop.remove();
-        void send({ type: 'open-guide', guideId, mode: 'guide' });
-      });
+      guide.addEventListener(
+        'click',
+        trusted(() => {
+          pop.remove();
+          void send({ type: 'open-guide', guideId, mode: 'guide' });
+        }),
+      );
       row.append(open, guide);
       pop.append(row);
     }
     const close = el('button', { class: 'x', type: 'button', 'aria-label': m.cancel }, '×');
-    close.addEventListener('click', () => pop.remove());
+    close.addEventListener(
+      'click',
+      trusted(() => pop.remove()),
+    );
     pop.append(close);
     root.append(pop);
     this.pop = pop;
@@ -733,11 +765,14 @@ export class GuidePage {
       const banner = el('div', { class: 'banner', role: 'status' });
       banner.append(el('span', {}, m.pickBanner));
       const whole = el('button', { type: 'button' }, m.wholePage);
-      whole.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.pick(false);
-        void send({ type: 'picked' });
-      });
+      whole.addEventListener(
+        'click',
+        trusted((e) => {
+          e.stopPropagation();
+          this.pick(false);
+          void send({ type: 'picked' });
+        }),
+      );
       banner.append(whole);
       root.append(banner);
     }
@@ -769,24 +804,24 @@ export class GuidePage {
     window.addEventListener('mousedown', swallow, opts);
     window.addEventListener(
       'click',
-      (e) => {
+      trusted((e) => {
         if (e.composedPath().includes(this.host as EventTarget)) return;
         swallow(e);
         const t = e.composedPath()[0];
         const chosen = t instanceof Element ? toActionable(t) : hovered;
         this.pick(false);
         if (chosen) void send({ type: 'picked', target: describeElement(chosen) });
-      },
+      }),
       opts,
     );
     window.addEventListener(
       'keydown',
-      (e) => {
+      trusted((e: KeyboardEvent) => {
         if (e.key !== 'Escape') return;
         swallow(e);
         this.pick(false);
         void send({ type: 'picked', cancelled: true });
-      },
+      }),
       opts,
     );
     this.startLoop();
@@ -861,7 +896,10 @@ export class GuidePage {
     const banner = el('div', { class: 'banner', role: 'alert' });
     banner.append(el('span', {}, g.signIn));
     const go = el('button', { type: 'button', class: 'primary' }, g.continue);
-    go.addEventListener('click', () => this.control('retry'));
+    go.addEventListener(
+      'click',
+      trusted(() => this.control('retry')),
+    );
     banner.append(go);
     this.notice = banner;
     this.ensureRoot().append(banner);

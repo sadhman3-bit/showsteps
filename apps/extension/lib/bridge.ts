@@ -3,7 +3,9 @@
 // by pages (the library, when guides live in the desktop library).
 import {
   BRIDGE_HOST,
+  BRAND_STORE_METHODS,
   BRIDGE_STORE_METHODS,
+  type BrandStore,
   PartCollector,
   decodeMessage,
   encodeMessage,
@@ -176,6 +178,22 @@ export async function readDownloadVia(
   return bytes instanceof Uint8Array
     ? new Blob([bytes as Uint8Array<ArrayBuffer>], { type: download.mime ?? '' })
     : undefined;
+}
+
+/**
+ * B3: the desktop app's brand kits (the person's own or the team folder's), through the bridge.
+ * Only desktop apps with capability `brand-kits` are asked; with an older one there are none.
+ */
+export function bridgeBrandStore(client: BridgeClient, which: 'personal' | 'team'): BrandStore {
+  const store: Record<string, unknown> = {};
+  for (const method of BRAND_STORE_METHODS) {
+    store[method] = async (...args: unknown[]) => {
+      await client.connect();
+      if (!client.can('brand-kits')) return method === 'listKits' ? [] : undefined;
+      return client.call('brand', [which, method, args]);
+    };
+  }
+  return store as unknown as BrandStore;
 }
 
 /** The desktop library as a GuideStore, through the bridge. */

@@ -100,7 +100,8 @@ function mainHandler(xoriginPort) {
     }
     // Downloads for the Exports page. A signed-out session gets the sign-in page instead of the
     // file (with status 200, as many sites do), so tests can check a sign-in page is never
-    // attached. `?kb=` pads the file (size tests).
+    // attached. `?kb=` pads the file (size tests); `?attach=1` makes the PDF a download even
+    // from a link on another site (exports-cross.html), where the `download` attribute is ignored.
     if (path === '/files/report.pdf' || (path === '/api/export' && req.method === 'POST')) {
       if (cookie(req, 'demo_session') === 'expired') return sendFile(res, join(ROOT, 'login.html'));
       const kb = Math.min(Math.max(Number(url.searchParams.get('kb') ?? 0) || 0, 0), 40 * 1024);
@@ -109,7 +110,9 @@ function mainHandler(xoriginPort) {
       res.writeHead(200, {
         'content-type': 'application/pdf',
         'cache-control': 'no-store',
-        ...(post ? { 'content-disposition': `attachment; filename="${name}"` } : {}),
+        ...(post || url.searchParams.get('attach') === '1'
+          ? { 'content-disposition': `attachment; filename="${name}"` }
+          : {}),
       });
       return res.end(demoPdf(post ? 'Statement' : 'Monthly report', kb));
     }

@@ -9,12 +9,15 @@ import {
   type Guide,
   type GuideStore,
   type Rect,
+  type Redactor,
   type Step,
 } from '@showsteps/core';
+import { encodeImage } from '../editor/imageio.js';
 import type { ExportImage, ExportInput } from '@showsteps/core/export';
 import { ANNOTATION_FONT, strokeFor } from '../components/Annotations.js';
 import { blurRadius } from '../guide/Screenshot.js';
 import { mimeFor } from '../hooks.js';
+import { brandFor, kitAsset, type BrandSources } from '../brand/sources.js';
 
 /** Widest picture written into exports; larger screenshots are scaled down. */
 const MAX_EXPORT_WIDTH = 1600;
@@ -112,6 +115,35 @@ async function encodePng(canvas: OffscreenCanvas): Promise<Uint8Array> {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
+/** Side of a mosaic block, in screenshot pixels. */
+const MOSAIC = 16;
+
+/**
+ * Burn a blur into the picture: first a 16-px mosaic of the region's own pixels (each block one
+ * average colour), then the blur on top for the usual look. A blur of the original pixels alone
+ * can sometimes be undone for short numbers in a known font; block averages can't.
+ */
+function burnBlur(ctx: Ctx, bitmap: ImageBitmap, W: number, H: number, r: Rect, radius: number) {
+  const sx = bitmap.width / W;
+  const sy = bitmap.height / H;
+  const bw = Math.max(1, Math.ceil(r.w / MOSAIC));
+  const bh = Math.max(1, Math.ceil(r.h / MOSAIC));
+  const small = new OffscreenCanvas(bw, bh);
+  const sctx = small.getContext('2d');
+  if (!sctx) return;
+  sctx.imageSmoothingQuality = 'high';
+  sctx.drawImage(bitmap, r.x * sx, r.y * sy, r.w * sx, r.h * sy, 0, 0, bw, bh);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.clip();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(small, 0, 0, bw, bh, r.x, r.y, bw * MOSAIC, bh * MOSAIC);
+  ctx.filter = `blur(${radius}px)`;
+  ctx.drawImage(small, 0, 0, bw, bh, r.x, r.y, bw * MOSAIC, bh * MOSAIC);
+  ctx.restore();
+}
+
 /**
  * A step's picture as readers see it, burned into pixels: crop when magnified, blurs (so the
  * hidden data is gone from the exported file), the highlight box and annotations.
@@ -120,6 +152,8 @@ export async function flattenStepImage(
   step: Step,
   source: Blob,
   maxWidth = MAX_EXPORT_WIDTH,
+  /** The brand's highlight colour (B2); ShowSteps's pink when left out. */
+  highlight: string = HIGHLIGHT_COLOR,
 ): Promise<ExportImage | undefined> {
   const shot = step.human.screenshot;
   if (!shot) return undefined;
@@ -137,15 +171,7 @@ export async function flattenStepImage(
     ctx.scale(scale, scale);
     ctx.translate(-view.x, -view.y);
     ctx.drawImage(bitmap, 0, 0, W, H);
-    for (const r of step.human.blurs) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(r.x, r.y, r.w, r.h);
-      ctx.clip();
-      ctx.filter = `blur(${blurRadius(W) * scale}px)`;
-      ctx.drawImage(bitmap, 0, 0, W, H);
-      ctx.restore();
-    }
+    for (const r of step.human.blurs) burnBlur(ctx, bitmap, W, H, r, blurRadius(W) * scale);
     const box = step.human.actionBox;
     if (box) {
       const sw = strokeFor(W);
@@ -158,7 +184,7 @@ export async function flattenStepImage(
         return ringBlendsIn(pctx.getImageData(0, 0, W, H).data, W, H, box);
       });
       ctx.save();
-      ctx.strokeStyle = navy ? HIGHLIGHT_ALT_COLOR : HIGHLIGHT_COLOR;
+      ctx.strokeStyle = navy ? HIGHLIGHT_ALT_COLOR : highlight;
       // A soft halo, then the ring.
       ctx.globalAlpha = 0.18;
       ctx.lineWidth = sw * 2.5;
@@ -178,6 +204,51 @@ export async function flattenStepImage(
     bitmap.close();
   }
 }
+
+/**
+ * A step's stored picture for a shared guide file (H1): the crop and blurs burned in, without the
+ * highlight and annotations (they stay editable in guide.json). Full size, so text stays sharp.
+ */
+export async function redactStepImage(
+  step: Step,
+  source: Blob,
+): Promise<{ png: Blob; view: Rect } | undefined> {
+  const shot = step.human.screenshot;
+  if (!shot) return undefined;
+  const bitmap = await createImageBitmap(source);
+  try {
+    const { width: W, height: H } = shot;
+    const view: Rect = shot.crop && (shot.zoom ?? 1) > 1 ? shot.crop : { x: 0, y: 0, w: W, h: H };
+    const canvas = new OffscreenCanvas(
+      Math.max(1, Math.round(view.w)),
+      Math.max(1, Math.round(view.h)),
+    );
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('2D canvas unavailable');
+    ctx.translate(-view.x, -view.y);
+    ctx.drawImage(bitmap, 0, 0, W, H);
+    for (const r of step.human.blurs) burnBlur(ctx, bitmap, W, H, r, blurRadius(W));
+    return { png: await canvas.convertToBlob({ type: 'image/png' }), view };
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** The redactor `exportGuideArchive` uses for shared files: redacted, then stored like any picture. */
+export const shareRedactor: Redactor = async (step, bytes, name) => {
+  const done = await redactStepImage(step, new Blob([bytes as BlobPart], { type: mimeFor(name) }));
+  if (!done) return undefined;
+  const img = await encodeImage(done.png);
+  return {
+    full: img.full,
+    thumb: img.thumb,
+    ext: img.ext,
+    width: img.width,
+    height: img.height,
+    origin: { x: done.view.x, y: done.view.y },
+    scale: img.width / done.view.w,
+  };
+};
 
 /** Any stored image (the branding logo) re-encoded as PNG, which every export format accepts. */
 async function toPng(source: Blob): Promise<ExportImage> {
@@ -206,16 +277,54 @@ async function storedBlob(
   return bytes ? new Blob([bytes as BlobPart], { type: mimeFor(name) }) : undefined;
 }
 
-/** Everything an exporter needs: the guide plus its finished pictures and logo. */
-export async function prepareExport(store: GuideStore, guide: Guide): Promise<ExportInput> {
+/**
+ * Everything an exporter needs: the guide plus its finished pictures, and its brand (B2) with
+ * the brand's logos, cover picture and fonts. `kit` uses another kit for this one export.
+ */
+export async function prepareExport(
+  store: GuideStore,
+  guide: Guide,
+  brandOptions: { sources?: BrandSources | undefined; kit?: string } = {},
+): Promise<ExportInput> {
+  const { sources, kit } = brandOptions;
+  const brand = await brandFor(sources, guide, kit);
   const images = new Map<string, ExportImage>();
   for (const b of guide.blocks) {
     if (b.kind !== 'step' || !b.human.screenshot) continue;
     const blob = await storedBlob(store, guide.id, b.human.screenshot.file);
-    const image = blob ? await flattenStepImage(b, blob) : undefined;
+    const image = blob
+      ? await flattenStepImage(b, blob, MAX_EXPORT_WIDTH, brand.colors.highlight)
+      : undefined;
     if (image) images.set(b.id, image);
   }
-  const logoFile = guide.branding?.logo;
-  const logoBlob = logoFile ? await storedBlob(store, guide.id, logoFile) : undefined;
-  return { guide, images, ...(logoBlob ? { logo: await toPng(logoBlob) } : {}) };
+  /** A picture from the brand's kit, as PNG. */
+  const kitPicture = async (name: string | undefined) => {
+    const bytes = name ? await kitAsset(sources, brand.id, name) : undefined;
+    return bytes ? toPng(new Blob([bytes as BlobPart], { type: mimeFor(name ?? '') })) : undefined;
+  };
+  const from = brand.logoFrom;
+  const logo =
+    from?.from === 'guide'
+      ? await storedBlob(store, guide.id, from.name).then((b) => (b ? toPng(b) : undefined))
+      : from?.from === 'kit'
+        ? await kitPicture(from.name)
+        : undefined;
+  const logoOnDark = await kitPicture(brand.logoOnDark);
+  const coverImage =
+    brand.cover.style === 'image' ? await kitPicture(brand.cover.image) : undefined;
+  const fonts = new Map<string, Uint8Array>();
+  for (const f of [brand.fonts.body, brand.fonts.heading]) {
+    if (!f?.startsWith('custom:') || fonts.has(f.slice(7))) continue;
+    const bytes = await kitAsset(sources, brand.id, f.slice(7));
+    if (bytes) fonts.set(f.slice(7), bytes);
+  }
+  return {
+    guide,
+    images,
+    brand,
+    ...(logo ? { logo } : {}),
+    ...(logoOnDark ? { logoOnDark } : {}),
+    ...(coverImage ? { coverImage } : {}),
+    ...(fonts.size ? { fonts } : {}),
+  };
 }

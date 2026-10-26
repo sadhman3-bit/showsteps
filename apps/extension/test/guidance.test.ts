@@ -3,6 +3,7 @@ import {
   IndexedDbStore,
   createGuide,
   createStep,
+  liveNeedsConfirm,
   parseAnalytics,
   plain,
   type Step,
@@ -43,6 +44,8 @@ async function setup(blocks: Step[], tabUrl = PAGE) {
   let found = true;
   /** How the top page answers the sign-in check (undefined: no answer). */
   let signIn: { host: string; secretField: boolean } | undefined;
+  /** The name the page's element has now (H4); undefined: the recorded one. */
+  let liveName: string | undefined;
   const deps: GuidanceDeps = {
     store,
     userName: async () => 'Alex',
@@ -57,7 +60,18 @@ async function setup(blocks: Step[], tabUrl = PAGE) {
     async send(_tab, msg, frameId) {
       sent.push({ msg, ...(frameId !== undefined ? { frameId } : {}) });
       if (msg.type === 'guide-show') return { found };
-      if (msg.type === 'guide-run') return { result: found ? 'acted' : 'not-found' };
+      if (msg.type === 'guide-run') {
+        if (!found) return { result: 'not-found' };
+        // As the content script does: the live element's name decides (H4).
+        const live = { role: 'button', name: liveName ?? msg.step.target?.name };
+        const run = {
+          confirmed: msg.confirmed ?? false,
+          ...(msg.approvedName !== undefined ? { approvedName: msg.approvedName } : {}),
+        };
+        if (liveNeedsConfirm(msg.step, live, run))
+          return { result: 'cannot', reason: 'needs-confirm', name: live.name };
+        return { result: 'acted' };
+      }
       if (msg.type === 'guide-check') return { failed: [] };
       if (msg.type === 'guide-signin') return signIn;
       return { ok: true };
@@ -79,6 +93,7 @@ async function setup(blocks: Step[], tabUrl = PAGE) {
     notFound: () => (found = false),
     found: () => (found = true),
     signInPage: (page: { host: string; secretField: boolean } | undefined) => (signIn = page),
+    liveName: (name: string | undefined) => (liveName = name),
     shown: () => sent.filter((x) => x.msg.type === 'guide-show').map((x) => x.msg),
     ran: () => sent.filter((x) => x.msg.type === 'guide-run').map((x) => x.msg),
   };
@@ -263,6 +278,39 @@ describe('Run for me', () => {
     await t.g.control('stop');
     expect(t.states.at(-1)).toMatchObject({ status: 'idle', scheduleId: 'sched' });
     expect(t.g.current.scheduleId).toBeUndefined();
+  });
+});
+
+describe('the live element decides (H4)', () => {
+  it('stops for confirm when a step recorded as Next now presses Delete account', async () => {
+    const t = await setup([step('Click Next', { target: { ...target, name: 'Next' } })]);
+    t.liveName('Delete account');
+    await t.g.start({ type: 'guide-start', guideId: t.guide.id, mode: 'run', tabId: 1 });
+    await t.settle();
+    expect(t.g.current).toMatchObject({ index: 0, phase: 'confirm' });
+    expect(t.ran()).toHaveLength(1);
+    // The person confirms: it goes ahead.
+    await t.g.control('confirm');
+    await t.settle();
+    expect(t.ran().at(-1)).toMatchObject({ confirmed: true });
+    expect(t.g.current.status).toBe('done');
+  });
+
+  it('holds a schedule’s approval only while the live name is the approved one', async () => {
+    const submit = step('Click Submit', {
+      target: { ...target, name: 'Submit' },
+      agent: { timeoutMs: 1000, confirm: true, visualOnly: false },
+    });
+    const t = await setup([submit]);
+    t.liveName('Pay now');
+    await t.g.start(
+      { type: 'guide-start', guideId: t.guide.id, mode: 'run', tabId: 1, windowId: 5 },
+      { approved: [submit.id], scheduleId: 'sched', windowId: 5 },
+    );
+    await t.settle();
+    expect(t.ran()[0]).toMatchObject({ approvedName: 'Submit', confirmed: false });
+    expect(t.g.current).toMatchObject({ index: 0, phase: 'confirm', scheduleId: 'sched' });
+    await t.g.control('stop');
   });
 });
 

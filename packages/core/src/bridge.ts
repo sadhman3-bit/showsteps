@@ -16,7 +16,7 @@ export const BRIDGE_VERSION = 1;
  * - `read-download` (1.2): `readDownload({ path, size })` returns a file Chrome just downloaded,
  *   for Run for me to attach; refused unless it is a fresh regular file of that size, ≤ 25 MB.
  */
-export const BRIDGE_CAPABILITIES = ['schedule-wake', 'read-download'] as const;
+export const BRIDGE_CAPABILITIES = ['schedule-wake', 'read-download', 'brand-kits'] as const;
 export type BridgeCapability = (typeof BRIDGE_CAPABILITIES)[number];
 
 /** The desktop app's reply to `hello` (fields after `version` are optional for 1.0). */

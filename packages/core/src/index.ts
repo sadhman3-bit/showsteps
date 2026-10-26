@@ -62,6 +62,20 @@ export {
 // Storage
 export * from './storage/types.js';
 export { FolderStore, type FileSystem } from './storage/folder.js';
+export {
+  BRAND_EXTENSION,
+  BRAND_STORE_METHODS,
+  FolderBrandStore,
+  IndexedDbBrandStore,
+  MAX_FONT_ASSET,
+  MAX_IMAGE_ASSET,
+  checkAsset,
+  exportBrandKit,
+  importBrandKit,
+  kitAssets,
+  type AssetKind,
+  type BrandStore,
+} from './storage/brand.js';
 export { IndexedDbStore } from './storage/indexeddb.js';
 export { summarize, thumbNameFor } from './storage/summary.js';
 
@@ -74,7 +88,7 @@ export {
   type ElementKey,
   type ShotInfo,
 } from './capture/session.js';
-export { isSensitiveField, isTextEntry } from './dom/sensitive.js';
+export { hasSecretName, isSensitiveField, isTextEntry } from './dom/sensitive.js';
 export { collectPageText, type CollectOptions } from './dom/text.js';
 export { pageState, expectationsFrom, type PageState } from './dom/observe.js';
 export {
@@ -95,10 +109,15 @@ export {
 export {
   ARCHIVE_ACCEPT,
   ARCHIVE_EXTENSION,
+  ARCHIVE_LIMITS,
   exportGuideArchive,
+  type ArchiveOptions,
+  type RedactedImage,
+  type Redactor,
   importGuideArchive,
   duplicateGuide,
   type ImportResult,
+  type ImportOptions,
 } from './archive.js';
 
 // Editing
@@ -126,6 +145,25 @@ export {
   accentOf,
   fontOf,
 } from './branding.js';
+export {
+  BrandKitSchema,
+  BrandPatchSchema,
+  COVER_ELEMENTS,
+  PAGE_OF,
+  SHOWSTEPS_KIT,
+  applyBrandPatch,
+  coverOrder,
+  expandTokens,
+  isShowStepsLook,
+  resolveBrand,
+  type BrandContext,
+  type BrandKit,
+  type BrandPatch,
+  type CoverElement,
+  type LogoSource,
+  type ResolvedBrand,
+  type TokenValues,
+} from './brandkit.js';
 export {
   LIGHT,
   DARK,
@@ -176,6 +214,14 @@ export {
   type StartMode,
 } from './guidance/links.js';
 export { looksLikeDownload, suggestAttachSource, setAttachSource } from './guidance/attach.js';
+export {
+  markReceived,
+  trustGuide,
+  rearmConfirms,
+  receivedSummary,
+  type ReceivedFrom,
+  type ReceivedSummary,
+} from './guidance/received.js';
 export {
   END_OF_GUIDE,
   REACTIONS,
@@ -324,7 +370,7 @@ export {
   alreadyBlurred,
   applySecureBlur,
 } from './secure.js';
-export { needsConfirm, isIrreversibleName } from './agent/confirm.js';
+export { needsConfirm, isIrreversibleName, liveNeedsConfirm } from './agent/confirm.js';
 export {
   valueKind,
   suggestAsk,

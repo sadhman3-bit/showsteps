@@ -313,3 +313,31 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Not now removes the marker only with site access** (it runs `history.replaceState` in the page); without it the address keeps the marker until the person navigates.
 - **Navigation events keep the fragment:** `webNavigation.onCommitted` and `onReferenceFragmentUpdated` report the address with its `#showsteps=…` marker (checked in `e2e/start-links.spec.ts`, where the window opens only from that marker).
 - **A downloaded file's name without an extension** gets one from its type (`application/pdf` → `.pdf`), because upload fields often check the extension. Found by the desktop e2e test, where Chrome saves downloads under random names.
+
+## Security 1.2.1
+
+- **The security plan ships as 1.2.1:** 1.2.0 was already published when it started, so the work is branch `security` from `main`, a PR back to `main`, release notes `docs/release-notes/1.2.1.md` and `docs/SECURITY_REVIEW_1.2.1.md`; publishing the release and the Web Store update (now 1.2.1) wait for the owner.
+- **Guide files have two modes:** `share` (every Export, the Share dialog and shared-folder saves) burns blurs and crops into the pictures and drops page text, originals and unused pictures; `backup` (library ⋯ Back up, after a confirm) keeps everything.
+- **Burned blurs are a 16-px mosaic, then a blur,** in exports and shared files alike: a plain Gaussian blur over short text can sometimes be reversed.
+- **The desktop app's "copy into my library" is a backup,** because it never leaves the computer and the copy should stay editable (blurs can still be moved).
+- **Guide text in generated code goes through `q()` (a string literal) or `comment()` (one line),** and a unit test reads `replay.ts` to keep it that way; numbers are the only other values written into the script.
+- **A download belongs to a Run for me run only if its own address is on the run's site;** the referrer is an extra check, never the only one. A redirect to another site is fetched again without cookies.
+- **A guide from someone else is marked `received`** (import, or a team-folder guide someone else saved last) until the person chooses Trust this guide; the field is optional, and 1.1 drops it when it saves (its schema strips unknown keys), which only means 1.1 never asks.
+- **Run for me judges the live element:** a button whose name on the page can't be undone asks first even when the guide recorded it as harmless, and a schedule's approval holds only for the name approved.
+- **ShowSteps's overlay and toolbar stay in open shadow roots;** their listeners ignore untrusted events instead. Closed roots would stop Playwright and the e2e tests from reaching the buttons, and a page could still dispatch events at the host, so the `isTrusted` check is what keeps page scripts from pressing them.
+- **A field that was secret once stays secret for the whole capture,** and a secret field on screen is blurred in the picture automatically; the blur is an ordinary one the person can remove.
+- **Script-made value changes are still recorded** (frameworks set values that way), but the step is marked `byPage` and the editor offers Delete or Keep.
+- **The bridge pipe is named by the account's SID, with no fallback to the old name:** the host and the app ship in one installer, so both change at once; a 1.2 host with a 1.2.1/1.3 app (or the reverse) simply shows the desktop app as offline until both are updated.
+- **Run from source, the host also trusts Electron from the repository's `node_modules`** when the app's `package.json` sits where the install folder would be (development and the desktop e2e tests); the account check still applies.
+- **A guide file holding anything but `guide.json` and pictures is refused, not partly imported:** ShowSteps never writes other entries, so one means the file wasn't made by ShowSteps or was changed.
+
+## Branding 1.3
+
+- **This branch ships as 1.3.0, not 1.2.1:** brand kits are a feature, added on the owner's request alongside the security fixes; the release notes keep a Security section.
+- **ShowSteps's own kit is today's look,** so exports don't change for anyone who sets nothing up; golden files stay byte for byte.
+- **Kits replace each other whole** (library default, then the team's, then the guide's kit); the guide's own changes go on top. `showsteps` names the built-in kit, so one guide can opt out of the library's default.
+- **Team kits sit in the team folder's `.brand` folder** (dot folders are not guides) and are listed as "(team)"; they're changed by duplicating.
+- **In the web page, a logo shown with a cover band sits above the band,** as before; in PDF and Word it follows the kit's order.
+- **Header and footer slots are for paged files (PDF, Word);** the web page, embed and Markdown show the notice but not page headers.
+- **The kit preview is the real web-page exporter in a sandboxed frame,** and the PDF preview is a real PDF opened in a new tab; pdf.js isn't bundled into the extension for it.
+- **Pictures added to a kit are redrawn as PNG; fonts must load with fontkit;** SVG is never accepted.

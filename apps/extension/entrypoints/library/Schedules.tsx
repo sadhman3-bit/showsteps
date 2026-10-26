@@ -5,7 +5,15 @@ import {
   type GuideStore,
   type Schedule,
 } from '@showsteps/core';
-import { ScheduleDialog, SchedulesPage, strings, type ScheduleItem } from '@showsteps/ui';
+import {
+  Button,
+  Dialog,
+  ReceivedPanel,
+  ScheduleDialog,
+  SchedulesPage,
+  strings,
+  type ScheduleItem,
+} from '@showsteps/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
   deleteSchedule,
@@ -91,11 +99,38 @@ export function ScheduleHost(props: {
   /** The desktop app is connected but doesn't start with Windows (S4). */
   suggestStartWithWindows: boolean;
   onDone: () => void;
+  /** "Trust this guide" for a guide from someone else (H4): saves it without the mark. */
+  onTrust: (trusted: Guide) => Promise<void>;
 }) {
   const [error, setError] = useState('');
+  const [guide, setGuide] = useState(props.guide);
+  const [checked, setChecked] = useState(false);
+  if (guide.received) {
+    const r = strings.guidance.received;
+    return (
+      <Dialog
+        title={s.dialogTitle(guide.title)}
+        onClose={props.onDone}
+        actions={<Button onClick={props.onDone}>{strings.library.cancel}</Button>}
+      >
+        <p class="ss-notice">{r.noSchedule}</p>
+        <ReceivedPanel
+          guide={guide}
+          from={guide.received}
+          checked={checked}
+          onCheck={setChecked}
+          onTrust={async () => {
+            const { received: _r, ...trusted } = guide;
+            await props.onTrust(trusted);
+            setGuide(trusted);
+          }}
+        />
+      </Dialog>
+    );
+  }
   return (
     <ScheduleDialog
-      guide={props.guide}
+      guide={guide}
       {...(props.schedule ? { schedule: props.schedule } : {})}
       desktopConnected={props.desktopConnected}
       {...(props.suggestStartWithWindows

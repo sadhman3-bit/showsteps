@@ -916,3 +916,14 @@ input.ss-editor__title:focus {
   margin: 0;
   flex: 1 1 240px;
 }
+
+/* H6: a step the page's script made */
+.ss-eblock__bypage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+  align-items: center;
+}
+.ss-eblock__bypage > span {
+  flex: 1 1 12em;
+}

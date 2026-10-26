@@ -26,6 +26,7 @@ import {
   type GuideStore,
   type Rect,
   type Step,
+  trustGuide,
 } from '@showsteps/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button, IconButton } from '../Button.js';
@@ -848,6 +849,7 @@ export function GuideEditor({
       {running && onRunForMe ? (
         <RunDialog
           guide={guide}
+          onTrust={() => apply((latest) => trustGuide(latest))}
           onClose={() => setRunning(undefined)}
           onStart={(opts) => {
             setRunning(undefined);
@@ -1089,6 +1091,7 @@ function StepFields(props: {
   onEndTyping: () => void;
   onEditImage: () => void;
   onAddImage: () => void;
+  onMenu: (action: MenuAction) => void;
 }) {
   const { step: s, num } = props;
   const [showAlt, setShowAlt] = useState(!!s.human.altText);
@@ -1119,6 +1122,27 @@ function StepFields(props: {
         }
         onCommit={props.onEndTyping}
       />
+      {s.capture.byPage ? (
+        <div class="ss-callout ss-callout--warning ss-eblock__bypage" role="note">
+          <Icon name="warning" />
+          <span>{e.byPage}</span>
+          <Button size="sm" variant="danger" onClick={() => props.onMenu('delete')}>
+            {e.byPageDelete}
+          </Button>
+          <Button
+            size="sm"
+            onClick={() =>
+              props.onChange((x) => {
+                if (x.kind !== 'step') return x;
+                const { byPage: _b, ...capture } = x.capture;
+                return { ...x, capture };
+              }, 'push')
+            }
+          >
+            {e.byPageKeep}
+          </Button>
+        </div>
+      ) : null}
       {s.input && (s.action === 'type' || s.action === 'select') ? (
         <InputControls step={s} num={num} onGuide={props.onGuide} onChange={props.onChange} />
       ) : null}

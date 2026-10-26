@@ -16,6 +16,7 @@ import { LOCKUP_SVG, MARK_SVG } from '../brand/art.js';
 import { Chip } from '../components/Chip.js';
 import { EmptyState } from '../components/EmptyState.js';
 import { Icon } from '../components/Icon.js';
+import { shareRedactor } from '../export/flatten.js';
 import { downloadBytes, safeFileName, useImageUrl, usePreference } from '../hooks.js';
 import { strings } from '../strings.js';
 import { relativeTime } from '../time.js';
@@ -42,6 +43,8 @@ export interface LibraryProps {
   onInsights?: () => void;
   /** Open settings. */
   onSettings?: () => void;
+  /** B4: Settings → Branding (brand kits). */
+  onBranding?: () => void;
   /** Offered when the library is empty: start recording (opens the side panel). */
   onStartCapture?: () => void;
   /** Open the About dialog. */
@@ -63,6 +66,7 @@ type Modal =
   | { kind: 'tags'; guide: GuideSummary }
   | { kind: 'move'; guide: GuideSummary }
   | { kind: 'purge'; guide: GuideSummary }
+  | { kind: 'backup'; guide: GuideSummary }
   | { kind: 'new-folder'; parentId?: string }
   | { kind: 'rename-folder'; folder: Folder }
   | { kind: 'delete-folder'; folder: Folder };
@@ -75,6 +79,7 @@ export function Library({
   onAddSamples,
   onInsights,
   onSettings,
+  onBranding,
   onStartCapture,
   onAbout,
   onSchedules,
@@ -146,7 +151,9 @@ export function Library({
   const onImportFile = async (file: File | undefined) => {
     if (!file) return;
     await act(async () => {
-      const result = await importGuideArchive(store, new Uint8Array(await file.arrayBuffer()));
+      const result = await importGuideArchive(store, new Uint8Array(await file.arrayBuffer()), {
+        received: { from: 'import', file: file.name },
+      });
       if (scope.kind === 'folder') {
         const g = await store.getGuide(result.guideId);
         if (g) await store.saveGuide({ ...g, folderId: scope.folderId }, { snapshot: false });
@@ -155,10 +162,16 @@ export function Library({
     if (fileInput.current) fileInput.current.value = '';
   };
 
-  const exportGuide = (g: GuideSummary) =>
+  /** Export: a file to give others, with blurs burned in and nothing hidden left in it (H1). */
+  const exportGuide = (g: GuideSummary, mode: 'share' | 'backup' = 'share') =>
     act(async () => {
-      const bytes = await exportGuideArchive(store, g.id);
-      downloadBytes(bytes, `${safeFileName(g.title)}${ARCHIVE_EXTENSION}`, 'application/zip');
+      const bytes = await exportGuideArchive(
+        store,
+        g.id,
+        mode === 'share' ? { mode, redact: shareRedactor } : { mode },
+      );
+      const name = mode === 'share' ? g.title : s.backupName(g.title);
+      downloadBytes(bytes, `${safeFileName(name)}${ARCHIVE_EXTENSION}`, 'application/zip');
     });
 
   return (
@@ -233,6 +246,11 @@ export function Library({
             {schedulesAttention ? (
               <span class="ss-attention" role="img" aria-label={strings.schedules.attention} />
             ) : null}
+          </Button>
+        ) : null}
+        {onBranding ? (
+          <Button variant="ghost" onClick={onBranding}>
+            <Icon name="palette" /> {strings.brandKits.button}
           </Button>
         ) : null}
         {onSettings ? (
@@ -427,6 +445,9 @@ export function Library({
                   case 'export':
                     void exportGuide(g);
                     break;
+                  case 'backup':
+                    setModal({ kind: 'backup', guide: g });
+                    break;
                   case 'trash':
                     void act(() => store.trashGuide(g.id));
                     break;
@@ -479,6 +500,19 @@ export function Library({
           confirm={s.deleteForever}
           onClose={() => setModal(null)}
           onConfirm={() => void act(() => store.purgeGuide(modal.guide.id))}
+        />
+      ) : null}
+      {modal?.kind === 'backup' ? (
+        <ConfirmDialog
+          title={s.backup}
+          message={s.backupConfirm}
+          confirm={s.backupDo}
+          onClose={() => setModal(null)}
+          onConfirm={() => {
+            const g = modal.guide;
+            setModal(null);
+            void exportGuide(g, 'backup');
+          }}
         />
       ) : null}
       {modal?.kind === 'new-folder' ? (
@@ -536,6 +570,7 @@ type CardAction =
   | 'move'
   | 'duplicate'
   | 'export'
+  | 'backup'
   | 'schedule'
   | 'trash'
   | 'restore'
@@ -584,6 +619,7 @@ function GuideCard(props: {
         ['move', s.moveTo],
         ['duplicate', s.duplicate],
         ['export', s.export],
+        ['backup', s.backup],
         ...(props.schedulable === undefined
           ? []
           : ([['schedule', strings.schedules.schedule]] as [CardAction, string][])),

@@ -166,6 +166,10 @@ export function GuideView({
       {guide && running && onRunForMe ? (
         <RunDialog
           guide={guide}
+          onTrust={async (trusted) => {
+            await store.saveGuide(trusted);
+            setGuide(trusted);
+          }}
           onClose={() => setRunning(false)}
           onStart={(opts) => {
             setRunning(false);

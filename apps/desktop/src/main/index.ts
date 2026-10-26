@@ -1,7 +1,10 @@
 import {
+  BRAND_STORE_METHODS,
   BRIDGE_CAPABILITIES,
   BRIDGE_STORE_METHODS,
+  FolderBrandStore,
   FolderStore,
+  type BrandStore,
   parseGuide,
   type GuideStore,
 } from '@showsteps/core';
@@ -9,6 +12,7 @@ import { nodeFileSystem } from '@showsteps/core/node';
 import {
   BrowserWindow,
   Menu,
+  Notification,
   Tray,
   app,
   dialog,
@@ -22,11 +26,12 @@ import {
 } from 'electron';
 import { mkdirSync } from 'node:fs';
 import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BridgeServer } from './bridge';
+import { BridgeServer, pipePath } from './bridge';
 import { readDownload } from './downloads';
 import { DesktopGuide, type OverlayView } from './guide';
+import { currentSid, denyPermissions, freeName, hardenWindow } from './harden';
 import { UiaHelper } from './helper';
 import { registerNativeHost, unregisterNativeHost } from './nativeHost';
 import {
@@ -60,6 +65,10 @@ const hostSetup = process.argv.includes('--register-native-host')
 if (process.env.SHOWSTEPS_USER_DATA) app.setPath('userData', process.env.SHOWSTEPS_USER_DATA);
 if (!hostSetup && !app.requestSingleInstanceLock()) app.quit();
 
+/** H7: the bridge's pipe name was taken by another program. */
+const PIPE_BUSY =
+  'Another program is using ShowSteps’s connection to Chrome. Restart Windows; if it keeps happening, tell us.';
+
 // ---------- Paths ----------
 
 const resources = app.isPackaged ? process.resourcesPath : join(__dirname, '..', '..', 'resources');
@@ -83,6 +92,9 @@ const shotDir = () => join(app.getPath('temp'), 'showsteps-shots');
 let settings: DesktopSettings;
 let personal: GuideStore;
 let shared: GuideStore | undefined;
+/** Brand kits (B3): the person's own, beside the library, and the team folder's `.brand`. */
+let brandPersonal: BrandStore;
+let brandTeam: BrandStore | undefined;
 let mainWindow: BrowserWindow | undefined;
 let controller: BrowserWindow | undefined;
 let overlay: BrowserWindow | undefined;
@@ -93,8 +105,30 @@ const helper = new UiaHelper(helperExe);
 function openStores(): void {
   personal = new FolderStore(nodeFileSystem, settings.libraryPath, { user: settings.userName });
   shared = settings.sharedPath
-    ? new FolderStore(nodeFileSystem, settings.sharedPath, { user: settings.userName })
+    ? new FolderStore(nodeFileSystem, settings.sharedPath, {
+        user: settings.userName,
+        othersAreReceived: true,
+      })
     : undefined;
+  brandPersonal = new FolderBrandStore(
+    nodeFileSystem,
+    join(dirname(settings.libraryPath), 'Brand'),
+  );
+  brandTeam = settings.sharedPath
+    ? new FolderBrandStore(nodeFileSystem, join(settings.sharedPath, '.brand'))
+    : undefined;
+}
+
+const BRAND_METHODS = new Set<string>(BRAND_STORE_METHODS);
+
+/** One call on the person's or the team's brand kits, for the window and the extension. */
+async function brandCall(which: unknown, method: unknown, args: unknown): Promise<unknown> {
+  if (typeof method !== 'string' || !BRAND_METHODS.has(method) || !Array.isArray(args))
+    throw new Error('invalid brand call');
+  const store = which === 'team' ? brandTeam : brandPersonal;
+  if (!store) return which === 'team' && method === 'listKits' ? [] : undefined;
+  const fn = (store as unknown as Record<string, (...a: unknown[]) => Promise<unknown>>)[method];
+  return fn?.apply(store, args);
 }
 
 /** The library shown in the window and used for new captures. */
@@ -118,7 +152,10 @@ const bridge = new BridgeServer(
     capabilities: [...BRIDGE_CAPABILITIES],
     startWithWindows: settings.startWithWindows,
   }),
-  { readDownload: (args) => readDownload(args) },
+  {
+    readDownload: (args) => readDownload(args),
+    brand: (which, method, args) => brandCall(which, method, args),
+  },
 );
 
 // ---------- Scheduled runs (S4) ----------
@@ -229,6 +266,7 @@ function updateController(state: DesktopCaptureState): void {
       show: false,
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
     });
+    hardenWindow(controller);
     controller.setContentProtection(true); // never in a screenshot
     controller.setAlwaysOnTop(true, 'screen-saver');
     void controller.loadFile(join(renderer, 'controller.html'));
@@ -265,6 +303,7 @@ function overlayHost() {
           show: false,
           webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
         });
+        hardenWindow(overlay);
         overlay.setAlwaysOnTop(true, 'screen-saver');
         overlay.setContentProtection(true);
         overlay.setIgnoreMouseEvents(true, { forward: true });
@@ -388,6 +427,7 @@ function showMain(hash = ''): void {
       show: false,
       webPreferences: { preload: join(__dirname, '..', 'preload', 'index.cjs'), sandbox: true },
     });
+    hardenWindow(mainWindow);
     mainWindow.setContentProtection(true);
     // Links never open app windows: web pages go to the browser, the licences to the viewer.
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -452,6 +492,9 @@ function registerIpc(): void {
     if (/^(save|trash|restore|purge|put|delete)/.test(method)) bridge.sendEvent('library-changed');
     return result;
   });
+  ipcMain.handle('brand', (_e, which: unknown, method: unknown, args: unknown) =>
+    brandCall(which, method, args),
+  );
   ipcMain.handle('settings:get', () => ({ ...settings, sharedAvailable: !!shared }));
   ipcMain.handle('settings:set', async (_e, value: unknown) => {
     const next = DesktopSettingsSchema.parse({
@@ -529,17 +572,25 @@ void app.whenReady().then(async () => {
   applyLoginItem();
   await restoreNextDue();
 
-  // Exports save straight to Downloads (the renderer uses download links).
+  // Exports save straight to Downloads (the renderer uses download links), never over a file
+  // that is already there (H7).
   session.defaultSession.on('will-download', (_e, item) => {
-    item.setSavePath(
-      join(process.env.SHOWSTEPS_DOWNLOADS ?? app.getPath('downloads'), item.getFilename()),
-    );
+    const dir = process.env.SHOWSTEPS_DOWNLOADS ?? app.getPath('downloads');
+    item.setSavePath(join(dir, freeName(dir, item.getFilename())));
   });
+  denyPermissions(session.defaultSession);
 
   await registerNativeHost(app.getPath('userData'), hostExe).catch(() => undefined);
-  await bridge
-    .listen()
-    .catch((error: unknown) => console.error('ShowSteps: bridge unavailable', error));
+  // The pipe is named by this account's SID, like the host's (no fallback to the old name).
+  const sid = currentSid();
+  if (sid)
+    await bridge.listen(pipePath(sid)).catch((error: unknown) => {
+      console.error('ShowSteps: bridge unavailable', error);
+      // Something else holds the name: tell the person rather than fail quietly.
+      if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE')
+        new Notification({ title: 'ShowSteps', body: PIPE_BUSY }).show();
+    });
+  else console.error('ShowSteps: bridge unavailable: no account SID');
 
   tray = new Tray(trayImage());
   nativeTheme.on('updated', () => tray?.setImage(trayImage()));

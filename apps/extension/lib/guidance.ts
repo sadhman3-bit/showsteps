@@ -140,6 +140,8 @@ export class Guidance {
   private values: Record<string, string> = {};
   private run: Run | undefined;
   private confirmed = new Set<number>();
+  /** Steps whose live element turned out to need confirming (H4), by index. */
+  private mustConfirm = new Set<number>();
   private approved = new Set<string>();
   /** A scheduled run's own window: guidance never moves to tabs outside it. */
   private ownWindow: number | undefined;
@@ -239,6 +241,7 @@ export class Guidance {
     this.steps = steps;
     this.values = msg.values ?? {};
     this.confirmed = new Set();
+    this.mustConfirm = new Set();
     this.approved = new Set(options.approved ?? []);
     this.ownWindow = options.scheduleId ? (options.windowId ?? msg.windowId) : undefined;
     this.run = {
@@ -291,6 +294,7 @@ export class Guidance {
     }
     this.run = undefined;
     this.approved = new Set();
+    this.mustConfirm = new Set();
     this.ownWindow = undefined;
     void this.files?.dispose();
     this.files = undefined;
@@ -407,8 +411,12 @@ export class Guidance {
       return;
     }
 
+    // A live element that needs confirming (H4) isn't covered by a schedule's approval.
+    const must = this.mustConfirm.has(index);
     const needsConfirm =
-      step.agent.confirm && !this.confirmed.has(index) && !this.approved.has(step.id);
+      (step.agent.confirm || must) &&
+      !this.confirmed.has(index) &&
+      (must || !this.approved.has(step.id));
     if (mode === 'run' && plan.kind === 'act' && !needsConfirm) return this.act(seq, step);
     if (mode === 'run' && plan.kind === 'attach' && !needsConfirm)
       return this.attachStep(seq, step, plan.from);
@@ -465,6 +473,12 @@ export class Guidance {
       this.site = (tabId !== undefined ? await this.deps.tabUrl(tabId) : undefined) ?? '';
       files.noteClick(step.id);
     }
+    const index = this.state.index;
+    const confirmed = this.confirmed.has(index);
+    const approvedName =
+      !confirmed && this.approved.has(step.id)
+        ? (step.target?.name ?? step.target?.text ?? '')
+        : undefined;
     const reply = await this.deliver(
       seq,
       step,
@@ -475,6 +489,8 @@ export class Guidance {
         speed: this.state.speed,
         timeoutMs,
         ...(files ? { grab: { fetchLink: !this.watch } } : {}),
+        confirmed,
+        ...(approvedName !== undefined ? { approvedName } : {}),
       },
       RunReplySchema,
       timeoutMs + 5000,
@@ -487,6 +503,11 @@ export class Guidance {
       void this.save();
     } else if (files && reply?.tooBig) files.tooBig(step.id, reply.tooBig.name);
     if (reply?.result === 'acted') return this.afterAct(seq);
+    if (reply?.result === 'cannot' && reply.reason === 'needs-confirm') {
+      // The live button can't be undone (or isn't the one a schedule approved): ask first.
+      this.mustConfirm.add(index);
+      return this.show();
+    }
     if (reply?.result === 'cannot') {
       // Page events could not do it (e.g. a missing option): the person does this one.
       this.set({ phase: 'manual', reason: 'cannot' });
@@ -569,7 +590,11 @@ export class Guidance {
     const number =
       (sourceId && this.guide ? stepNumbers(this.guide).get(sourceId) : undefined) ??
       this.sourceNumber(from);
-    return { ...(name ? { name } : {}), ...(number ? { step: number } : {}) };
+    const sites =
+      found.kind === 'problem' && found.from && found.site
+        ? { from: found.from, site: found.site }
+        : {};
+    return { ...(name ? { name } : {}), ...(number ? { step: number } : {}), ...sites };
   }
 
   /**

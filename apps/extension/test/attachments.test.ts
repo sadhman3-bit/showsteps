@@ -196,3 +196,63 @@ describe('helpers', () => {
     expect([...base64ToBytes(await blobToBase64(new Blob([bytes])))]).toEqual([...bytes]);
   });
 });
+
+describe('only the run’s own site’s files (H3)', () => {
+  it('(a) refuses another site’s file without a referrer, and says which sites', () => {
+    const { run } = setup();
+    run.noteClick(download.id);
+    const bank = item({ url: 'https://bank.example/statement.pdf', referrer: '' });
+    expect(run.downloadCreated({ ...bank, finalUrl: bank.url })).toBe(false);
+    expect(run.lookup({ download: download.id }, steps, 3)).toEqual({
+      kind: 'problem',
+      stepId: download.id,
+      problem: 'other-site',
+      name: 'statement.pdf',
+      from: 'bank.example',
+      site: 'reports.test',
+    });
+  });
+
+  it('(b) takes the run’s own site’s file without a referrer', () => {
+    const { run } = setup();
+    run.noteClick(download.id);
+    expect(run.downloadCreated(item({ referrer: '' }))).toBe(true);
+    expect(run.lookup({ download: download.id }, steps, 3)).toMatchObject({ kind: 'pending' });
+  });
+
+  it('(c) fetches a redirect to another site without cookies, never from the desktop app', async () => {
+    const calls: string[] = [];
+    let read = 0;
+    const { run } = setup({
+      refetch: async (_d, { credentials }) => {
+        calls.push(credentials);
+        return new Blob(['%PDF-1.4']);
+      },
+      readDownload: async () => {
+        read++;
+        return new Blob(['from desktop']);
+      },
+    });
+    run.noteClick(download.id);
+    const moved = item({ finalUrl: 'https://storage.example/signed/report.pdf?sig=1' });
+    expect(run.downloadCreated(moved)).toBe(true);
+    await run.downloadEnded(moved);
+    expect(calls).toEqual(['omit']);
+    expect(read).toBe(0);
+    expect(run.lookup({ download: 'latest' }, steps, 3)).toMatchObject({ kind: 'ready' });
+  });
+
+  it('sends cookies only for the run’s own site', async () => {
+    const calls: string[] = [];
+    const { run } = setup({
+      refetch: async (_d, { credentials }) => {
+        calls.push(credentials);
+        return new Blob(['%PDF-1.4']);
+      },
+    });
+    run.noteClick(download.id);
+    run.downloadCreated(item());
+    await run.downloadEnded(item());
+    expect(calls).toEqual(['include']);
+  });
+});

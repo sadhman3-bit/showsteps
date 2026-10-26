@@ -104,8 +104,8 @@ test('Agent view, input modes, confirm flags, expectations and the Agent Pack (U
   );
   expect(validateAgentPack(folder, files)).toEqual([]);
   const skill = strFromU8(files['SKILL.md']!);
-  expect(skill).toContain('7. Type {{invoice_no}} into Invoice no.');
-  expect(skill).toContain('17. **CONFIRM** Click Submit invoice');
+  expect(skill).toContain('7. Type {{invoice_no}} into `Invoice no.`');
+  expect(skill).toContain('17. **CONFIRM** Click `Submit invoice`');
   expect(skill).toContain('On failure: Ask the AP team.');
   expect(skill).toContain('the text `Check the details` appears');
   expect(Object.keys(files).filter((p) => p.startsWith('assets/screenshots/'))).toHaveLength(17);

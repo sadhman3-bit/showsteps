@@ -83,6 +83,11 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
     shotId: ShotId,
     /** Words on screen in the top frame (CSS pixels) when the picture was taken. */
     words: PageTextSchema,
+    /** H6: boxes of secret fields on screen (CSS pixels), blurred in the picture. */
+    secrets: z
+      .array(z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }))
+      .max(50)
+      .optional(),
   }),
   z.object({
     type: z.literal('event'),
@@ -90,6 +95,8 @@ export const ContentMessageSchema = z.discriminatedUnion('type', [
     /** The page will report what this action changed under this id (U6). */
     observeId: ShotId.optional(),
     event: ContentEventSchema,
+    /** H6: from an event the page's script raised (`isTrusted` false). */
+    byPage: z.boolean().optional(),
   }),
   /** An action in an iframe: ask the top frame to observe the page around it as well. */
   z.object({ type: z.literal('observe-top'), observeId: ShotId }),

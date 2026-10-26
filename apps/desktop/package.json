@@ -1,7 +1,7 @@
 {
   "name": "@showsteps/desktop",
   "productName": "ShowSteps",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
   "description": "ShowSteps for Windows: record desktop and web steps, edit, export and guide.",
@@ -19,11 +19,11 @@
     "@preact/preset-vite": "^2.10.6",
     "@showsteps/core": "workspace:*",
     "@showsteps/ui": "workspace:*",
-    "electron": "^44.7.0",
+    "electron": "^44.9.3",
     "electron-builder": "^26.15.3",
     "preact": "^11.0.1",
     "vite": "^8.3.4",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "build": {
     "appId": "app.showsteps.desktop",
