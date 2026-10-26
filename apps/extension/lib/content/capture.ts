@@ -164,13 +164,15 @@ export class PageRecorder {
     return true;
   }
 
-  /** Boxes of the secret fields on screen in this (top) frame, in CSS pixels (H6). */
+  /** Boxes of the secret fields with a value on screen in this (top) frame, in CSS pixels (H6). */
   private secretBoxes(): { x: number; y: number; w: number; h: number }[] {
     const out: { x: number; y: number; w: number; h: number }[] = [];
     for (const el of deepElements(document)) {
       if (out.length >= 50) break;
       if (!(el.localName === 'input' || el.localName === 'textarea') || !this.isSecret(el))
         continue;
+      // An empty field shows nothing to hide.
+      if (!(el as HTMLInputElement).value) continue;
       const r = el.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0) continue;
       if (r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) continue;
