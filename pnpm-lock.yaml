@@ -50,8 +50,8 @@ importers:
         specifier: ^6.4.299
         version: 6.4.299
       png-to-ico:
-        specifier: 2.1.8
-        version: 2.1.8
+        specifier: 3.0.2
+        version: 3.0.2
       prettier:
         specifier: ^3.9.9
         version: 3.9.9
@@ -830,14 +830,14 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
-  '@types/node@17.0.45':
-    resolution: {integrity: sha512-w+tIMs3rq2afQdsPJlODhoUEKzFP1ayaoyl1CcnwtIlsVe7K7bA1NGm4s3PraqTLlXnbIN84zuBlxBWo1u9BLw==}
-
   '@types/node@22.20.5':
     resolution: {integrity: sha512-U2+DNr+wSjpsTS/wZGYHq7GcwfuSmKiKvoPvK22zwTlRhU91yOniN4qRR5KhIjvif7ysw/dz/hKmfDH0Ris4aA==}
 
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
+
+  '@types/node@25.9.9':
+    resolution: {integrity: sha512-b4e2xxj/yMeT2hNlD6x7zNFiQK2Dlmkb9CQ6v3/1G2RezKN4YS2lcEv8lzGm1mhs4f2lM4yNAMI/zUDBZBBt7w==}
 
   '@types/node@26.6.5':
     resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
@@ -2247,14 +2247,14 @@ packages:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
     engines: {node: '>=10.4.0'}
 
-  png-to-ico@2.1.8:
-    resolution: {integrity: sha512-Nf+IIn/cZ/DIZVdGveJp86NG5uNib1ZXMiDd/8x32HCTeKSvgpyg6D/6tUBn1QO/zybzoMK0/mc3QRgAyXdv9w==}
-    engines: {node: '>=8'}
+  png-to-ico@3.0.2:
+    resolution: {integrity: sha512-36vvp3/YF7LPYkUEOj08/WgB1wI63qW391YfOhOWckgOtGkarr9+EhPBimcCmRP7fJaG4EaXQhTTaQ8qqdj8aA==}
+    engines: {node: '>=20'}
     hasBin: true
 
-  pngjs@6.0.0:
-    resolution: {integrity: sha512-TRzzuFRRmEoSW/p1KVAmiOgPco2Irlah+bGFCeNfJXxxYGwSw7YwAOAcd7X28K/m5bjBWKsC29KyoMfHbypayg==}
-    engines: {node: '>=12.13.0'}
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
 
   postcss@8.5.29:
     resolution: {integrity: sha512-49cGhUbXj8Qenv0iTMxA1cFBzxXoctpC9Ujd77t1WcbJIr6nF/eI7g/8MgxrYldFRuAXvja7xQRwavoW7kgrxQ==}
@@ -3576,13 +3576,15 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
-  '@types/node@17.0.45': {}
-
   '@types/node@22.20.5':
     dependencies:
       undici-types: 6.21.0
 
   '@types/node@24.19.2':
+    dependencies:
+      undici-types: 7.24.6
+
+  '@types/node@25.9.9':
     dependencies:
       undici-types: 7.24.6
 
@@ -5098,13 +5100,13 @@ snapshots:
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
-  png-to-ico@2.1.8:
+  png-to-ico@3.0.2:
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 25.9.9
       minimist: 1.2.8
-      pngjs: 6.0.0
+      pngjs: 7.0.0
 
-  pngjs@6.0.0: {}
+  pngjs@7.0.0: {}
 
   postcss@8.5.29:
     dependencies:
