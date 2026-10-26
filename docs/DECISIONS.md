@@ -330,3 +330,14 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **The bridge pipe is named by the account's SID, with no fallback to the old name:** the host and the app ship in one installer, so both change at once; a 1.2 host with a 1.2.1/1.3 app (or the reverse) simply shows the desktop app as offline until both are updated.
 - **Run from source, the host also trusts Electron from the repository's `node_modules`** when the app's `package.json` sits where the install folder would be (development and the desktop e2e tests); the account check still applies.
 - **A guide file holding anything but `guide.json` and pictures is refused, not partly imported:** ShowSteps never writes other entries, so one means the file wasn't made by ShowSteps or was changed.
+
+## Branding 1.3
+
+- **This branch ships as 1.3.0, not 1.2.1:** brand kits are a feature, added on the owner's request alongside the security fixes; the release notes keep a Security section.
+- **ShowSteps's own kit is today's look,** so exports don't change for anyone who sets nothing up; golden files stay byte for byte.
+- **Kits replace each other whole** (library default, then the team's, then the guide's kit); the guide's own changes go on top. `showsteps` names the built-in kit, so one guide can opt out of the library's default.
+- **Team kits sit in the team folder's `.brand` folder** (dot folders are not guides) and are listed as "(team)"; they're changed by duplicating.
+- **In the web page, a logo shown with a cover band sits above the band,** as before; in PDF and Word it follows the kit's order.
+- **Header and footer slots are for paged files (PDF, Word);** the web page, embed and Markdown show the notice but not page headers.
+- **The kit preview is the real web-page exporter in a sandboxed frame,** and the PDF preview is a real PDF opened in a new tab; pdf.js isn't bundled into the extension for it.
+- **Pictures added to a kit are redrawn as PNG; fonts must load with fontkit;** SVG is never accepted.

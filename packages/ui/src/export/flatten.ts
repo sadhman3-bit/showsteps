@@ -17,6 +17,7 @@ import type { ExportImage, ExportInput } from '@showsteps/core/export';
 import { ANNOTATION_FONT, strokeFor } from '../components/Annotations.js';
 import { blurRadius } from '../guide/Screenshot.js';
 import { mimeFor } from '../hooks.js';
+import { brandFor, kitAsset, type BrandSources } from '../brand/sources.js';
 
 /** Widest picture written into exports; larger screenshots are scaled down. */
 const MAX_EXPORT_WIDTH = 1600;
@@ -151,6 +152,8 @@ export async function flattenStepImage(
   step: Step,
   source: Blob,
   maxWidth = MAX_EXPORT_WIDTH,
+  /** The brand's highlight colour (B2); ShowSteps's pink when left out. */
+  highlight: string = HIGHLIGHT_COLOR,
 ): Promise<ExportImage | undefined> {
   const shot = step.human.screenshot;
   if (!shot) return undefined;
@@ -181,7 +184,7 @@ export async function flattenStepImage(
         return ringBlendsIn(pctx.getImageData(0, 0, W, H).data, W, H, box);
       });
       ctx.save();
-      ctx.strokeStyle = navy ? HIGHLIGHT_ALT_COLOR : HIGHLIGHT_COLOR;
+      ctx.strokeStyle = navy ? HIGHLIGHT_ALT_COLOR : highlight;
       // A soft halo, then the ring.
       ctx.globalAlpha = 0.18;
       ctx.lineWidth = sw * 2.5;
@@ -274,16 +277,54 @@ async function storedBlob(
   return bytes ? new Blob([bytes as BlobPart], { type: mimeFor(name) }) : undefined;
 }
 
-/** Everything an exporter needs: the guide plus its finished pictures and logo. */
-export async function prepareExport(store: GuideStore, guide: Guide): Promise<ExportInput> {
+/**
+ * Everything an exporter needs: the guide plus its finished pictures, and its brand (B2) with
+ * the brand's logos, cover picture and fonts. `kit` uses another kit for this one export.
+ */
+export async function prepareExport(
+  store: GuideStore,
+  guide: Guide,
+  brandOptions: { sources?: BrandSources | undefined; kit?: string } = {},
+): Promise<ExportInput> {
+  const { sources, kit } = brandOptions;
+  const brand = await brandFor(sources, guide, kit);
   const images = new Map<string, ExportImage>();
   for (const b of guide.blocks) {
     if (b.kind !== 'step' || !b.human.screenshot) continue;
     const blob = await storedBlob(store, guide.id, b.human.screenshot.file);
-    const image = blob ? await flattenStepImage(b, blob) : undefined;
+    const image = blob
+      ? await flattenStepImage(b, blob, MAX_EXPORT_WIDTH, brand.colors.highlight)
+      : undefined;
     if (image) images.set(b.id, image);
   }
-  const logoFile = guide.branding?.logo;
-  const logoBlob = logoFile ? await storedBlob(store, guide.id, logoFile) : undefined;
-  return { guide, images, ...(logoBlob ? { logo: await toPng(logoBlob) } : {}) };
+  /** A picture from the brand's kit, as PNG. */
+  const kitPicture = async (name: string | undefined) => {
+    const bytes = name ? await kitAsset(sources, brand.id, name) : undefined;
+    return bytes ? toPng(new Blob([bytes as BlobPart], { type: mimeFor(name ?? '') })) : undefined;
+  };
+  const from = brand.logoFrom;
+  const logo =
+    from?.from === 'guide'
+      ? await storedBlob(store, guide.id, from.name).then((b) => (b ? toPng(b) : undefined))
+      : from?.from === 'kit'
+        ? await kitPicture(from.name)
+        : undefined;
+  const logoOnDark = await kitPicture(brand.logoOnDark);
+  const coverImage =
+    brand.cover.style === 'image' ? await kitPicture(brand.cover.image) : undefined;
+  const fonts = new Map<string, Uint8Array>();
+  for (const f of [brand.fonts.body, brand.fonts.heading]) {
+    if (!f?.startsWith('custom:') || fonts.has(f.slice(7))) continue;
+    const bytes = await kitAsset(sources, brand.id, f.slice(7));
+    if (bytes) fonts.set(f.slice(7), bytes);
+  }
+  return {
+    guide,
+    images,
+    brand,
+    ...(logo ? { logo } : {}),
+    ...(logoOnDark ? { logoOnDark } : {}),
+    ...(coverImage ? { coverImage } : {}),
+    ...(fonts.size ? { fonts } : {}),
+  };
 }

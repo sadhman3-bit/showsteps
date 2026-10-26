@@ -1,8 +1,9 @@
 import { IconButton } from '../Button.js';
 import { stepNumbers, toPlainText, type Guide, type GuideStore, type Step } from '@showsteps/core';
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { brandStyle } from '../brand.js';
+import { brandFor, kitAsset, useBrandSources } from '../brand/sources.js';
 import { Icon, type IconName } from '../components/Icon.js';
 import { RichText } from '../components/RichText.js';
 import { useImageUrl } from '../hooks.js';
@@ -37,8 +38,32 @@ export function GuideReader({
   footer,
 }: GuideReaderProps) {
   const numbers = stepNumbers(guide);
-  const logo = useImageUrl(store, guide.id, guide.branding?.logo?.replace(/^img\//, ''));
+  const guideLogo = useImageUrl(store, guide.id, guide.branding?.logo?.replace(/^img\//, ''));
   const root = useRef<HTMLElement>(null);
+  // B6: the guide's brand (its kit, or the library's), as exports show it.
+  const getSources = useBrandSources();
+  const [brand, setBrand] = useState<{ accent: string; font?: string; logo?: string }>();
+  useEffect(() => {
+    let live = true;
+    let url: string | undefined;
+    void getSources().then(async (sources) => {
+      const b = await brandFor(sources, guide);
+      const from = b.logoFrom;
+      const bytes = from?.from === 'kit' ? await kitAsset(sources, b.id, from.name) : undefined;
+      if (bytes) url = URL.createObjectURL(new Blob([bytes as BlobPart]));
+      if (live)
+        setBrand({
+          accent: b.colors.accent,
+          ...(b.fonts.body ? { font: b.fonts.body } : {}),
+          ...(url ? { logo: url } : {}),
+        });
+    });
+    return () => {
+      live = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [guide.branding]);
+  const logo = guideLogo ?? brand?.logo;
 
   useEffect(() => {
     if (!focusStepId) return;
@@ -47,7 +72,11 @@ export function GuideReader({
   }, [focusStepId, guide]);
 
   return (
-    <article class="ss-reader" style={brandStyle(guide.branding)} ref={root}>
+    <article
+      class="ss-reader"
+      style={brandStyle(brand ? { ...guide.branding, ...brand } : guide.branding)}
+      ref={root}
+    >
       <header class="ss-guide__header">
         {logo ? <img class="ss-reader__logo" src={logo} alt="" /> : null}
         <h1>{guide.title}</h1>

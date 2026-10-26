@@ -1,6 +1,7 @@
 import { DEFAULT_ACCENT, type Guide, type GuideStore, type VersionInfo } from '@showsteps/core';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { BRAND_FONTS, brandStyle } from '../brand.js';
+import { listKits, useBrandSources, type KitList } from '../brand/sources.js';
 import { Button } from '../Button.js';
 import { ConfirmDialog, Dialog } from '../components/Dialog.js';
 import { GuideReader } from '../guide/GuideReader.js';
@@ -101,6 +102,13 @@ export function BrandingDialog(props: {
   const branding = props.guide.branding ?? {};
   const logo = useImageUrl(props.store, props.guide.id, branding.logo?.replace(/^img\//, ''));
   const file = useRef<HTMLInputElement>(null);
+  // B6: the guide's brand kit; the changes below are this guide's own, on top of it.
+  const getSources = useBrandSources();
+  const [kits, setKits] = useState<KitList>();
+  useEffect(() => {
+    void getSources().then(async (sources) => setKits(await listKits(sources)));
+  }, []);
+  const ownChanges = !!(branding.logo || branding.accent || branding.font || branding.overrides);
   const set = (change: Partial<NonNullable<Guide['branding']>>) => {
     // Empty values remove that setting.
     const next = Object.fromEntries(
@@ -119,6 +127,27 @@ export function BrandingDialog(props: {
     <Dialog title={b.title} onClose={props.onClose}>
       <p class="ss-muted">{b.hint}</p>
       <div class="ss-stack">
+        {kits ? (
+          <label class="ss-field">
+            {b.kit}
+            <select
+              class="ss-input"
+              value={branding.kit ?? ''}
+              onChange={(e) => set({ kit: e.currentTarget.value })}
+            >
+              <option value="">
+                {b.kitDefault(kits.kits.find((k) => k.id === kits.defaultKit)?.name)}
+              </option>
+              <option value="showsteps">{strings.share.brandShowSteps}</option>
+              {kits.kits.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {kits.teamIds.has(k.id) ? strings.share.brandTeam(k.name) : k.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <p class="ss-muted">{b.ownHint}</p>
         <div class="ss-field">
           <span>{b.logo}</span>
           <div class="ss-toolbar__group">
@@ -169,6 +198,16 @@ export function BrandingDialog(props: {
         >
           <span class="ss-step__num">1</span> {props.guide.title}
         </div>
+        {ownChanges ? (
+          <div>
+            <Button
+              size="sm"
+              onClick={() => set({ logo: '', accent: '', font: '', overrides: undefined })}
+            >
+              {b.reset}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Dialog>
   );

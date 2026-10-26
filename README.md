@@ -119,6 +119,22 @@ Run for me then attaches the file without opening a picker. It keeps a copy only
 
 Exported PDF, Word, web page, embed and Markdown files have a line under the title: **Open in ShowSteps: Guide Me · Run for me**. Each link opens the guide's first page. In Chrome with ShowSteps and the same guide in its library (import the `.showsteps` file, or share a team folder), a small ShowSteps window offers to start; nothing starts until you press **Start**. In another browser, or without ShowSteps, the link just opens the page. Turn the links off in the Share dialog.
 
+## Branding your exports
+
+**Branding** in the library's sidebar holds brand kits: how every PDF, Word file, web page, embed card and Markdown file looks. A kit sets:
+
+- colours: the accent, the cover, headings, links and the highlight in pictures;
+- fonts: one of the built-in families, or your own TTF or OTF file, embedded in PDF, Word and web pages;
+- logos: one for light backgrounds and one for dark covers, on the cover, in the page header, or both;
+- the cover: a band with the trail pattern, a plain colour band, no band, or your own picture. Show, hide and reorder its parts: title, links, logo, description, steps and date, and before you start;
+- the page header and footer: left, centre and right, with **Insert…** for the guide title, company name, page numbers, date and author. Add a notice on every page (such as "Confidential"), and choose A4 or US Letter;
+- step numbers (circle, square or plain) and picture borders;
+- **ShowSteps marks**, each of which you can turn off: the trail pattern, the Guide Me and Run for me links, the "Agent-readable procedure" line, the procedure inside PDF and Word files, and "ShowSteps" as the file's creator (your company name instead).
+
+Choose a **default** kit for all guides. In the editor, **Branding** picks another kit for one guide and holds changes for that guide only (**Reset to the kit** removes them). The Share dialog can use another kit for one export.
+
+A preview beside the kit shows a sample guide as a web page, and **Open a PDF preview** makes the PDF. **Export…** saves a kit as a `.showsteps-brand` file for colleagues to **Import…**. With a team folder, a kit in its `.brand` folder appears for everyone as a team kit.
+
 ## What else is in it
 
 - **Editor:** rich step titles, sections, callouts, image steps, crop, zoom, arrows, shapes, badges, blur, bulk blur, undo, version history, branding.

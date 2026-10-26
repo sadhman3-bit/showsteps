@@ -1,6 +1,8 @@
 import { exportGuideArchive, importGuideArchive, type Guide } from '@showsteps/core';
 import {
   AboutDialog,
+  BrandPage,
+  BrandSourcesContext,
   Button,
   Dialog,
   GuideEditor,
@@ -21,6 +23,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import desktopPackage from '../../package.json';
 import {
   api,
+  ipcBrandStore,
   ipcStore,
   useLibraryVersion,
   usePushed,
@@ -35,11 +38,16 @@ type Route =
   | { page: 'edit'; id: string }
   | { page: 'view'; id: string; stepId?: string }
   | { page: 'print'; id: string }
-  | { page: 'insights' };
+  | { page: 'insights' }
+  | { page: 'branding' };
 
-/** #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId> · …/print · #/insights */
+/**
+ * #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId> · …/print ·
+ * #/insights · #/branding
+ */
 export function parseRoute(hash: string): Route {
   if (hash.startsWith('#/insights')) return { page: 'insights' };
+  if (hash.startsWith('#/branding')) return { page: 'branding' };
   const m = /^#\/guide\/([^/?]+)(?:\/(view|step|print)(?:\/([^/?]+))?)?/.exec(hash);
   if (!m?.[1]) return { page: 'library' };
   const id = decodeURIComponent(m[1]);
@@ -56,6 +64,14 @@ const d = strings.desktop;
 export function App() {
   const [route, setRoute] = useState<Route>(() => parseRoute(location.hash));
   const [settings, setSettings] = useState<DesktopSettingsView>();
+  // Brand kits (B6): the person's own, and the team folder's when one is set up.
+  const brandSources = useMemo(
+    () => ({
+      personal: ipcBrandStore('personal'),
+      ...(settings?.sharedAvailable ? { team: ipcBrandStore('team') } : {}),
+    }),
+    [settings?.sharedAvailable],
+  );
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [aiAvailable, setAiAvailable] = useState(false);
@@ -223,6 +239,8 @@ export function App() {
         onBack={() => (history.length > 1 ? history.back() : go(guideHash(route.id)))}
       />
     );
+  } else if (route.page === 'branding') {
+    body = <BrandPage sources={brandSources} onBack={() => go('#/')} />;
   } else if (route.page === 'insights') {
     body = (
       <Insights
@@ -241,22 +259,25 @@ export function App() {
         onOpen={(id) => go(guideHash(id))}
         onInsights={() => go('#/insights')}
         onSettings={() => setShowSettings(true)}
+        onBranding={() => go('#/branding')}
       />
     );
   }
 
   return (
-    <div class="ss-desktop">
-      {bar}
-      {notice ? (
-        <p class="ss-notice ss-desktop__notice" role="status">
-          {notice}
-        </p>
-      ) : null}
-      {body}
-      {settingsDialog}
-      {aboutDialog}
-    </div>
+    <BrandSourcesContext.Provider value={async () => brandSources}>
+      <div class="ss-desktop">
+        {bar}
+        {notice ? (
+          <p class="ss-notice ss-desktop__notice" role="status">
+            {notice}
+          </p>
+        ) : null}
+        {body}
+        {settingsDialog}
+        {aboutDialog}
+      </div>
+    </BrandSourcesContext.Provider>
   );
 }
 

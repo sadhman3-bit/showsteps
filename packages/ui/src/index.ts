@@ -60,3 +60,15 @@ export { describeSchedule, formatWhen } from './schedule/format.js';
 export { SettingsDialog, type UserSettings } from './guidance/SettingsDialog.js';
 export { detectAi, anyAi, type AiCapabilities } from './ai/builtin.js';
 export { AiTools } from './editor/AiTools.js';
+export { BrandPage, BrandSettings } from './brand/BrandSettings.js';
+export { BrandPreview } from './brand/BrandPreview.js';
+export {
+  BrandSourcesContext,
+  TEAM_PREFIX,
+  brandFor,
+  kitAsset,
+  listKits,
+  useBrandSources,
+  type BrandSources,
+  type KitList,
+} from './brand/sources.js';

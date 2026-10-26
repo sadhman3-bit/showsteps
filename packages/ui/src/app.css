@@ -1066,3 +1066,108 @@
   flex-wrap: wrap;
   gap: var(--ss-space-2);
 }
+
+/* ---------- Branding (B4) ---------- */
+
+.ss-brandkits {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: var(--ss-space-4, 24px);
+  align-items: start;
+}
+.ss-brandkits__list,
+.ss-brandkits__editor,
+.ss-brandkits__form {
+  display: grid;
+  gap: var(--ss-space-2, 12px);
+}
+.ss-brandkits__kits {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ss-brandkits__kit {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--ss-radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.ss-brandkits__kit[aria-current='true'] {
+  border-color: var(--ss-accent);
+  background: var(--ss-surface-2);
+}
+.ss-brandkits__swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.ss-brandkits__actions {
+  flex-wrap: wrap;
+  gap: var(--ss-space-2, 8px);
+}
+.ss-brandkits__colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+.ss-brandkits__color {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+.ss-brandkits__color input[type='color'] {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--ss-line);
+  border-radius: 6px;
+}
+.ss-brandkits__order {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 1.5em;
+}
+.ss-brandkits__order li {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.ss-brandkits__order li > .ss-check {
+  flex: 1;
+}
+.ss-brandkits__slot {
+  flex: 1 1 12em;
+}
+.ss-brandkits__token {
+  flex: 0 1 10em;
+  align-self: end;
+}
+.ss-brandkits__frame {
+  width: 100%;
+  height: 520px;
+  border: 1px solid var(--ss-line);
+  border-radius: var(--ss-radius);
+  background: var(--ss-surface);
+}
+.ss-share__brand {
+  margin-bottom: 8px;
+}
+@media (max-width: 860px) {
+  .ss-brandkits {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

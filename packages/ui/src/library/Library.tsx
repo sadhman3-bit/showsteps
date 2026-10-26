@@ -43,6 +43,8 @@ export interface LibraryProps {
   onInsights?: () => void;
   /** Open settings. */
   onSettings?: () => void;
+  /** B4: Settings → Branding (brand kits). */
+  onBranding?: () => void;
   /** Offered when the library is empty: start recording (opens the side panel). */
   onStartCapture?: () => void;
   /** Open the About dialog. */
@@ -77,6 +79,7 @@ export function Library({
   onAddSamples,
   onInsights,
   onSettings,
+  onBranding,
   onStartCapture,
   onAbout,
   onSchedules,
@@ -243,6 +246,11 @@ export function Library({
             {schedulesAttention ? (
               <span class="ss-attention" role="img" aria-label={strings.schedules.attention} />
             ) : null}
+          </Button>
+        ) : null}
+        {onBranding ? (
+          <Button variant="ghost" onClick={onBranding}>
+            <Icon name="palette" /> {strings.brandKits.button}
           </Button>
         ) : null}
         {onSettings ? (

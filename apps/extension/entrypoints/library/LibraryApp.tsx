@@ -3,6 +3,7 @@ import { stepNumbers, toPlainText } from '@showsteps/core';
 import type { Guide, Schedule } from '@showsteps/core';
 import {
   AboutDialog,
+  BrandPage,
   GuideEditor,
   GuideView,
   Insights,
@@ -17,10 +18,12 @@ import {
   Button,
   Dialog,
   RunDialog,
+  type BrandSources,
   type RunOptions,
 } from '@showsteps/ui';
 import { useEffect, useState } from 'preact/hooks';
 import {
+  getBrandStores,
   getLocalStore,
   getStore,
   deleteAllData,
@@ -46,16 +49,18 @@ type Route =
   | { page: 'view'; id: string; stepId?: string }
   | { page: 'print'; id: string }
   | { page: 'insights' }
+  | { page: 'branding' }
   | { page: 'schedules' }
   | { page: 'start'; link: StartLinkRoute };
 
 /**
  * Hash routes: #/ · #/guide/<id> (editor) · #/guide/<id>/view · #/guide/<id>/step/<stepId>
- * (reader) · #/guide/<id>/print · #/insights · #/schedules · #/start/<id>?mode&tab&v (the window
+ * (reader) · #/guide/<id>/print · #/insights · #/branding · #/schedules · #/start/<id>?mode&tab&v (the window
  * a link in an exported file opens).
  */
 export function parseRoute(hash: string): Route {
   if (hash.startsWith('#/insights')) return { page: 'insights' };
+  if (hash.startsWith('#/branding')) return { page: 'branding' };
   if (hash.startsWith('#/schedules')) return { page: 'schedules' };
   if (hash.startsWith('#/start/')) {
     const link = parseStartRoute(hash);
@@ -382,6 +387,7 @@ export function LibraryApp() {
       </>
     );
   }
+  if (route.page === 'branding') return <BrandingRoute onBack={() => go('#/')} />;
   if (route.page === 'insights') {
     return (
       <Insights
@@ -414,6 +420,7 @@ export function LibraryApp() {
         onAddSamples={() => installSamples(store)}
         onInsights={() => go('#/insights')}
         onSettings={() => setShowSettings(true)}
+        onBranding={() => go('#/branding')}
         onStartCapture={openSidePanel}
         onAbout={() => setShowAbout(true)}
         onSchedules={() => go('#/schedules')}
@@ -435,4 +442,13 @@ export function LibraryApp() {
       {settingsDialog}
     </>
   );
+}
+
+/** B4: the Branding page, with this browser's kits (or the desktop app's while guides live there). */
+function BrandingRoute(props: { onBack: () => void }) {
+  const [sources, setSources] = useState<BrandSources>();
+  useEffect(() => {
+    void getBrandStores().then(setSources);
+  }, []);
+  return <BrandPage sources={sources} onBack={props.onBack} />;
 }

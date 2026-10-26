@@ -402,3 +402,8 @@ Run `pnpm release`. On a clean Windows user account, follow the README's **Insta
 - **MT-R-2 Outlook on the web:** the same as MT-R-1 in Outlook on the web (outlook.office.com), with Attach → Browse this computer. **Expected:** the file is attached to the draft without a picker.
 - **MT-R-3 Link in a PDF:** export the demo invoice guide as PDF with links on, open the file in Chrome's PDF viewer and click **Run for me** under the title. **Expected:** the sign-in page opens in a new tab, a small ShowSteps window offers Run for me with the run choices; **Start** opens the side panel and runs from the clean sign-in address.
 - **MT-R-4 Link in Word:** with Chrome as the default browser, export the same guide as Word, open it in Word for Windows and Ctrl+click **Guide Me**. **Expected:** Chrome opens the sign-in page and the ShowSteps window offers Guide Me; **Not now** closes it and the address loses `#showsteps=…`.
+
+## Update 1.3: brand kits
+
+- **MT-B-1 Printed PDF:** make a kit with your logo, a plain cover, a footer with the company name and page numbers, the notice "Confidential", US Letter, and every ShowSteps mark off. Export the demo invoice guide as PDF and print it. **Expected:** the logo and title on the cover, the footer and notice on every page after it, and no "ShowSteps" anywhere on paper or in the file's properties (File → Properties in Acrobat or Edge).
+- **MT-B-2 Brand file through OneDrive:** export that kit as a `.showsteps-brand` file, put it in a OneDrive folder, and on another computer import it in Branding. **Expected:** the same colours, logo and font in that computer's exports.

@@ -48,6 +48,7 @@ Everything needed to publish the ShowSteps extension. Each field below matches a
 > EDIT AND SHARE
 > • Reorder steps, add sections, tips and warnings, crop and annotate screenshots.
 > • Export to PDF, Word, Markdown or HTML, or copy into a document or wiki.
+> • Brand kits: your colours, fonts, logo, cover, header, footer and page notice on every export, with ShowSteps's own marks optional.
 > • Version history: go back to any earlier version.
 >
 > GUIDE PEOPLE THROUGH IT
