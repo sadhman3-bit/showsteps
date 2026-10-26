@@ -180,6 +180,49 @@ export interface ImportResult {
   renamed: boolean;
 }
 
+/** Limits on what a guide file may unpack to (H8): a small file can't expand without bound. */
+export const ARCHIVE_LIMITS = {
+  entries: 5_000,
+  guideJson: 20 * 1024 * 1024,
+  total: 600 * 1024 * 1024,
+} as const;
+
+const isSafeName = (name: string) => {
+  try {
+    return !!assertSafeName(name);
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Checks each entry before it is decompressed, using the sizes the zip declares: only
+ * `guide.json` and pictures under `img/` with safe names, within ARCHIVE_LIMITS.
+ */
+function entryFilter(): (file: { name: string; originalSize: number }) => boolean {
+  let count = 0;
+  let total = 0;
+  return (file) => {
+    if (++count > ARCHIVE_LIMITS.entries)
+      throw new GuideFormatError('This guide file has too many files in it to import.');
+    if (file.name === 'img/') return false;
+    if (file.name === 'guide.json') {
+      if (file.originalSize > ARCHIVE_LIMITS.guideJson)
+        throw new GuideFormatError('This guide file is too large to import.');
+    } else {
+      const name = /^img\/([^/]+)$/.exec(file.name)?.[1];
+      if (!name || !isSafeName(name))
+        throw new GuideFormatError(
+          `This isn't a ShowSteps guide file: it holds "${file.name.slice(0, 80)}".`,
+        );
+    }
+    total += file.originalSize;
+    if (total > ARCHIVE_LIMITS.total)
+      throw new GuideFormatError('This guide file unpacks to more than ShowSteps imports.');
+    return true;
+  };
+}
+
 /** Who an imported guide is from (H4): someone else unless the caller says otherwise. */
 export interface ImportOptions {
   /** `false`: ShowSteps's own samples, or a copy of the person's own guide. */
@@ -200,8 +243,9 @@ export async function importGuideArchive(
     throw new GuideFormatError('This file is too large to import.');
   let entries: Record<string, Uint8Array>;
   try {
-    entries = unzipSync(bytes);
-  } catch {
+    entries = unzipSync(bytes, { filter: entryFilter() });
+  } catch (error) {
+    if (error instanceof GuideFormatError) throw error;
     throw new GuideFormatError('This file is not a ShowSteps guide.');
   }
   const json = entries['guide.json'];

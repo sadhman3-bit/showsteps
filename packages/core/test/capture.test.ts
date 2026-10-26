@@ -376,14 +376,19 @@ describe('.showsteps archives', () => {
       GuideFormatError,
     );
     const { zipSync, strToU8 } = await import('fflate');
+    // Files other than guide.json and pictures are refused outright (H8)…
     await expect(importGuideArchive(store, zipSync({ 'x.txt': strToU8('hi') }))).rejects.toThrow(
-      /no guide.json/,
+      /holds "x.txt"/,
     );
+    // …and pictures without a guide.json aren't a guide.
+    await expect(
+      importGuideArchive(store, zipSync({ 'img/a.png': strToU8('hi') })),
+    ).rejects.toThrow(/no guide.json/);
     const evil = zipSync({
       'guide.json': strToU8(serializeGuide(createGuide())),
       img: { '..%2f..%2fx': strToU8('x') },
     });
-    await expect(importGuideArchive(store, evil)).rejects.toThrow(/Invalid image name/);
+    await expect(importGuideArchive(store, evil)).rejects.toThrow(GuideFormatError); // refused before unpacking (H8)
   });
 
   it('duplicates a guide with its images', async () => {

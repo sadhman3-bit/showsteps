@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@showsteps/core": "workspace:*",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.17",
     "preact": "^11.0.1",
     "tesseract.js": "7.0.0"
   },

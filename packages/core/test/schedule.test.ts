@@ -11,6 +11,7 @@ import {
   createStep,
   exportGuideArchive,
   guideVersion,
+  GuideFormatError,
   importGuideArchive,
   IndexedDbStore,
   hostMatches,
@@ -356,12 +357,14 @@ describe('schedule schema', () => {
     const files = unzipSync(await exportGuideArchive(from, g.id, { mode: 'backup' }));
     const raw = JSON.parse(strFromU8(files['guide.json']!)) as Record<string, unknown>;
     files['guide.json'] = strToU8(JSON.stringify({ ...raw, schedules: [s] }));
-    files['schedules.json'] = strToU8(JSON.stringify([s]));
     const to = new IndexedDbStore(new IDBFactory());
     const { guideId } = await importGuideArchive(to, zipSync(files));
     const imported = await to.getGuide(guideId);
     expect(imported).toBeDefined();
     expect(JSON.stringify(imported)).not.toContain(s.id);
+    // A file of its own isn't ignored any more: the whole guide file is refused (H8).
+    files['schedules.json'] = strToU8(JSON.stringify([s]));
+    await expect(importGuideArchive(to, zipSync(files))).rejects.toThrow(GuideFormatError);
   });
 
   it('knows which guides can be scheduled and which need the person', () => {

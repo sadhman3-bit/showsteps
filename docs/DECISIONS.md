@@ -329,3 +329,4 @@ One line per default chosen during the build. Newest at the bottom of each miles
 - **Script-made value changes are still recorded** (frameworks set values that way), but the step is marked `byPage` and the editor offers Delete or Keep.
 - **The bridge pipe is named by the account's SID, with no fallback to the old name:** the host and the app ship in one installer, so both change at once; a 1.2 host with a 1.2.1/1.3 app (or the reverse) simply shows the desktop app as offline until both are updated.
 - **Run from source, the host also trusts Electron from the repository's `node_modules`** when the app's `package.json` sits where the install folder would be (development and the desktop e2e tests); the account check still applies.
+- **A guide file holding anything but `guide.json` and pictures is refused, not partly imported:** ShowSteps never writes other entries, so one means the file wasn't made by ShowSteps or was changed.

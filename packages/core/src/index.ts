@@ -95,6 +95,7 @@ export {
 export {
   ARCHIVE_ACCEPT,
   ARCHIVE_EXTENSION,
+  ARCHIVE_LIMITS,
   exportGuideArchive,
   type ArchiveOptions,
   type RedactedImage,

@@ -1,11 +1,14 @@
 import { IDBFactory } from 'fake-indexeddb';
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import {
+  ARCHIVE_LIMITS,
+  GuideFormatError,
   IndexedDbStore,
   createGuide,
   createStep,
   exportGuideArchive,
+  importGuideArchive,
   parseGuide,
   plain,
   type Redactor,
@@ -145,5 +148,67 @@ describe('pictures with nothing hidden (H1)', () => {
     const shared = parseGuide(JSON.parse(strFromU8(files['guide.json']!))).blocks[0] as Step;
     expect(shared.human.actionBox).toEqual({ x: 150, y: 250, w: 100, h: 40 });
     expect(shared.human.original).toBeUndefined();
+  });
+});
+
+describe('import limits (H8)', () => {
+  /** A real guide file, plus extra entries. */
+  async function withEntries(extra: Record<string, Uint8Array>) {
+    const { store, guide } = await seeded();
+    const files = unzipSync(await exportGuideArchive(store, guide.id, { mode: 'backup' }));
+    return zipSync({ ...files, ...extra }, { level: 6 });
+  }
+
+  /** Make the zip's central directory claim `size` bytes for `name` (a zip bomb's lie). */
+  function claim(zip: Uint8Array, name: string, size: number): Uint8Array {
+    const out = zip.slice();
+    const view = new DataView(out.buffer);
+    for (let i = 0; i + 46 < out.length; i++) {
+      if (view.getUint32(i, true) !== 0x02014b50) continue;
+      const len = view.getUint16(i + 28, true);
+      if (strFromU8(out.subarray(i + 46, i + 46 + len)) === name)
+        view.setUint32(i + 24, size, true);
+    }
+    return out;
+  }
+
+  it('imports a normal guide file', async () => {
+    const zip = await withEntries({});
+    const to = new IndexedDbStore(new IDBFactory());
+    const { guideId } = await importGuideArchive(to, zip);
+    expect(await to.getGuide(guideId)).toBeDefined();
+  });
+
+  it('refuses a small file that claims to unpack past the limit, before unpacking it', async () => {
+    const zip = claim(
+      await withEntries({ 'img/big.png': new Uint8Array(1024 * 1024) }),
+      'img/big.png',
+      ARCHIVE_LIMITS.total + 1,
+    );
+    expect(zip.length).toBeLessThan(2 * 1024 * 1024);
+    await expect(importGuideArchive(new IndexedDbStore(new IDBFactory()), zip)).rejects.toThrow(
+      GuideFormatError,
+    );
+    const json = claim(await withEntries({}), 'guide.json', ARCHIVE_LIMITS.guideJson + 1);
+    await expect(importGuideArchive(new IndexedDbStore(new IDBFactory()), json)).rejects.toThrow(
+      /too large/,
+    );
+  });
+
+  it('refuses too many entries and anything but guide.json and pictures', async () => {
+    const many: Record<string, Uint8Array> = {};
+    for (let i = 0; i < ARCHIVE_LIMITS.entries; i++)
+      many[`img/p${i}.png`] = new Uint8Array([i % 256]);
+    await expect(
+      importGuideArchive(new IndexedDbStore(new IDBFactory()), await withEntries(many)),
+    ).rejects.toThrow(/too many/);
+    for (const name of ['schedules.json', 'img/sub/x.png', '../evil.png', 'img/..png'])
+      await expect(
+        importGuideArchive(
+          new IndexedDbStore(new IDBFactory()),
+          await withEntries({ [name]: new Uint8Array([1]) }),
+        ),
+        name,
+      ).rejects.toThrow(GuideFormatError);
   });
 });
