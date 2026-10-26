@@ -20,9 +20,9 @@
     "@showsteps/core": "workspace:*",
     "@showsteps/ui": "workspace:*",
     "electron": "^44.9.3",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^26.18.0",
     "preact": "^11.0.1",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "zod": "^4.6.7"
   },
   "build": {
